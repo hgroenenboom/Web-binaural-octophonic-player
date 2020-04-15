@@ -1,0 +1,14 @@
+Parameters to add:
+- Possibility to enter specific reverb impulse responses
+- Possibility to change style
+    - background image
+    - Colorscheme
+    - Speaker and listener images
+
+Functionalities to add:
+- Moving speakers
+- Rotating speakers and the listener
+- Zooming in and out on the x- and y-axis
+
+Coulds:
+- Z-axis manipulation

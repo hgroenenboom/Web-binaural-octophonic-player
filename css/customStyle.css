@@ -1,0 +1,117 @@
+
+div.drawingSpace {
+    height: 100%;
+    width: auto;
+    display: block;
+}
+
+.sliders {
+  width: 100%;
+  height: auto;
+}
+
+.slider {
+    -webkit-appearance: none;
+    background: #d0d0d0;
+    outline: none;
+    border-radius: 10px;
+    height: 2vh;
+}
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 3.2vh;
+    height: 3.2vh;
+    cursor: pointer;
+    background: #4CAF50;
+    border-radius: 50%;
+}
+.slider::-moz-range-thumb {
+    width: 3.2vh;
+    height: 3.2vh;
+    cursor: pointer;
+    background: #4CAF50;
+    border-radius: 50%;
+}
+
+.playbutton {
+    width: 40%;
+    margin: 10px 31%;
+    height: 28px;
+}
+
+.canvas {
+    height: 100%;
+    width: 97%;
+    margin: auto;
+    float: left;
+}
+
+.frameSpace {
+    /* padding: 2%; */
+    /* height: 98vh; */
+    width: auto;
+    display:inline-block;
+    
+}
+
+.customContainer {
+    width: 100%;
+    height: 100%;
+    display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
+    display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
+    display: -ms-flexbox;      /* TWEENER - IE 10 */
+    display: -webkit-flex;     /* NEW - Chrome */
+    display: flex;             /* NEW, Spec - Opera 12.1, Firefox 20+ */
+    padding: 4vh;
+}
+
+.drawFrameSpace {
+    width: 98vh;
+}
+
+.centered {
+    margin: auto;
+    /* margin: auto */
+}
+
+body {
+  /* opacity=0.1; */
+  background: transparent;
+    height: 100%;
+}
+
+input[type=range] {
+    /* width: 52%; */
+    width: 97%;
+    margin: 0.2%; 0%;
+    height: 2wh;
+    display: inline;
+    vertical-align: middle;
+}
+
+label {
+    font-family: verdana;
+    font-size: 2.9vh;
+    margin: 1px 2%;
+    vertical-align: middle;
+}
+button {
+    display: block;
+    margin: 4.5% auto;
+    height: 7vh;
+    font-size: 5hw;
+    width: 18vw;
+    <!-- vertical-align: center; -->
+}
+
+@media (max-width: 500px) {
+    label {
+        font-size: 10px;
+    }
+}
+@media (max-height: 300px) {
+    label {
+        font-size: 10px;
+    }
+}
