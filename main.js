@@ -10,7 +10,8 @@ let audioContext;
 audioContext = new AudioContext();
 let listener;
 listener = audioContext.listener;
-// audioContext.suspend();
+window.listener = listener;
+audioContext.suspend();
 
 reverbjs.extend(audioContext);
 
@@ -607,8 +608,8 @@ function setupDrawingFunctions()
         vars.canvasDiam = vars.DIAM * vars.positionToCanvasMultY; 
         
         vars.listenerPositionCanvas = new Rectangle( 
-            vars.canvasXMid + vars.positionToCanvasMultY * listener.positionX.value - vars.canvasRad, 
-            vars.canvasYMid + vars.positionToCanvasMultY * listener.positionY.value - vars.canvasRad, 
+            vars.canvasXMid + vars.positionToCanvasMultY * listener.positionX - vars.canvasRad, 
+            vars.canvasYMid + vars.positionToCanvasMultY * listener.positionY - vars.canvasRad, 
             vars.canvasDiam, 
             vars.canvasDiam
         );
@@ -664,8 +665,8 @@ function setupDrawingFunctions()
                 vars.listenerIsBeingDragged = true;
                 
                 // save old listener position
-                vars.listenerXPositionOnMouseDown = listener.positionX.value;
-                vars.listenerYPositionOnMouseDown = listener.positionY.value;
+                vars.listenerXPositionOnMouseDown = listener.positionX;
+                vars.listenerYPositionOnMouseDown = listener.positionY;
             }
         }
     }, false);
@@ -842,6 +843,7 @@ function initIfAllLoaded() {
             initializeCallback();
         }
         log("init finished");
+        audioContext.resume();
         enableHTMLView();
     }
 }
