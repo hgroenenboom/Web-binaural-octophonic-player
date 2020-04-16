@@ -608,11 +608,12 @@ function setupDrawingFunctions()
         vars.canvasDiam = vars.DIAM * vars.positionToCanvasMultY; 
         
         vars.listenerPositionCanvas = new Rectangle( 
-            vars.canvasXMid + vars.positionToCanvasMultY * listener.positionX - vars.canvasRad, 
-            vars.canvasYMid + vars.positionToCanvasMultY * listener.positionY - vars.canvasRad, 
+            vars.canvasXMid + vars.positionToCanvasMultY * listener.positionX.value - vars.canvasRad, 
+            vars.canvasYMid + vars.positionToCanvasMultY * listener.positionY.value - vars.canvasRad, 
             vars.canvasDiam, 
             vars.canvasDiam
         );
+        // console.log(vars.listenerPositionCanvas);
         debugDrawingVariables(2);
     }
     function debugDrawingVariables(debugamount) {
@@ -642,20 +643,31 @@ function setupDrawingFunctions()
         vars.drawMode = ( vars.drawMode + 1 ) % 2;
         log("drawmode = " + vars.drawMode);
     });
-    window.addEventListener("mouseup", (e) => {
+    function canvasMouseUp() {
         if(vars.drawMode == 1) {
             vars.listenerIsBeingDragged = false;
         }
+    }
+    drawCanvas.addEventListener("mouseup", (e) => {
+        canvasMouseUp();
     });
+    drawCanvas.addEventListener("touchend", (e) => {
+        e.preventDefault();
+        canvasMouseUp();
+        vars.hoverListener = false;
+    }, { passive:false });
    
     //----------------------------------------------------------------------------//
     // ------------------------ LISTENER EVENTS FROM CANVAS  ---------------------//
+    function getEventX(e) { return (e.clientX != null ? e.clientX : e.changedTouches[0].clientX); }
+    function getEventY(e) { return (e.clientY != null ? e.clientY : e.changedTouches[0].clientY); }
+    
     function getMouseDown(e) {
         setDrawingVariables();
-        vars.windowMouseDownX = e.clientX - drawCanvas.offsetLeft;
-        vars.windowMouseDownY = e.clientY - drawCanvas.offsetTop;
+        vars.windowMouseDownX = getEventX(e) - drawCanvas.offsetLeft;
+        vars.windowMouseDownY = getEventY(e) - drawCanvas.offsetTop;
     }
-    drawCanvas.addEventListener("mousedown", (e) => {
+    function canvasMouseDown(e) {
         setDrawingVariables();
         getMouseDown(e);
         
@@ -665,25 +677,40 @@ function setupDrawingFunctions()
                 vars.listenerIsBeingDragged = true;
                 
                 // save old listener position
-                vars.listenerXPositionOnMouseDown = listener.positionX;
-                vars.listenerYPositionOnMouseDown = listener.positionY;
+                vars.listenerXPositionOnMouseDown = listener.positionX.value;
+                vars.listenerYPositionOnMouseDown = listener.positionY.value;
             }
         }
+    }
+    drawCanvas.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        canvasMouseDown(e);
+    }, { passive:false });
+    drawCanvas.addEventListener("mousedown", (e) => {
+        canvasMouseDown(e);
     }, false);
 
-    drawCanvas.addEventListener("mousemove", (e) => {
+    function canvasDrag(e) {
         setDrawingVariables();
-        vars.windowDragX = e.clientX - drawCanvas.offsetLeft;
-        vars.windowDragY = e.clientY - drawCanvas.offsetTop;
+        vars.windowDragX = getEventX(e) - drawCanvas.offsetLeft;
+        vars.windowDragY = getEventY(e) - drawCanvas.offsetTop;
         
         vars.hoverListener = (vars.listenerIsBeingDragged == true || vars.listenerPositionCanvas.isInside( vars.windowTocanvasMultX * vars.windowDragX, vars.windowTocanvasMultY * vars.windowDragY ) );
         if(vars.drawMode == 1 && vars.listenerIsBeingDragged == true) {
             const canvasXDistanceFromDragStart = (vars.windowDragX - vars.windowMouseDownX) * vars.windowTocanvasMultX;
             const canvasYDistanceFromDragStart = (vars.windowDragY - vars.windowMouseDownY) * vars.windowTocanvasMultX;
             
-            listener.positionX.value = vars.listenerXPositionOnMouseDown + canvasXDistanceFromDragStart / vars.positionToCanvasMultX;
-            listener.positionY.value = vars.listenerYPositionOnMouseDown + canvasYDistanceFromDragStart / vars.positionToCanvasMultY;
+            const xy = [vars.listenerXPositionOnMouseDown + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.listenerYPositionOnMouseDown + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ]
+            listener.positionX.value = xy[0];
+            listener.positionY.value = xy[1];
         }
+    }
+    drawCanvas.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        canvasDrag(e);
+    }, { passive:false });
+    drawCanvas.addEventListener("mousemove", (e) => {
+        canvasDrag(e);
     }, false);
 
     //----------------------------------------------------------------------------//
