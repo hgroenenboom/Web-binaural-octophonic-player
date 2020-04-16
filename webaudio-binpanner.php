@@ -2,6 +2,32 @@
 <!--- by Harold Groenenboom                       --->
 <!--- Base code: https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Web_audio_spatialization_basics --->
 
+<!-- 
+    audiofiles will be looked for like this:
+    <file>{0-channels}<ext>
+    
+    --- ARGUMENTS ---
+    manditory
+    - file=<url>, url of file to load. Without the extension and without the numbering (for instance audiofile01.mp3 -> audiofile0)
+        Files are supposed to be split into mono files and numbered from 1. 
+        Example for the files needed for the input audiofile0:
+            audiofile01<ext>, audiofile02<ext>, audiofile03<ext>, audiofile04<ext>, audiofile05<ext>, audiofile06<ext>, audiofile07<ext>, audiofile08<ext>
+    - ext=<audioextension>, audio extension to be used. (i.e. .wav/.mp3/.m4a)
+    
+    common
+    - channels=<0-16>, the number of audiofiles to look for.
+    
+    style
+    - background_image=<url>, the background image to use. Default is art designed by me
+    
+    powerusers
+    - debuglevel=<0-10>, the debuglevel to run on. Higher level creates more console output. only to use when debugging.
+    
+    unused / disabled
+    - height=<200-1000>, the height of the iFrame
+-->
+
+
 <!DOCTYPE html>
 <html>
     <head>
@@ -40,12 +66,23 @@
 
     <body>
         <!-- main div -->
-        <div style="background-image: url('/img/test3.gif');background-origin: content-box;background-repeat: repeat-y;background-size: cover;background-position-x: center;position:absolute;width:100%;height:100%;">
+        <div style="background-image: url('<?php
+            parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
+            if(isset($array["background_image"])) {
+                echo $array["background_image"];
+            } else {
+                echo "/img/test3.gif";
+            }
+        ?>');background-origin: content-box;background-repeat: repeat-y;background-size: cover;background-position-x: center;position:absolute;width:100%;height:100%;">
             <div id="loading screen">
                 <p style="margin:auto;font-size:5vw;text-align:center">loading...</p>
                 <p id="loading-text" style="margin:auto;font-size:3.5vw;text-align:center;padding:100px">0/0</p>
             </div>
             
+            <!--<div>
+                <p id="debug-z"></p>
+                <p id="debug-dist"></p>
+            </div>-->
             <div class="customContainer" id="octophonic player" style="display:none;">
                 <!-- canvas space -->
                 <div class="frameSpace drawFrameSpace">

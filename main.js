@@ -163,7 +163,7 @@ class Rectangle {
 // LISTENER POSITION INITIAL CONSTANTS
 var LISTENER_INITIAL_X = 0;
 var LISTENER_INITIAL_Y = 0;
-var LISTENER_INITIAL_Z = 5;
+var LISTENER_INITIAL_Z = 40;
 
 var listenerPosition = [];
 function setListenerPosition(x, y, z) {
@@ -339,9 +339,9 @@ function setupPanningNodes(inputNodes, outputNode)
 {
     // PANNER NODE SETTINGS
     const pannerModel = 'HRTF';
-    const innerCone = 360;
-    const outerCone = 0;
-    const outerGain = 0;
+    const innerCone = 50;
+    const outerCone = 150;
+    const outerGain = 0.3;
     const distanceModel = 'inverse';
     const maxDistance = 10000;          // 0 - INF  def: 10000
     const refDistance = 1;              // 0 - INF  def: 1
@@ -360,9 +360,9 @@ function setupPanningNodes(inputNodes, outputNode)
         {
             panningModel: pannerModel,
             distanceModel: distanceModel,
-            // positionX: positionX,
-            // positionY: positionY,
-            // positionZ: positionZ,
+            positionX: positionX,
+            positionY: positionY,
+            positionZ: positionZ,
             orientationX: orientationX,
             orientationY: orientationY,
             orientationZ: orientationZ,
@@ -374,7 +374,7 @@ function setupPanningNodes(inputNodes, outputNode)
             coneOuterGain: outerGain
         })
         
-        panner[i].positionZ.value = 0;
+        // panner[i].positionZ.value = 0;
     }
     // window.panner = panner;
     
@@ -403,11 +403,22 @@ function setupPanningNodes(inputNodes, outputNode)
             const speakerY = speakerR * ( Math.sin ( angle + speakerAngle ) );
             // console.log(i, speakerX / speakerR, speakerY / speakerR);
             
+            // set positions
             panner[i].positionX.value = speakerX;
             panner[audioElements.length+i].positionX.value = speakerX;
             panner[i].positionY.value = speakerY;
             panner[audioElements.length+i].positionY.value = speakerY;
-            
+
+            // set angles
+            const angleX = - speakerX / speakerR;
+            const angleY = - speakerY / speakerR;
+            if(panner[i].orientationX) {
+                panner[i].orientationX.value = angleX;
+                panner[i].orientationY.value = angleY;
+            } else {
+                panner[i].setOrientation(angleX, angleY, 0.0);
+            }
+
             panner[i].hg_angle = (angle + speakerAngle) % (2*Math.PI);
             panner[i].hg_radius = speakerR;
             
@@ -927,15 +938,31 @@ function setupDrawingFunctions()
                 drawContext.fillText( i+1, speakerXMid, speakerYMid + 0.25*vars.canvasRad  );
             }
         }   
-        // const panControl = document.querySelector('[data-action="pan"]');
-        // panControl.value += parseFloat(panControl.value) + 0.05;
-        // globals.setPanning();
+        
+        // autorotate
+        if(false) {
+            var panControl = document.querySelector('[data-action="pan"]');
+            panControl.value = (parseFloat(panControl.value) + 0.01) % (2 * Math.PI);
+            globals.setPanning();
+            // document.getElementById("debug-dist").innerHTML = panControl.value;
+        }
+        
         log("canvas updated", 1);
     };
     draw();
 }
 
 
+window.addEventListener("mousemove", (e) => {
+    // const z = -100 + 400 * e.clientX / window.innerWidth;
+    // setListenerPosition(listenerPosition[0], listenerPosition[1], z);
+    // for(var i = 0; i < audioElements.length; i++) {
+        // panner[i].positionZ.value = z - 5;
+    // }
+    // document.getElementById("debug-z").innerHTML = z;
+    // // const dist = 
+    // // document.getElementById("debug-dist").innerHTML = 
+});
 
 
 // to move past loading screen
