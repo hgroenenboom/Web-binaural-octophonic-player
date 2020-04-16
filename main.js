@@ -69,6 +69,31 @@ class DrawingVariables {
 };
 vars = new DrawingVariables();
 
+// simple rectangle class to reduce duplicate code
+class Rectangle {
+    constructor(x, y, w, h) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+    }
+    
+    isInside(xpos, ypos) {
+        log("isInside: xpos="+xpos+" ; ypos="+ypos, 1);
+        if(xpos >= this.x && xpos < this.x+this.w && ypos >= this.y && ypos <= this.y+this.h) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    getRelativePosition(xpos, ypos) {
+        const _xpos = (xpos-this.x) / (this.w-this.x);
+        const _ypos = (ypos-this.y) / (this.h-this.y);
+        return [_xpos, _ypos];
+    }
+}
+
 /*-----------------------------------------------------------------------------------------------------------------*/
 /*---------------------------------------------  Testing       ----------------------------------------------------*/
 /*-----------------------------------------------------------------------------------------------------------------*/
@@ -120,9 +145,48 @@ vars = new DrawingVariables();
 
 
 
+/*-----------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------- pre initialization ------------------------------------------------*/
+/*-----------------------------------------------------------------------------------------------------------------*/
 
+// LISTENER POSITION INITIAL CONSTANTS
+const LISTENER_INITIAL_X = 0;
+const LISTENER_INITIAL_Y = 0;
+const LISTENER_INITIAL_Z = 0;
+function initListener() {
+    const posX = LISTENER_INITIAL_X;
+    const posY = LISTENER_INITIAL_Y;
+    const posZ = LISTENER_INITIAL_Z - 0;
 
-
+    // AUDIO CONTEXT LISTENER CONFIG
+    if(listener.setPosition) 
+    {
+        listener.setPosition(posX, posY, posZ);
+    }
+    if(listener.positionX == null) {
+        listener.positionX = {};
+        listener.positionY = {};
+        listener.positionZ = {};
+    }
+    listener.positionX.value = posX;
+    listener.positionY.value = posY;
+    listener.positionZ.value = posZ;
+    
+    if(listener.forwardX) 
+    {
+        listener.forwardX.value = 0;
+        listener.forwardY.value = 0;
+        listener.forwardZ.value = -1;
+    }
+    // listener head pos
+    if(listener.upX) 
+    {
+        listener.upX.value = 0;
+        listener.upY.value = 1;
+        listener.upZ.value = 0;
+    }
+}
+initListener();
 
 /*-----------------------------------------------------------------------------------------------------------------*/
 /*--------------------------------------------- Audio pipeline ----------------------------------------------------*/
@@ -256,37 +320,6 @@ function setupAudioTrackNodes()
 
 function setupPanningNodes(inputNodes, outputNode) 
 {
-    // LISTENER POSITION VARIABLES
-    const posX = 0;
-    const posY = 0;
-    const posZ = 0;
-
-    // AUDIO CONTEXT LISTENER CONFIG
-    if(listener.positionX) 
-    {
-        listener.positionX.value = posX;
-        listener.positionY.value = posY;
-        listener.positionZ.value = posZ-5;
-    } 
-    else 
-    {
-        listener.setPosition(posX, posY, posZ-5);
-    }
-    
-    if(listener.forwardX) 
-    {
-        listener.forwardX.value = 0;
-        listener.forwardY.value = 0;
-        listener.forwardZ.value = -1;
-    }
-    // listener head pos
-    if(listener.upX) 
-    {
-        listener.upX.value = 0;
-        listener.upY.value = 1;
-        listener.upZ.value = 0;
-    }
-
     // PANNER NODE SETTINGS
     const pannerModel = 'HRTF';
     const innerCone = 40;
@@ -296,9 +329,9 @@ function setupPanningNodes(inputNodes, outputNode)
     const maxDistance = 20;          // 0 - INF  def: 10000
     const refDistance = 22;              // 0 - INF  def: 1
     const rollOff = 0.88;                  // 0 - 1    def: 1
-    const positionX = posX;
-    const positionY = posY;
-    const positionZ = posZ;
+    const positionX = LISTENER_INITIAL_X;
+    const positionY = LISTENER_INITIAL_Y;
+    const positionZ = LISTENER_INITIAL_Z;
     const orientationX = 0.0;
     const orientationY = 0.0;
     const orientationZ = 0.0;
@@ -336,18 +369,44 @@ function setupPanningNodes(inputNodes, outputNode)
     // ---- set panning of all panners
     var sinPhase = 0.0;
     function setPanning() {
-        const toAdd = 2*Math.PI / audioElements.length;
         for(var i = 0; i < audioElements.length; i++) {
-            const speakerX = SPEAKER_DIST * 0.5 * ( Math.cos ( sinPhase + i * toAdd ) );
-            const speakerY = SPEAKER_DIST * 0.5 * ( Math.sin ( sinPhase + i * toAdd ) );
+            const speakerR = Math.sqrt( Math.pow(panner[i].hg_staticPosX, 2) + Math.pow(panner[i].hg_staticPosY, 2));
+            const speakerAngle = Math.atan2( panner[i].hg_staticPosY, panner[i].hg_staticPosX );
+            // console.log(speakerAngle, panner[i].hg_staticPosY, panner[i].hg_staticPosX);
+        
+            const speakerX = speakerR * ( Math.cos ( sinPhase + speakerAngle ) );
+            const speakerY = speakerR * ( Math.sin ( sinPhase + speakerAngle ) );
+            // console.log(i, speakerX / speakerR, speakerY / speakerR);
+            
             panner[i].positionX.value = speakerX;
             panner[audioElements.length+i].positionX.value = speakerX;
             panner[i].positionY.value = speakerY;
             panner[audioElements.length+i].positionY.value = speakerY;
-            panner[i].angle = (sinPhase + i*toAdd) % (2*Math.PI);
+            
+            panner[i].hg_angle = (sinPhase + speakerAngle) % (2*Math.PI);
+            panner[i].hg_radius = speakerR;
+            
             log("panner:\tx: "+panner[i].positionX.value+" \t y: "+panner[i].positionY.value, 2); 
         }
     }
+    function setDistributed(angle) {
+        const toAdd = 2*Math.PI / audioElements.length;
+        for(var i = 0; i < audioElements.length; i++) {
+            const speakerX = SPEAKER_DIST * 0.5 * ( Math.cos ( angle + i * toAdd ) );
+            const speakerY = SPEAKER_DIST * 0.5 * ( Math.sin ( angle + i * toAdd ) );
+            panner[i].positionX.value = speakerX;
+            panner[audioElements.length+i].positionX.value = speakerX;
+            panner[i].hg_staticPosX = speakerX;
+            panner[i].positionY.value = speakerY;
+            panner[audioElements.length+i].positionY.value = speakerY;
+            panner[i].hg_staticPosY = speakerY;
+            
+            panner[i].hg_angle = (angle + i*toAdd) % (2*Math.PI);
+            panner[i].hg_radius = 0.5*SPEAKER_DIST;
+            log("panner:\tx: "+panner[i].positionX.value+" \t y: "+panner[i].positionY.value, 2); 
+        }
+    }
+    setDistributed(sinPhase);
     
     // panning slider callback
     const panControl = document.querySelector('[data-action="pan"]');
@@ -356,7 +415,6 @@ function setupPanningNodes(inputNodes, outputNode)
         setPanning();
     };
     panControl.value = sinPhase;
-    setPanning();
 }
 
 function setupReverbNodes(inputNodes, endNode) 
@@ -559,31 +617,6 @@ function setupDrawingFunctions()
         return average;
     }
     
-    // simple rectangle class to reduce duplicate code
-    class Rectangle {
-        constructor(x, y, w, h) {
-            this.x = x;
-            this.y = y;
-            this.w = w;
-            this.h = h;
-        }
-        
-        isInside(xpos, ypos) {
-            log("isInside: xpos="+xpos+" ; ypos="+ypos, 1);
-            if(xpos >= this.x && xpos < this.x+this.w && ypos >= this.y && ypos <= this.y+this.h) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-        
-        getRelativePosition(xpos, ypos) {
-            const _xpos = (xpos-this.x) / (this.w-this.x);
-            const _ypos = (ypos-this.y) / (this.h-this.y);
-            return [_xpos, _ypos];
-        }
-    }
-    
     //----------------------------------------------------------------------------//
     // ------------------------ DRAWING VARIABLES   ------------------------------//
     function setDrawingVariables() {
@@ -607,6 +640,7 @@ function setupDrawingFunctions()
         vars.canvasRad = vars.RAD * vars.positionToCanvasMultY;
         vars.canvasDiam = vars.DIAM * vars.positionToCanvasMultY; 
         
+        window.listener = listener;
         vars.listenerPositionCanvas = new Rectangle( 
             vars.canvasXMid + vars.positionToCanvasMultY * listener.positionX.value - vars.canvasRad, 
             vars.canvasYMid + vars.positionToCanvasMultY * listener.positionY.value - vars.canvasRad, 
@@ -708,7 +742,7 @@ function setupDrawingFunctions()
     drawCanvas.addEventListener("touchmove", (e) => {
         e.preventDefault();
         canvasDrag(e);
-    }, { passive:false });
+    }, vars.hoverListener ? { passive:false } : { passive:true });
     drawCanvas.addEventListener("mousemove", (e) => {
         canvasDrag(e);
     }, false);
@@ -813,9 +847,9 @@ function setupDrawingFunctions()
                 const fillstyle = "hsl("+(80-80*(Math.pow(average[i], 0.7))) + ", " + (68+average[i]*15) + "%, " + (40+average[i]*30)+"%)";
                 drawContext.fillStyle = fillstyle;
                 drawContext.beginPath();
-                const SPEAKER_ANGLE = panner[i].angle;
-                const speakerXMid = vars.canvasXMid + vars.R_EXTRA_VIEW_RADIUS * vars.positionToCanvasMultX * 0.5 * SPEAKER_DIST * Math.cos(SPEAKER_ANGLE);
-                const speakerYMid = vars.canvasYMid + vars.R_EXTRA_VIEW_RADIUS * vars.positionToCanvasMultY * 0.5 * SPEAKER_DIST * Math.sin(SPEAKER_ANGLE);
+                const SPEAKER_ANGLE = panner[i].hg_angle;
+                const speakerXMid = vars.canvasXMid + vars.R_EXTRA_VIEW_RADIUS * vars.positionToCanvasMultX * panner[i].hg_radius * Math.cos(SPEAKER_ANGLE);
+                const speakerYMid = vars.canvasYMid + vars.R_EXTRA_VIEW_RADIUS * vars.positionToCanvasMultY * panner[i].hg_radius * Math.sin(SPEAKER_ANGLE);
                 for(var j = 0; j < 4; j++) {
                     const pointX = speakerXMid + vars.canvasRad  * Math.cos( SPEAKER_ANGLE + ( 0.25 + 0.5 * j ) * Math.PI );
                     const pointY = speakerYMid + vars.canvasRad  * Math.sin( SPEAKER_ANGLE + ( 0.25 + 0.5 * j ) * Math.PI );
