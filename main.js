@@ -1,7 +1,7 @@
 const audioElements = document.getElementsByTagName('audio');
 const NUM_FILES = audioElements.length;
 const USE_REVERB_NODES = true;
-const EXPERIMENTAL_REVERB_ENABLED = true;
+const EXPERIMENTAL_REVERB_ENABLED = false;
 console.log(SHOULD_LOG);
 
 // for cross browser way
@@ -10,12 +10,12 @@ let audioContext;
 audioContext = new AudioContext();
 let listener;
 listener = audioContext.listener;
-window.listener = listener;
+// window.listener = listener;
 // audioContext.suspend();
 
 reverbjs.extend(audioContext);
 
-const SPEAKER_DIST = 25.0;
+const SPEAKER_DIST = 20.0;
 
 // Table of contents:
 // **TO BE FILLED IN**
@@ -61,6 +61,11 @@ class DrawingVariables {
 
     viewDistance = SPEAKER_DIST;
     
+    speakerPositionCanvas = [];
+    speakerPositionXOnMouseDown = [];
+    speakerPositionYOnMouseDown = [];
+    speakerIsBeingDragged = [];
+    
     EXTRA_VIEW_RAD = 1.4;
     R_EXTRA_VIEW_RADIUS = 1 / this.EXTRA_VIEW_RAD;
     
@@ -68,6 +73,12 @@ class DrawingVariables {
     }
 };
 vars = new DrawingVariables();
+
+class GlobalFunctions {
+    constructor() {
+    }
+}
+globals = new GlobalFunctions();
 
 // simple rectangle class to reduce duplicate code
 class Rectangle {
@@ -150,40 +161,46 @@ class Rectangle {
 /*-----------------------------------------------------------------------------------------------------------------*/
 
 // LISTENER POSITION INITIAL CONSTANTS
-const LISTENER_INITIAL_X = 0;
-const LISTENER_INITIAL_Y = 0;
-const LISTENER_INITIAL_Z = 0;
-function initListener() {
-    const posX = LISTENER_INITIAL_X;
-    const posY = LISTENER_INITIAL_Y;
-    const posZ = LISTENER_INITIAL_Z - 0;
+var LISTENER_INITIAL_X = 0;
+var LISTENER_INITIAL_Y = 0;
+var LISTENER_INITIAL_Z = 5;
 
-    // AUDIO CONTEXT LISTENER CONFIG
-    if(listener.setPosition) 
-    {
-        listener.setPosition(posX, posY, posZ);
+var listenerPosition = [];
+function setListenerPosition(x, y, z) {
+    if(listener.positionX) {
+        listener.positionX.setValueAtTime(x, audioContext.currentTime);
+        listener.positionY.setValueAtTime(y, audioContext.currentTime);
+        listener.positionZ.setValueAtTime(z, audioContext.currentTime);
+    } else {
+        listener.setPosition(x, y, z);
     }
-    if(listener.positionX == null) {
-        listener.positionX = {};
-        listener.positionY = {};
-        listener.positionZ = {};
-    }
-    listener.positionX.value = posX;
-    listener.positionY.value = posY;
-    listener.positionZ.value = posZ;
+    // if(listener.positionX == null) {
+        // listener.positionX = {};
+        // listener.positionY = {};
+        // listener.positionZ = {};
+    // }
+    
+    listenerPosition = [x, y, z];
+}
+
+function initListener() {
+    var posX = LISTENER_INITIAL_X;
+    var posY = LISTENER_INITIAL_Y;
+    var posZ = LISTENER_INITIAL_Z - 0;
+    setListenerPosition(posX, posY, posZ);
     
     if(listener.forwardX) 
     {
-        listener.forwardX.value = 0;
+        // point nose points to
+        listener.forwardX.setValueAtTime(0, audioContext.currentTime);
         listener.forwardY.value = 0;
         listener.forwardZ.value = -1;
-    }
-    // listener head pos
-    if(listener.upX) 
-    {
+        // point where head faces to
         listener.upX.value = 0;
         listener.upY.value = 1;
         listener.upZ.value = 0;
+    } else {
+        listener.setOrientation(0,0,-1,0,1,0);
     }
 }
 initListener();
@@ -322,17 +339,17 @@ function setupPanningNodes(inputNodes, outputNode)
 {
     // PANNER NODE SETTINGS
     const pannerModel = 'HRTF';
-    const innerCone = 40;
-    const outerCone = 50;
-    const outerGain = 0.4;
-    const distanceModel = 'linear';
-    const maxDistance = 20;          // 0 - INF  def: 10000
-    const refDistance = 22;              // 0 - INF  def: 1
-    const rollOff = 0.88;                  // 0 - 1    def: 1
+    const innerCone = 360;
+    const outerCone = 0;
+    const outerGain = 0;
+    const distanceModel = 'inverse';
+    const maxDistance = 10000;          // 0 - INF  def: 10000
+    const refDistance = 1;              // 0 - INF  def: 1
+    const rollOff = 1;                  // 0 - 1    def: 1
     const positionX = LISTENER_INITIAL_X;
     const positionY = LISTENER_INITIAL_Y;
-    const positionZ = LISTENER_INITIAL_Z;
-    const orientationX = 0.0;
+    const positionZ = LISTENER_INITIAL_Z - 5;
+    const orientationX = 1.0;
     const orientationY = 0.0;
     const orientationZ = 0.0;
 
@@ -343,9 +360,9 @@ function setupPanningNodes(inputNodes, outputNode)
         {
             panningModel: pannerModel,
             distanceModel: distanceModel,
-            positionX: positionX,
-            positionY: positionY,
-            positionZ: positionZ,
+            // positionX: positionX,
+            // positionY: positionY,
+            // positionZ: positionZ,
             orientationX: orientationX,
             orientationY: orientationY,
             orientationZ: orientationZ,
@@ -359,7 +376,7 @@ function setupPanningNodes(inputNodes, outputNode)
         
         panner[i].positionZ.value = 0;
     }
-    window.panner = panner;
+    // window.panner = panner;
     
     for(var i = 0; i < audioElements.length; i++) {
         panner[i].connect(outputNode);
@@ -367,15 +384,23 @@ function setupPanningNodes(inputNodes, outputNode)
     }
     
     // ---- set panning of all panners
-    var sinPhase = 0.0;
+    function fromRotatedPositionToStaticPosition(i) {
+        // const angle = parseFloat(panControl.value);
+        const staticAngle = Math.atan2( panner[i].positionY.value, panner[i].positionX.value ) - parseFloat(panControl.value);
+        const staticRadius = Math.sqrt( Math.pow(panner[i].positionY.value, 2) + Math.pow(panner[i].positionX.value, 2));
+        
+        return [staticRadius * ( Math.cos ( staticAngle ) ), staticRadius * ( Math.sin ( staticAngle ) )];
+    }
+    globals.fromRotatedPositionToStaticPosition = fromRotatedPositionToStaticPosition;
     function setPanning() {
+        const angle = parseFloat(panControl.value);
         for(var i = 0; i < audioElements.length; i++) {
             const speakerR = Math.sqrt( Math.pow(panner[i].hg_staticPosX, 2) + Math.pow(panner[i].hg_staticPosY, 2));
             const speakerAngle = Math.atan2( panner[i].hg_staticPosY, panner[i].hg_staticPosX );
             // console.log(speakerAngle, panner[i].hg_staticPosY, panner[i].hg_staticPosX);
         
-            const speakerX = speakerR * ( Math.cos ( sinPhase + speakerAngle ) );
-            const speakerY = speakerR * ( Math.sin ( sinPhase + speakerAngle ) );
+            const speakerX = speakerR * ( Math.cos ( angle + speakerAngle ) );
+            const speakerY = speakerR * ( Math.sin ( angle + speakerAngle ) );
             // console.log(i, speakerX / speakerR, speakerY / speakerR);
             
             panner[i].positionX.value = speakerX;
@@ -383,17 +408,18 @@ function setupPanningNodes(inputNodes, outputNode)
             panner[i].positionY.value = speakerY;
             panner[audioElements.length+i].positionY.value = speakerY;
             
-            panner[i].hg_angle = (sinPhase + speakerAngle) % (2*Math.PI);
+            panner[i].hg_angle = (angle + speakerAngle) % (2*Math.PI);
             panner[i].hg_radius = speakerR;
             
             log("panner:\tx: "+panner[i].positionX.value+" \t y: "+panner[i].positionY.value, 2); 
         }
     }
+    globals.setPanning = setPanning;
     function setDistributed(angle) {
         const toAdd = 2*Math.PI / audioElements.length;
         for(var i = 0; i < audioElements.length; i++) {
-            const speakerX = SPEAKER_DIST * 0.5 * ( Math.cos ( angle + i * toAdd ) );
-            const speakerY = SPEAKER_DIST * 0.5 * ( Math.sin ( angle + i * toAdd ) );
+            const speakerX = vars.R_EXTRA_VIEW_RADIUS * SPEAKER_DIST * 0.5 * ( Math.cos ( angle + i * toAdd ) );
+            const speakerY = vars.R_EXTRA_VIEW_RADIUS * SPEAKER_DIST * 0.5 * ( Math.sin ( angle + i * toAdd ) );
             panner[i].positionX.value = speakerX;
             panner[audioElements.length+i].positionX.value = speakerX;
             panner[i].hg_staticPosX = speakerX;
@@ -406,15 +432,15 @@ function setupPanningNodes(inputNodes, outputNode)
             log("panner:\tx: "+panner[i].positionX.value+" \t y: "+panner[i].positionY.value, 2); 
         }
     }
-    setDistributed(sinPhase);
     
     // panning slider callback
     const panControl = document.querySelector('[data-action="pan"]');
     panControl.circularSliderCallback = function() {
-        sinPhase = parseFloat(this.value);
         setPanning();
     };
-    panControl.value = sinPhase;
+    panControl.value = 0.0;
+    setDistributed(0.0);
+    setPanning();
 }
 
 function setupReverbNodes(inputNodes, endNode) 
@@ -557,7 +583,8 @@ function setupAnalyzingNodes(numNodes)
     
     log("Analyzing nodes initialized");
 }
-function connectAnalyzingNodes(startNodes) {
+function connectAnalyzingNodes(startNodes) 
+{
     console.assert(startNodes != null);
     const numNodes = startNodes.length;
     
@@ -640,14 +667,22 @@ function setupDrawingFunctions()
         vars.canvasRad = vars.RAD * vars.positionToCanvasMultY;
         vars.canvasDiam = vars.DIAM * vars.positionToCanvasMultY; 
         
-        window.listener = listener;
+        // window.listener = listener;
         vars.listenerPositionCanvas = new Rectangle( 
-            vars.canvasXMid + vars.positionToCanvasMultY * listener.positionX.value - vars.canvasRad, 
-            vars.canvasYMid + vars.positionToCanvasMultY * listener.positionY.value - vars.canvasRad, 
+            vars.canvasXMid + vars.positionToCanvasMultY * listenerPosition[0] - vars.canvasRad, 
+            vars.canvasYMid + vars.positionToCanvasMultY * listenerPosition[1] - vars.canvasRad, 
             vars.canvasDiam, 
             vars.canvasDiam
         );
-        // console.log(vars.listenerPositionCanvas);
+        for(var i = 0; i < audioElements.length; i++) {
+            vars.speakerPositionCanvas[i] = new Rectangle( 
+                vars.canvasXMid + vars.positionToCanvasMultY * panner[i].positionX.value - vars.canvasRad, 
+                vars.canvasYMid + vars.positionToCanvasMultY * panner[i].positionY.value - vars.canvasRad, 
+                vars.canvasDiam, 
+                vars.canvasDiam
+            );
+        }
+        
         debugDrawingVariables(2);
     }
     function debugDrawingVariables(debugamount) {
@@ -680,6 +715,9 @@ function setupDrawingFunctions()
     function canvasMouseUp() {
         if(vars.drawMode == 1) {
             vars.listenerIsBeingDragged = false;
+            for(var i = 0; i < audioElements.length; i++) {
+                vars.speakerIsBeingDragged[i] = false;
+            }
         }
     }
     drawCanvas.addEventListener("mouseup", (e) => {
@@ -707,12 +745,22 @@ function setupDrawingFunctions()
         
         // check whether mouse down on listener (to drag the listener position)
         if(vars.drawMode == 1) {
-            if( vars.listenerPositionCanvas.isInside( vars.windowTocanvasMultX * vars.windowMouseDownX, vars.windowTocanvasMultY * vars.windowMouseDownY ) ) {
+            const mousePositionCanvas = [vars.windowTocanvasMultX * vars.windowMouseDownX, vars.windowTocanvasMultY * vars.windowMouseDownY];
+            if( vars.listenerPositionCanvas.isInside( mousePositionCanvas[0], mousePositionCanvas[1] ) ) {
                 vars.listenerIsBeingDragged = true;
                 
                 // save old listener position
-                vars.listenerXPositionOnMouseDown = listener.positionX.value;
-                vars.listenerYPositionOnMouseDown = listener.positionY.value;
+                vars.listenerXPositionOnMouseDown = listenerPosition[0];
+                vars.listenerYPositionOnMouseDown = listenerPosition[1];
+            }
+            for(var i = 0; i < audioElements.length; i++) {
+                if( vars.speakerPositionCanvas[i].isInside( mousePositionCanvas[0], mousePositionCanvas[1] ) ) {
+                    vars.speakerIsBeingDragged[i] = true;
+                    
+                    // save old listener position
+                    vars.speakerPositionXOnMouseDown[i] = panner[i].positionX.value;
+                    vars.speakerPositionYOnMouseDown[i] = panner[i].positionY.value;
+                }
             }
         }
     }
@@ -730,13 +778,26 @@ function setupDrawingFunctions()
         vars.windowDragY = getEventY(e) - drawCanvas.offsetTop;
         
         vars.hoverListener = (vars.listenerIsBeingDragged == true || vars.listenerPositionCanvas.isInside( vars.windowTocanvasMultX * vars.windowDragX, vars.windowTocanvasMultY * vars.windowDragY ) );
-        if(vars.drawMode == 1 && vars.listenerIsBeingDragged == true) {
+        if(vars.drawMode == 1) {
             const canvasXDistanceFromDragStart = (vars.windowDragX - vars.windowMouseDownX) * vars.windowTocanvasMultX;
             const canvasYDistanceFromDragStart = (vars.windowDragY - vars.windowMouseDownY) * vars.windowTocanvasMultX;
             
-            const xy = [vars.listenerXPositionOnMouseDown + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.listenerYPositionOnMouseDown + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ]
-            listener.positionX.value = xy[0];
-            listener.positionY.value = xy[1];
+            if(vars.listenerIsBeingDragged == true) {
+                const xy = [vars.listenerXPositionOnMouseDown + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.listenerYPositionOnMouseDown + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ]
+                setListenerPosition(xy[0], xy[1], listenerPosition[2]);
+            }
+            for(var i = 0; i < audioElements.length; i++) {
+                if(vars.speakerIsBeingDragged[i] == true) {
+                    const xy = [vars.speakerPositionXOnMouseDown[i] + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.speakerPositionYOnMouseDown[i] + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ]
+                    panner[i].positionX.value = xy[0];
+                    panner[i].positionY.value = xy[1];
+                    
+                    staticPosition = globals.fromRotatedPositionToStaticPosition(i);
+                    panner[i].hg_staticPosX = staticPosition[0];
+                    panner[i].hg_staticPosY = staticPosition[1];
+                }
+            }
+            globals.setPanning();
         }
     }
     drawCanvas.addEventListener("touchmove", (e) => {
@@ -848,8 +909,8 @@ function setupDrawingFunctions()
                 drawContext.fillStyle = fillstyle;
                 drawContext.beginPath();
                 const SPEAKER_ANGLE = panner[i].hg_angle;
-                const speakerXMid = vars.canvasXMid + vars.R_EXTRA_VIEW_RADIUS * vars.positionToCanvasMultX * panner[i].hg_radius * Math.cos(SPEAKER_ANGLE);
-                const speakerYMid = vars.canvasYMid + vars.R_EXTRA_VIEW_RADIUS * vars.positionToCanvasMultY * panner[i].hg_radius * Math.sin(SPEAKER_ANGLE);
+                const speakerXMid = vars.canvasXMid + vars.positionToCanvasMultX * panner[i].hg_radius * Math.cos(SPEAKER_ANGLE);
+                const speakerYMid = vars.canvasYMid + vars.positionToCanvasMultY * panner[i].hg_radius * Math.sin(SPEAKER_ANGLE);
                 for(var j = 0; j < 4; j++) {
                     const pointX = speakerXMid + vars.canvasRad  * Math.cos( SPEAKER_ANGLE + ( 0.25 + 0.5 * j ) * Math.PI );
                     const pointY = speakerYMid + vars.canvasRad  * Math.sin( SPEAKER_ANGLE + ( 0.25 + 0.5 * j ) * Math.PI );
@@ -866,6 +927,9 @@ function setupDrawingFunctions()
                 drawContext.fillText( i+1, speakerXMid, speakerYMid + 0.25*vars.canvasRad  );
             }
         }   
+        // const panControl = document.querySelector('[data-action="pan"]');
+        // panControl.value += parseFloat(panControl.value) + 0.05;
+        // globals.setPanning();
         log("canvas updated", 1);
     };
     draw();
