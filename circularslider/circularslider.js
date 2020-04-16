@@ -1,35 +1,52 @@
 // Use the defined slidercallback
 
+// sets all available circular-sliders on this page.
 const sliders = document.getElementsByClassName("circular-slider");
 
 for(var i = 0; i < sliders.length; i++) {
     function mouseDown(e) {
-        e.srcElement.classList.add("drawing");
+        if( !e.srcElement.classList.contains("drawing") ) {
+            e.srcElement.classList.add("drawing");
+        }
+        return true;
     }
-    sliders[i].onmousedown = (e) => { mouseDown(e); }
-    sliders[i].addEventListener("touchstart", (e) => { mouseDown(e); });
+    sliders[i].onmousedown = (e) => { return mouseDown(e); }
+    sliders[i].addEventListener("touchstart", (e) => { 
+        e.preventDefault();
+        return mouseDown(e); 
+    }, false);
     
     function mouseUp(e) {
         e.srcElement.classList.remove("drawing");    
+        return true;
     }
-    sliders[i].onmouseup = (e) => {   mouseUp(e); }
-    sliders[i].addEventListener("touchend", (e) => { mouseUp(e); });
-    sliders[i].addEventListener("touchcancel", (e) => { mouseUp(e); });
+    sliders[i].onmouseup = (e) => { return mouseUp(e); }
+    sliders[i].addEventListener("touchend", (e) => { 
+        e.preventDefault();
+        return mouseUp(e); 
+    }, false);
+    sliders[i].addEventListener("touchcancel", (e) => {
+        e.preventDefault();
+        return mouseUp(e); 
+    }, false);
     
     sliders[i].circularSliderCallback = null;
     function mouseMove(e) {
         if(e.srcElement.classList.contains("drawing")) {
-          const width = e.srcElement.offsetWidth;
-          const xPos = e.clientX - e.srcElement.offsetLeft;
-          const offset = (xPos + 100*width) % width;
-          const val = e.srcElement.max * (offset / width);
-          e.srcElement.value = val;
-          if(typeof e.srcElement.circularSliderCallback == "function") {
-            e.srcElement.circularSliderCallback();
-          }
+            const width = e.srcElement.offsetWidth;
+            const xPos = (e.clientX != null ? e.clientX : e.touches[0].clientX) - e.srcElement.offsetLeft;
+            const offset = (xPos + 100*width) % width;
+            const val = e.srcElement.max * (offset / width);
+            e.srcElement.value = val;
+            if(typeof e.srcElement.circularSliderCallback == "function") {
+                e.srcElement.circularSliderCallback();
+            }
         }
-        return false;
+        return true;
     }
-    sliders[i].onmousemove = (e) => { mouseMove(e); };
-    sliders[i].addEventListener("touchmove", (e) => { mouseMove(e); });
+    sliders[i].onmousemove = (e) => { return mouseMove(e); };
+    sliders[i].addEventListener("touchmove", (e) => { 
+        e.preventDefault();
+        return mouseMove(e); 
+    }, { passive:false });
 }

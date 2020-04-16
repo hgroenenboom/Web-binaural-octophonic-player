@@ -11,7 +11,7 @@ audioContext = new AudioContext();
 let listener;
 listener = audioContext.listener;
 window.listener = listener;
-audioContext.suspend();
+// audioContext.suspend();
 
 reverbjs.extend(audioContext);
 
@@ -843,7 +843,7 @@ function initIfAllLoaded() {
             initializeCallback();
         }
         log("init finished");
-        audioContext.resume();
+        // audioContext.resume();
         enableHTMLView();
     }
 }
