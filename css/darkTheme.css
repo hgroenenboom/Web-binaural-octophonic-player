@@ -1,0 +1,18 @@
+body {
+    color: #ddd;
+}
+
+button {
+    color: #000;
+}
+
+.slider {
+    background: #ddd;
+}
+
+.slider::-webkit-slider-thumb {
+    background: #777;
+}
+.slider::-moz-range-thumb {
+    background: #777;
+}

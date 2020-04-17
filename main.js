@@ -105,6 +105,42 @@ class Rectangle {
     }
 }
 
+function colorFromAmplitude(val, exponent = 1.0) {
+    // return "hsl("+(80-80*(Math.pow(val, 0.7))) + ", " + (68+val*15) + "%, " + (40+val*30)+"%)";
+    const shiftedVal = Math.pow(val, exponent);
+    
+    var colorFound = false;
+    var baseColorIndex = colorPoints.length - 2;
+    for(var i = 1; i < colorPoints.length; i++) {
+        if(colorPoints[i][0] >= shiftedVal && !colorFound) {
+            baseColorIndex = i-1;
+            colorFound = true;
+        }
+    }
+    console.assert(baseColorIndex < colorPoints.length-1 && baseColorIndex >= 0, "colorFromAmplitude: baseColorIndex should larger then zero and smaller then the colorPoints array size: "+baseColorIndex);
+    
+    // get interpolation index (amount)
+    const range = colorPoints[baseColorIndex+1][0] - colorPoints[baseColorIndex][0];
+    const index = shiftedVal - colorPoints[baseColorIndex][0];
+    const amount = index / range;
+    console.assert(index >= 0.0, "colorFromAmplitude: index should be larger then 0");
+    
+    var fillStyle = "rgba(";
+    // get interpolated color
+    for(var i = 0; i < 4; i++) {
+        const val = (amount) * colorPoints[baseColorIndex+1][1][i] + (1.0-amount) * colorPoints[baseColorIndex][1][i];
+        if(i < 3) {
+            fillStyle += parseInt( val );
+            fillStyle += ", ";
+        } else {
+            fillStyle += parseFloat( val );
+        }
+    }
+    fillStyle += ")";
+    
+    return fillStyle;
+}
+
 /*-----------------------------------------------------------------------------------------------------------------*/
 /*---------------------------------------------  Testing       ----------------------------------------------------*/
 /*-----------------------------------------------------------------------------------------------------------------*/
@@ -174,11 +210,6 @@ function setListenerPosition(x, y, z) {
     } else {
         listener.setPosition(x, y, z);
     }
-    // if(listener.positionX == null) {
-        // listener.positionX = {};
-        // listener.positionY = {};
-        // listener.positionZ = {};
-    // }
     
     listenerPosition = [x, y, z];
 }
@@ -525,7 +556,7 @@ function setupReverbNodes(inputNodes, endNode)
         //----------------------------------------------------------------------------//
         // ----------------------- SET REVERB ELEMENTS------------------------------- //
         
-        const init_reverb_level = 0.1;
+        const init_reverb_level = 0.2;
         reverbGainNode.gain.value = init_reverb_level;
         reverbControl.value = init_reverb_level;
         reverbControl.addEventListener('input', 
@@ -859,9 +890,7 @@ function setupDrawingFunctions()
                 const x = i * widthPerElement;
                 
                 // draw meters
-                drawContext.fillStyle = gradient;
-                const fillstyle = "rgba(" + parseInt(55*Math.pow(average[i], 0.5)+180) + ", " + parseInt(40*Math.pow(average[i], 0.25)+180) + ", 160, " + (0.6*Math.pow(average[i], 0.2)+0.4) + ")";
-                drawContext.fillStyle = fillstyle;
+                drawContext.fillStyle = colorFromAmplitude(average[i]);
                 const gainYPos = height - height * average[i];
                 drawContext.fillRect(x, gainYPos, widthPerElement - 3, height - gainYPos);
                 
@@ -916,8 +945,8 @@ function setupDrawingFunctions()
                 drawContext.stroke();
             
             for(var i = 0; i < audioElements.length; i++) {
-                const fillstyle = "hsl("+(80-80*(Math.pow(average[i], 0.7))) + ", " + (68+average[i]*15) + "%, " + (40+average[i]*30)+"%)";
-                drawContext.fillStyle = fillstyle;
+                
+                drawContext.fillStyle = colorFromAmplitude(average[i], 0.5);
                 drawContext.beginPath();
                 const SPEAKER_ANGLE = panner[i].hg_angle;
                 const speakerXMid = vars.canvasXMid + vars.positionToCanvasMultX * panner[i].hg_radius * Math.cos(SPEAKER_ANGLE);
@@ -952,7 +981,7 @@ function setupDrawingFunctions()
     draw();
 }
 
-
+// for debugging
 window.addEventListener("mousemove", (e) => {
     // const z = -100 + 400 * e.clientX / window.innerWidth;
     // setListenerPosition(listenerPosition[0], listenerPosition[1], z);
@@ -964,6 +993,13 @@ window.addEventListener("mousemove", (e) => {
     // // document.getElementById("debug-dist").innerHTML = 
 });
 
+
+
+
+
+/*-----------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------- loading resources  ------------------------------------------------*/
+/*-----------------------------------------------------------------------------------------------------------------*/
 
 // to move past loading screen
 function enableHTMLView() {

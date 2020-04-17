@@ -19,6 +19,9 @@
     
     style
     - background_image=<url>, the background image to use. Default is art designed by me
+    - opacity=<0-1>, opacity for the background image
+    - colortheme=<dark/light>, default=light, the color theme for all visible html elements
+    - colorgradient=< [ n*[amplitude, [r,g,b,a]] ] >
     
     powerusers
     - debuglevel=<0-10>, the debuglevel to run on. Higher level creates more console output. only to use when debugging.
@@ -48,6 +51,7 @@
         <!--<link href="circularslider/circularslider.css" rel="stylesheet">-->
         
         <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script>
+        
         <?php
             # SET DEFAULT PARAMETERS
             $NUM_AUDIO_FILES = 8;
@@ -55,28 +59,38 @@
             if(isset($array["channels"])) {
                 $NUM_AUDIO_FILES = (int)$array["channels"];
             }
+            echo '<script type="text/javascript">';
             parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
             if(isset($array["debuglevel"])) {
-                echo '<script type="text/javascript">var SHOULD_LOG=parseFloat('.$array["debuglevel"].');</script>';
+                echo 'var SHOULD_LOG=parseFloat(' . $array["debuglevel"] . ');';
             } else {
-                echo '<script type="text/javascript">var SHOULD_LOG=-1;</script>';
+                echo 'var SHOULD_LOG=-1;';
             }
+            if(isset($array["colorgradient"])) {
+                echo 'var colorPoints = ' . $array["colorgradient"] . ';';
+            } else {
+                echo 'var colorPoints = [[0, [32, 209, 33, 1.0]], [0.33, [36, 66, 36, 1.0]], [0.666, [242, 128, 13, 1.0]], [1, [255, 0, 0, 1.0]]];';
+            }
+            echo "</script>";
+        ?>
+        
+        <?php
+            # SET STYLE SHEET
+            parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
+                if(isset($array["colortheme"])) {
+                    if($array["colortheme"] == "dark") {
+                        echo "<link href='css/darkTheme.css' rel='stylesheet'>";
+                    }
+                }
         ?>
     </head>
 
     <body>
         <!-- main div -->
-        <div style="background-image: url('<?php
-            parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
-            if(isset($array["background_image"])) {
-                echo $array["background_image"];
-            } else {
-                echo "/img/test3.gif";
-            }
-        ?>');background-origin: content-box;background-repeat: repeat-y;background-size: cover;background-position-x: center;position:absolute;width:100%;height:100%;">
-            <div id="loading screen">
-                <p style="margin:auto;font-size:5vw;text-align:center">loading...</p>
-                <p id="loading-text" style="margin:auto;font-size:3.5vw;text-align:center;padding:100px">0/0</p>
+        <div>        
+            <div id="loading screen" style="position:relative;z-index:1;">
+                <p style="margin-top:10vw;font-size:4vw;text-align:center">loading resources</p>
+                <p id="loading-text" style="margin-top: 7vw;font-size:2.2vw;text-align:center;padding:7wh">0/0</p>
             </div>
             
             <!--<div>
@@ -201,6 +215,38 @@
                 </section> <!-- audio sources -->
                 
             </div> <!-- octophonic player -->
+            
+            <!--- background image -->
+            <div class="background" style="background-image: url('<?php
+                            parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
+                if(isset($array["background_image"])) {
+                    echo $array["background_image"];
+                } else {
+                    echo "/img/test3.gif";
+                }
+                echo "'); opacity:";
+                if(isset($array["opacity"])) {
+                    echo $array["opacity"];
+                } else {
+                    echo "0.8";
+                }
+            ?>;">
+            </div> <!--- background image -->
+            
+            <!--- background color -->
+            <div class="background" style="position:absolute;z-index: -1;background-color: <?php
+                parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
+                if(isset($array["colortheme"])) {
+                    if($array["colortheme"] == "dark") {
+                        echo "#000";
+                    } else {
+                    // light theme
+                        echo "#fff";
+                    }
+                }
+            ?>;">
+            </div> <!--- background color -->
+            
             <?php
                 # GENERATE DEBUG INTERFACE (PANNER CONTROLS)
                 parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
