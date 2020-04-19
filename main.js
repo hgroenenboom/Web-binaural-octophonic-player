@@ -141,44 +141,82 @@ function colorFromAmplitude(val, exponent = 1.0) {
     return fillStyle;
 }
 
+class PreloadedAudioNode {
+    source = audioContext.createBufferSource(); // creates a sound source
+    loglevel = -1;
+    
+    constructor(url, callback) {
+        this.loadSound(url, this.source, callback);
+    }
+
+    connect(node) {
+        this.source.connect(node);
+    }
+    getAudioNode() {
+        return source;
+    }
+
+    loadSound(url, buffer_to_load_into, callback) {
+      var request = new XMLHttpRequest();
+      request.open('GET', url, true);
+      request.responseType = 'arraybuffer';
+      
+      // Decode asynchronously
+      request.onload = function() {
+        var audioData = request.response;
+        
+        audioContext.decodeAudioData(audioData, function(buffer) {
+            buffer_to_load_into.buffer = buffer;
+        }, ()=>{console.log("error")});
+        
+        console.log("calling callback");
+        if(typeof callback == "function") {
+            callback();
+        } else {
+            console.error("callback is not a function");
+        }
+      }
+      
+      request.send();
+    }
+    
+    startedAt = 0;
+    pausedAt = 0;
+    paused = false;
+    
+    play(timeToPlay=0) {
+        this.paused = false;
+
+        if (this.pausedAt) {
+            this.startedAt = Date.now() - this.pausedAt;
+            this.source.start(timeToPlay, this.pausedAt / 1000);
+            log("PreloadedAudioNode: resume playing", this.loglevel);
+        }
+        else {
+            this.startedAt = Date.now();
+            this.source.start(timeToPlay);
+            log("PreloadedAudioNode: start playing", this.loglevel);
+        }
+    };
+
+    stop(timeToPlay=0) {
+        this.source.stop(timeToPlay);
+        this.pausedAt = Date.now() - this.startedAt;
+        this.paused = true;
+        log("PreloadedAudioNode: stop playing called", this.loglevel);
+    };
+};
+
 /*-----------------------------------------------------------------------------------------------------------------*/
 /*---------------------------------------------  Testing       ----------------------------------------------------*/
 /*-----------------------------------------------------------------------------------------------------------------*/
 
-// var request = new XMLHttpRequest();
-// request.open('GET', 'audio/atmos-mp3/athmospheres_octophonic-01.mp3');
-// request.send();
-// let src;
-// request.onload = () => {
-    // console.log("source loaded");
-    // src = request.response;
-// }
-
-// var src;
-// function loadSound(url, buffer_to_load_into) {
-  // var request = new XMLHttpRequest();
-  // request.open('GET', url, true);
-  // request.responseType = 'arraybuffer';
-  
-  // // Decode asynchronously
-  // request.onload = function() {
-    // audioContext.decodeAudioData(request.response, function(buffer) {
-      // buffer_to_load_into = buffer;
-    // }, onError);
-  // }
-  // request.send();
-// }
-// loadSound("audio/atmos-mp3/athmospheres_octophonic-01.mp3", src);
-
-// function playSound(buffer) {
-  // var source = context.createBufferSource(); // creates a sound source
-  // source.buffer = buffer;                    // tell the source which sound to play
-  // source.connect(context.destination);       // connect the source to the context's destination (the speakers)
-  // source.start(0);                           // play the source now
-                                             // // note: on older systems, may have to use deprecated noteOn(time);
-// }
-
-
+var audiofile = new PreloadedAudioNode("audio/aesthetics/aesthetics1.wav", ()=>{ 
+    audiofile.connect(audioContext.destination); 
+    audiofile.play(audioContext.currentTime); 
+    audiofile.stop(audioContext.currentTime+2); 
+    }
+);
 
 
 
