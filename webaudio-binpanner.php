@@ -69,7 +69,7 @@
             if(isset($array["colorgradient"])) {
                 echo 'var colorPoints = ' . $array["colorgradient"] . ';';
             } else {
-                echo 'var colorPoints = [[0, [32, 209, 33, 1.0]], [0.33, [36, 66, 36, 1.0]], [0.666, [242, 128, 13, 1.0]], [1, [255, 0, 0, 1.0]]];';
+                echo 'var colorPoints = [[0, [198, 207, 199, 0.7]],[0.1, [32, 209, 33, 1.0]], [0.33, [36, 66, 36, 1.0]], [0.666, [242, 128, 13, 1.0]], [1, [255, 0, 0, 1.0]]];';
             }
             echo "</script>";
         ?>

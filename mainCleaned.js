@@ -177,11 +177,13 @@ class PreloadedAudioNode {
     
     get duration() { return this.audioBuffer.duration; } 
     get currentTime() { 
+        var time;
         if(this.paused) {
-            return this.pausedAt / 1000;
+            time = this.pausedAt / 1000;
         } else {
-            return (Date.now() - this.startedAt) / 1000;
+            time = (Date.now() - this.startedAt) / 1000;
         }
+        return time > this.duration ? 0 : time;
     }
 
     loadSound(url, callback) {
