@@ -223,7 +223,12 @@ class PreloadedAudioNode {
         if (this.pausedAt) {
             log("PreloadedAudioNode: resume playing", this.loglevel);
             this.startedAt = Date.now() - this.pausedAt;
-            this.source.start(timeToPlay, this.pausedAt / 1000);
+            if(this.pausedAt / 1000 >= this.duration) {
+                this.pausedAt = null;
+                this.play(timeToPlay);
+            } else {
+                this.source.start(timeToPlay, this.pausedAt / 1000);
+            }
         }
         else {
             log("PreloadedAudioNode: start playing", this.loglevel);
