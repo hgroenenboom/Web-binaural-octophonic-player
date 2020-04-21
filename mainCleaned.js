@@ -8,10 +8,6 @@ console.log("LOGGING LEVEL:",SHOULD_LOG);
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioContext;
 audioContext = new AudioContext();
-let listener;
-listener = audioContext.listener;
-// window.listener = listener;
-// audioContext.suspend();
 
 reverbjs.extend(audioContext);
 
@@ -21,8 +17,8 @@ const SPEAKER_DIST = 20.0;
 // **TO BE FILLED IN**
 
 
-// TODO
-// - "drawmodebutton" outside canvas!
+
+
 
 
 /*------------------------------------------ VARIABLES AND OBJECTS ------------------------------------------------*/
@@ -53,11 +49,16 @@ function log(txt, niveau=0) {
 }
 log("Num audio sources found: "+ urls.length);
 
-// empty drawingvariables container
+// drawingvariables container
 class DrawingVariables {
+    // state switch between drawmodes
     drawMode = 1;
-    DIAM = 3;
-    RAD = 0.5*this.DIAM;
+    
+    // drawing look constants
+    get DIAM() { return 3 };
+    get RAD() { return 0.5*this.DIAM };
+    get EXTRA_VIEW_RAD() { return 1.4; };
+    get R_EXTRA_VIEW_RADIUS() { return 1 / this.EXTRA_VIEW_RAD; };
 
     viewDistance = SPEAKER_DIST;
     
@@ -66,21 +67,24 @@ class DrawingVariables {
     speakerPositionYOnMouseDown = [];
     speakerIsBeingDragged = [];
     
-    EXTRA_VIEW_RAD = 1.4;
-    R_EXTRA_VIEW_RADIUS = 1 / this.EXTRA_VIEW_RAD;
-    
-    constructor() {
-    }
+    constructor() {}
 };
+// !!! extra variables will be dynamicly added to this object
 vars = new DrawingVariables();
 
+
+
+// empty container for functions that should be globally available
 class GlobalFunctions {
-    constructor() {
-    }
+    constructor() {}
 }
 globals = new GlobalFunctions();
 
-// simple rectangle class to reduce duplicate code
+
+
+
+
+// simple rectangle class to reduce duplicate code and to simplify rectangle interactions
 class Rectangle {
     constructor(x, y, w, h) {
         this.x = x;
@@ -105,8 +109,16 @@ class Rectangle {
     }
 }
 
+
+
+// get the color from a corresponding amplitude point
+// @pre val{0-1}, exponent{>0 - <inf}
+// @post fillStyle{"rgb(<r>,<g>,<b>,<a>)"}
 function colorFromAmplitude(val, exponent = 1.0) {
     // return "hsl("+(80-80*(Math.pow(val, 0.7))) + ", " + (68+val*15) + "%, " + (40+val*30)+"%)";
+    console.assert(colorPoints != null, "colorFromAmplitude, colorpoints array is never created!");
+    console.assert(val >= 0 && val <= 1.0, "colorFromAmplitude, value is not inside range: "+val);
+    
     const shiftedVal = Math.pow(val, exponent);
     
     // find colors to interpolate with
@@ -142,6 +154,58 @@ function colorFromAmplitude(val, exponent = 1.0) {
     return fillStyle;
 }
 
+
+
+class AudioListener {
+// const
+    LISTENER_INITIAL_X = 0;
+    LISTENER_INITIAL_Y = 0;
+    LISTENER_INITIAL_Z = 40;
+    
+// private
+    listener = audioContext.listener;
+    listenerPosition = [0, 0, 0];
+    
+// public
+    constructor() {
+        this.setListenerPosition(this.LISTENER_INITIAL_X, this.LISTENER_INITIAL_Y, this.LISTENER_INITIAL_Z);
+        
+        if(this.listener.forwardX) 
+        {
+            // point nose points to
+            this.listener.forwardX.setValueAtTime(0, audioContext.currentTime);
+            this.listener.forwardY.setValueAtTime(0, audioContext.currentTime);
+            this.listener.forwardZ.setValueAtTime(-1, audioContext.currentTime);
+            // point where head faces to
+            this.listener.upX.setValueAtTime(0, audioContext.currentTime);
+            this.listener.upY.setValueAtTime(1, audioContext.currentTime);
+            this.listener.upZ.setValueAtTime(0, audioContext.currentTime);
+        } else {
+            this.listener.setOrientation(0,0,-1,0,1,0);
+        }
+    }
+    
+    setListenerPosition(x, y, z) {
+        if(this.listener.positionX) {
+            this.listener.positionX.setValueAtTime(x, audioContext.currentTime);
+            this.listener.positionY.setValueAtTime(y, audioContext.currentTime);
+            this.listener.positionZ.setValueAtTime(z, audioContext.currentTime);
+        } else {
+            this.listener.setPosition(x, y, z);
+        }
+        
+        this.listenerPosition[0] = x;
+        this.listenerPosition[1] = y;
+        this.listenerPosition[2] = z;
+    }
+    
+    get x() { return this.listenerPosition[0]; }
+    get y() { return this.listenerPosition[1]; }
+    get z() { return this.listenerPosition[2]; }
+    get listenerPosition() { return this.listenerPosition; }
+    get initialPosition() { return [this.LISTENER_INITIAL_X, this.LISTENER_INITIAL_Y, this.LISTENER_INITIAL_Z]; }
+};
+var audioListener = new AudioListener();
 
 
 
@@ -347,53 +411,47 @@ class MultiPreloadedAudioNodes {
 
 
 
-class AudioListener {
-// const
-    LISTENER_INITIAL_X = 0;
-    LISTENER_INITIAL_Y = 0;
-    LISTENER_INITIAL_Z = 0;
+/*class BinauralPanner {
+//private
+    panner = null;
     
-// private
-    listener = audioContext.listener;
-    listenerPosition = [0, 0, 0];
+    // PANNER NODE SETTINGS
+    pannerModel = 'HRTF';
+    innerCone = 50;
+    outerCone = 150;
+    outerGain = 0.3;
+    distanceModel = 'inverse';
+    maxDistance = 10000;          // 0 - INF  def: 10000
+    refDistance = 1;              // 0 - INF  def: 1
+    rollOff = 1;                  // 0 - 1    def: 1
+    positionX = audioListener.LISTENER_INITIAL_X;
+    positionY = audioListener.LISTENER_INITIAL_Y;
+    positionZ = audioListener.LISTENER_INITIAL_Z - 5;
+    orientationX = 1.0;
+    orientationY = 0.0;
+    orientationZ = 0.0;
     
-// public
+//public
     constructor() {
-        this.setListenerPosition(this.LISTENER_INITIAL_X, this.LISTENER_INITIAL_Y, this.LISTENER_INITIAL_Z);
-        
-        if(this.listener.forwardX) 
+        panner = new PannerNode(audioContext, 
         {
-            // point nose points to
-            this.listener.forwardX.setValueAtTime(0, audioContext.currentTime);
-            this.listener.forwardY.setValueAtTime(0, audioContext.currentTime);
-            this.listener.forwardZ.setValueAtTime(-1, audioContext.currentTime);
-            // point where head faces to
-            this.listener.upX.setValueAtTime(0, audioContext.currentTime);
-            this.listener.upY.setValueAtTime(1, audioContext.currentTime);
-            this.listener.upZ.setValueAtTime(0, audioContext.currentTime);
-        } else {
-            this.listener.setOrientation(0,0,-1,0,1,0);
-        }
+            panningModel: this.pannerModel,
+            distanceModel: this.distanceModel,
+            positionX: this.positionX,
+            positionY: this.positionY,
+            positionZ: this.positionZ,
+            orientationX: this.orientationX,
+            orientationY: this.orientationY,
+            orientationZ: this.orientationZ,
+            refDistance: this.refDistance,
+            maxDistance: this.maxDistance,
+            rolloffFactor: this.rollOff,
+            coneInnerAngle: this.innerCone,
+            coneOuterAngle: this.outerCone,
+            coneOuterGain: this.outerGain
+        })
     }
-    
-    setListenerPosition(x, y, z) {
-        if(this.listener.positionX) {
-            this.listener.positionX.setValueAtTime(x, audioContext.currentTime);
-            this.listener.positionY.setValueAtTime(y, audioContext.currentTime);
-            this.listener.positionZ.setValueAtTime(z, audioContext.currentTime);
-        } else {
-            this.listener.setPosition(x, y, z);
-        }
-        
-        this.listenerPosition[0] = x;
-        this.listenerPosition[1] = y;
-        this.listenerPosition[2] = z;
-    }
-    
-    get x() { return this.listenerPosition[0]; }
-    get y() { return this.listenerPosition[1]; }
-    get z() { return this.listenerPosition[2]; }
-};
+}*/
 
 /*-----------------------------------------------------------------------------------------------------------------*/
 /*---------------------------------------------  Testing       ----------------------------------------------------*/
@@ -415,7 +473,6 @@ for(var i = 0; i < NUM_FILES; i++) {
 // console.log(urls);
 // var multiAudioNodes = new MultiPreloadedAudioNodes(urls, ()=> { multiAudioNodes.connectToAudioContext(); multiAudioNodes.playAll(); });
 
-var audioListener = new AudioListener();
 
 
 
@@ -425,83 +482,6 @@ var audioListener = new AudioListener();
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*-----------------------------------------------------------------------------------------------------------------*/
-/*--------------------------------------------- pre initialization ------------------------------------------------*/
-/*-----------------------------------------------------------------------------------------------------------------*/
-
-// LISTENER POSITION INITIAL CONSTANTS
-var LISTENER_INITIAL_X = 0;
-var LISTENER_INITIAL_Y = 0;
-var LISTENER_INITIAL_Z = 40;
-
-var listenerPosition = [];
-function setListenerPosition(x, y, z) {
-    if(listener.positionX) {
-        listener.positionX.setValueAtTime(x, audioContext.currentTime);
-        listener.positionY.setValueAtTime(y, audioContext.currentTime);
-        listener.positionZ.setValueAtTime(z, audioContext.currentTime);
-    } else {
-        listener.setPosition(x, y, z);
-    }
-    
-    listenerPosition = [x, y, z];
-}
-
-function initListener() {
-    var posX = LISTENER_INITIAL_X;
-    var posY = LISTENER_INITIAL_Y;
-    var posZ = LISTENER_INITIAL_Z - 0;
-    setListenerPosition(posX, posY, posZ);
-    
-    if(listener.forwardX) 
-    {
-        // point nose points to
-        listener.forwardX.setValueAtTime(0, audioContext.currentTime);
-        listener.forwardY.value = 0;
-        listener.forwardZ.value = -1;
-        // point where head faces to
-        listener.upX.value = 0;
-        listener.upY.value = 1;
-        listener.upZ.value = 0;
-    } else {
-        listener.setOrientation(0,0,-1,0,1,0);
-    }
-}
-initListener();
 
 /*-----------------------------------------------------------------------------------------------------------------*/
 /*--------------------------------------------- Audio pipeline ----------------------------------------------------*/
@@ -544,6 +524,7 @@ function init()
     
     var firstPanners = panner.slice(0, panner.length / 2);
     tracks.connectToNodes(analyserNodes);
+    // tracks.connectToSingleNode(audioContext.destination);
     tracks.connectToNodes(firstPanners);
     
     setupReverbNodes(tracks.nodes, gainNode);
@@ -624,9 +605,9 @@ function setupPanningNodes(inputNodes, outputNode)
     const maxDistance = 10000;          // 0 - INF  def: 10000
     const refDistance = 1;              // 0 - INF  def: 1
     const rollOff = 1;                  // 0 - 1    def: 1
-    const positionX = LISTENER_INITIAL_X;
-    const positionY = LISTENER_INITIAL_Y;
-    const positionZ = LISTENER_INITIAL_Z - 5;
+    const positionX = audioListener.LISTENER_INITIAL_X;
+    const positionY = audioListener.LISTENER_INITIAL_Y;
+    const positionZ = audioListener.LISTENER_INITIAL_Z - 5;
     const orientationX = 1.0;
     const orientationY = 0.0;
     const orientationZ = 0.0;
@@ -651,10 +632,7 @@ function setupPanningNodes(inputNodes, outputNode)
             coneOuterAngle: outerCone,
             coneOuterGain: outerGain
         })
-        
-        // panner[i].positionZ.value = 0;
     }
-    // window.panner = panner;
     
     for(var i = 0; i < NUM_FILES; i++) {
         panner[i].connect(outputNode);
@@ -858,7 +836,7 @@ function setupReverbNodes(inputNodes, endNode)
 function setupAnalyzingNodes(numNodes) 
 {
     console.assert(numNodes > 0, "Num nodes shouldn't be zero!");
-    console.assert(numNodes == NUM_FILES, "Num nodes shoulb equal to num audio elements!");
+    console.assert(numNodes == NUM_FILES, "Num nodes should equal to num audio elements!");
     
     //----------------------------------------------------------------------------//
     // ------------------------ INIT + CONNECT AUDIONODES ------------------------//
@@ -875,10 +853,8 @@ function connectAnalyzingNodes(startNodes)
 {
     console.assert(startNodes != null);
     const numNodes = startNodes.length;
-    
     console.assert(numNodes != 0);
     console.assert(numNodes == NUM_FILES, "analyzing nodes has a different amount of inputs then the number of audiofiles presented (given:"+numNodes+")");
-    
     console.assert(numNodes == NUM_FILES, "numNodes ("+numNodes+") should be NUM_FILES!");
     console.assert(startNodes.length == numNodes, "startNodes ("+startNodes.length+") is not of same length as numNodes ("+numNodes+")!");
     
@@ -897,12 +873,8 @@ function setupDrawingFunctions()
     
     var drawContext = document.getElementById("canvas").getContext("2d");
     var drawCanvas = document.getElementById("canvas");
-    var gradient = drawContext.createLinearGradient(0, 0, 0, drawCanvas.height);
-    gradient.addColorStop(1, '#000000');
-    gradient.addColorStop(0.75, '#ff0000');
-    gradient.addColorStop(0.25, '#ffff00');
-    gradient.addColorStop(0, '#ffffff');
-    
+
+    // convert time to string
     function convertElapsedTime(inputSeconds) 
     {
         var seconds = Math.floor(inputSeconds % 60)
@@ -916,20 +888,13 @@ function setupDrawingFunctions()
     
     function getAverageVolume(array) 
     {
+        const length = array.length;
+        
         var values = 0;
-        var average;
-
-        var length = array.length;
-
-        // get all the frequency amplitudes
         for (var i = 0; i < length; i++) 
-        {
             values += array[i];
-        }
-        // console.log(values);
-
-        average = values / length;
-        return average;
+        
+        return values / length;
     }
     
     //----------------------------------------------------------------------------//
@@ -955,10 +920,9 @@ function setupDrawingFunctions()
         vars.canvasRad = vars.RAD * vars.positionToCanvasMultY;
         vars.canvasDiam = vars.DIAM * vars.positionToCanvasMultY; 
         
-        // window.listener = listener;
         vars.listenerPositionCanvas = new Rectangle( 
-            vars.canvasXMid + vars.positionToCanvasMultY * listenerPosition[0] - vars.canvasRad, 
-            vars.canvasYMid + vars.positionToCanvasMultY * listenerPosition[1] - vars.canvasRad, 
+            vars.canvasXMid + vars.positionToCanvasMultY * audioListener.listenerPosition[0] - vars.canvasRad, 
+            vars.canvasYMid + vars.positionToCanvasMultY * audioListener.listenerPosition[1] - vars.canvasRad, 
             vars.canvasDiam, 
             vars.canvasDiam
         );
@@ -1038,8 +1002,8 @@ function setupDrawingFunctions()
                 vars.listenerIsBeingDragged = true;
                 
                 // save old listener position
-                vars.listenerXPositionOnMouseDown = listenerPosition[0];
-                vars.listenerYPositionOnMouseDown = listenerPosition[1];
+                vars.listenerXPositionOnMouseDown = audioListener.x;
+                vars.listenerYPositionOnMouseDown = audioListener.y;
             }
             for(var i = 0; i < NUM_FILES; i++) {
                 if( vars.speakerPositionCanvas[i].isInside( mousePositionCanvas[0], mousePositionCanvas[1] ) ) {
@@ -1072,7 +1036,7 @@ function setupDrawingFunctions()
             
             if(vars.listenerIsBeingDragged == true) {
                 const xy = [vars.listenerXPositionOnMouseDown + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.listenerYPositionOnMouseDown + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ]
-                setListenerPosition(xy[0], xy[1], listenerPosition[2]);
+                setListenerPosition(xy[0], xy[1], audioListener.listenerPosition[2]);
             }
             for(var i = 0; i < NUM_FILES; i++) {
                 if(vars.speakerIsBeingDragged[i] == true) {
