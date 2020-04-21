@@ -191,7 +191,7 @@
                             # IF EXTENSION AND FILE IS DEFINED
                             for($i = 1; $i < $NUM_AUDIO_FILES+1; $i++) {
                                 echo '<audio ';
-                                echo 'src="'.$array["file"].$i.$array["ext"].'" async preload crossorigin="anonymous">';
+                                echo 'src="'.$array["file"].$i.$array["ext"].'" preload="none" crossorigin="anonymous">';
                                 echo '</audio>';
                             }
                         } 
@@ -271,7 +271,8 @@
         <script src="http://reverbjs.org/reverb.js"></script> 
         
         <!-- main scripts -->
-        <script src="main.js" type="text/javascript"></script>
+        <!--<script src="main.js" type="text/javascript"></script>-->
+        <script src="mainCleaned.js" type="text/javascript"></script>
         <script src="circularslider/circularslider.js"></script>
         
         <?php

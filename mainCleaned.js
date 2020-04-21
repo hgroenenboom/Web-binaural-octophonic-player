@@ -2,7 +2,7 @@ const audioElements = document.getElementsByTagName('audio');
 const NUM_FILES = audioElements.length;
 const USE_REVERB_NODES = true;
 const EXPERIMENTAL_REVERB_ENABLED = false;
-console.log(SHOULD_LOG);
+console.log("LOGGING LEVEL:",SHOULD_LOG);
 
 // for cross browser way
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -16,6 +16,13 @@ listener = audioContext.listener;
 reverbjs.extend(audioContext);
 
 const SPEAKER_DIST = 20.0;
+
+// Table of contents:
+// **TO BE FILLED IN**
+
+
+// TODO
+// - "drawmodebutton" outside canvas!
 
 
 /*------------------------------------------ VARIABLES AND OBJECTS ------------------------------------------------*/
@@ -135,35 +142,40 @@ function colorFromAmplitude(val, exponent = 1.0) {
     return fillStyle;
 }
 
+
+
+
+
 class PreloadedAudioNode {
+// private
     source = audioContext.createBufferSource(); // creates a sound source
-    loglevel = -1;
+    loglevel = 1;
     
+// public
     constructor(url, callback) {
-        this.loadSound(url, this.source, callback);
+        this.loadSound(url, callback);
     }
 
     connect(node) {
         this.source.connect(node);
     }
-    getAudioNode() {
-        return source;
-    }
+    get audioNode() { return source; }
 
-    loadSound(url, buffer_to_load_into, callback) {
+    loadSound(url, callback) {
       var request = new XMLHttpRequest();
       request.open('GET', url, true);
       request.responseType = 'arraybuffer';
+      var node = this.source;
       
       // Decode asynchronously
       request.onload = function() {
         var audioData = request.response;
         
         audioContext.decodeAudioData(audioData, function(buffer) {
-            buffer_to_load_into.buffer = buffer;
+            node.buffer = buffer;
         }, ()=>{console.log("error")});
         
-        console.log("calling callback");
+        log("PreloadedAudioNode, calling callback", this.loglevel);
         if(typeof callback == "function") {
             callback();
         } else {
@@ -174,10 +186,12 @@ class PreloadedAudioNode {
       request.send();
     }
     
+// private
     startedAt = 0;
     pausedAt = 0;
     paused = false;
     
+// public
     play(timeToPlay=0) {
         this.paused = false;
 
@@ -201,57 +215,188 @@ class PreloadedAudioNode {
     };
 };
 
+
+
+
+class MultiPreloadedAudioNodes {
+// private
+    loglevel = 1;
+
+    numfiles = 0;
+    urls = [];
+    nodes = [];
+    
+    allLoaded = false;
+    loadedStates = [];
+
+// public
+    constructor(urls, onLoadedCallback = null) {
+        this.loadAudioFiles(urls, onLoadedCallback);
+    }
+
+    loadAudioFiles(urls, onLoadedCallback = null) {
+        console.assert(urls.length >= 0, "MultiPreloadedAudioNodes did not receive an URL array larger 1");
+        this.urls = urls;
+        this.numfiles = urls.length;
+        this.allLoaded = false;
+        
+        for(var i = 0; i < this.numfiles; i++)
+            this.loadedStates[i] = false;
+        for(var i = 0; i < this.numfiles; i++) {
+            this.nodes[i] = new PreloadedAudioNode(urls[i], function(multiAudiofile, i) { 
+                return ()=> {
+                    multiAudiofile.loadedStates[i] = true;
+                    multiAudiofile.allLoaded = multiAudiofile.checkWhetherAllLoaded();
+                    
+                    if(multiAudiofile.allLoaded == true) {
+                        if(typeof onLoadedCallback == "function") {
+                            onLoadedCallback();
+                        }
+                    }
+                }
+            }(this, i)
+            );
+        }
+    }
+    
+    connectToAudioContext() {   this.connectToSingleNode(audioContext.destination);     }
+    connectToSingleNode(node) { 
+        for(var i = 0; i < this.numfiles; i++) {
+            this.nodes[i].connect(node);
+        }
+    }
+    
+    playAll(timeToPlay=0) {
+        log("MultiPreloadedAudioNodes, play all", this.loglevel);
+        for(var i = 0; i < this.numfiles; i++) {
+            this.nodes[i].play(timeToPlay);
+        }
+    }
+    
+    stopAll(timeToStop=0) {
+        log("MultiPreloadedAudioNodes, stop all", this.loglevel);
+        for(var i = 0; i < this.numfiles; i++) {
+            this.nodes[i].stop(timeToStop);
+        }
+    }
+    
+// private
+    checkWhetherAllLoaded() {
+        var al = true;
+        for(var i = 0; i < this.numfiles; i++) {
+            if(this.loadedStates[i] == false) {
+                al = false;
+            }
+        }
+        return al;
+    }
+    
+    // wip
+    // assertSync() {}
+};
+
+
+
+
 class AudioListener {
+// const
     LISTENER_INITIAL_X = 0;
     LISTENER_INITIAL_Y = 0;
     LISTENER_INITIAL_Z = 0;
     
+// private
     listener = audioContext.listener;
     listenerPosition = [0, 0, 0];
     
+// public
     constructor() {
-        setListenerPosition(LISTENER_INITIAL_X, LISTENER_INITIAL_Y, LISTENER_INITIAL_Z);
+        this.setListenerPosition(this.LISTENER_INITIAL_X, this.LISTENER_INITIAL_Y, this.LISTENER_INITIAL_Z);
         
-        if(listener.forwardX) 
+        if(this.listener.forwardX) 
         {
             // point nose points to
-            listener.forwardX.setValueAtTime(0, audioContext.currentTime);
-            listener.forwardY.setValueAtTime(0, audioContext.currentTime);
-            listener.forwardZ.setValueAtTime(-1, audioContext.currentTime);
+            this.listener.forwardX.setValueAtTime(0, audioContext.currentTime);
+            this.listener.forwardY.setValueAtTime(0, audioContext.currentTime);
+            this.listener.forwardZ.setValueAtTime(-1, audioContext.currentTime);
             // point where head faces to
-            listener.upX.value = 0;
-            listener.upY.value = 1;
-            listener.upZ.value = 0;
+            this.listener.upX.setValueAtTime(0, audioContext.currentTime);
+            this.listener.upY.setValueAtTime(1, audioContext.currentTime);
+            this.listener.upZ.setValueAtTime(0, audioContext.currentTime);
         } else {
-            listener.setOrientation(0,0,-1,0,1,0);
+            this.listener.setOrientation(0,0,-1,0,1,0);
         }
     }
     
     setListenerPosition(x, y, z) {
-        if(listener.positionX) {
-            listener.positionX.setValueAtTime(x, audioContext.currentTime);
-            listener.positionY.setValueAtTime(y, audioContext.currentTime);
-            listener.positionZ.setValueAtTime(z, audioContext.currentTime);
+        if(this.listener.positionX) {
+            this.listener.positionX.setValueAtTime(x, audioContext.currentTime);
+            this.listener.positionY.setValueAtTime(y, audioContext.currentTime);
+            this.listener.positionZ.setValueAtTime(z, audioContext.currentTime);
         } else {
-            listener.setPosition(x, y, z);
+            this.listener.setPosition(x, y, z);
         }
         
-        listenerPosition[0] = x;
-        listenerPosition[1] = y;
-        listenerPosition[2] = z;
+        this.listenerPosition[0] = x;
+        this.listenerPosition[1] = y;
+        this.listenerPosition[2] = z;
     }
+    
+    get x() { return this.listenerPosition[0]; }
+    get y() { return this.listenerPosition[1]; }
+    get z() { return this.listenerPosition[2]; }
 };
 
 /*-----------------------------------------------------------------------------------------------------------------*/
 /*---------------------------------------------  Testing       ----------------------------------------------------*/
 /*-----------------------------------------------------------------------------------------------------------------*/
 
+// test audiofile
 var audiofile = new PreloadedAudioNode("audio/aesthetics/aesthetics1.wav", ()=>{ 
     audiofile.connect(audioContext.destination); 
     audiofile.play(audioContext.currentTime); 
     audiofile.stop(audioContext.currentTime+1); 
     }
 );
+
+// test multiaudiofile
+urls = [];
+for(var i = 0; i < audioElements.length; i++) {
+    urls[i] = "audio/test/Harold_Insert "+(i+1)+".wav";
+}
+// console.log(urls);
+var multiAudioNodes = new MultiPreloadedAudioNodes(urls, ()=> { multiAudioNodes.connectToAudioContext(); multiAudioNodes.playAll(); });
+
+var audioListener = new AudioListener();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -375,7 +520,7 @@ function setupAudioTrackNodes()
     
     //-----------------------------------------------------------------------------------------------//
     // -----------------------          SETUP AUDIONODES            -------------------------------- /
-    for(var i = 0; i < NUM_FILES; i++) 
+    for(var i = 0; i < audioElements.length; i++) 
     {
         tracks[i] = audioContext.createMediaElementSource(audioElements[i]);
     }
