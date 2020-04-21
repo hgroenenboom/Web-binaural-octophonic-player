@@ -189,13 +189,22 @@
                         if(isset($array["file"]) && isset($array["ext"])) 
                         {
                             # IF EXTENSION AND FILE IS DEFINED
+                            echo '<script type="text/javascript">urls=[';
                             for($i = 1; $i < $NUM_AUDIO_FILES+1; $i++) {
-                                echo '<audio ';
-                                echo 'src="'.$array["file"].$i.$array["ext"].'" preload="none" crossorigin="anonymous">';
-                                echo '</audio>';
+                                echo '"' . $array["file"] . $i . $array["ext"] . '"';
+                                if($i < $NUM_AUDIO_FILES) {
+                                    echo ", ";
+                                }
                             }
+                            echo '];</script>';
+                            
+                            // for($i = 1; $i < $NUM_AUDIO_FILES+1; $i++) {
+                                // echo '<audio ';
+                                // echo 'src="'.$array["file"].$i.$array["ext"].'" preload="none" crossorigin="anonymous">';
+                                // echo '</audio>';
+                            // }
                         } 
-                        else if(isset($array["file"])) 
+                        /*else if(isset($array["file"])) 
                         {
                             # IF ONLY FILE IS DEFINED (BUGGY!!!!)
                             for($i = 1; $i < $NUM_AUDIO_FILES+1; $i++) {
@@ -206,7 +215,7 @@
                                 // echo '<source="'.$array["file"].i.'.wav">'
                                 echo '</audio>';
                             }
-                        }
+                        }*/
                         else 
                         {
                             echo '<h>no valid audiofile selected! please enter a valid audiofile like this: www.haroldgroenenboom.nl/other/webaudio-binpanner/webaudio-binpanner.php?file<enter your file url here!></h>';

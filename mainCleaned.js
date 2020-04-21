@@ -1,5 +1,5 @@
-const audioElements = document.getElementsByTagName('audio');
-const NUM_FILES = audioElements.length;
+// const audioElements = document.getElementsByTagName('audio');
+const NUM_FILES = urls.length;
 const USE_REVERB_NODES = true;
 const EXPERIMENTAL_REVERB_ENABLED = false;
 console.log("LOGGING LEVEL:",SHOULD_LOG);
@@ -51,7 +51,7 @@ function log(txt, niveau=0) {
         }
     }
 }
-log("Num audio elements found: "+ audioElements.length);
+log("Num audio sources found: "+ urls.length);
 
 // empty drawingvariables container
 class DrawingVariables {
@@ -148,39 +148,64 @@ function colorFromAmplitude(val, exponent = 1.0) {
 
 class PreloadedAudioNode {
 // private
-    source = audioContext.createBufferSource(); // creates a sound source
+    source = null;
+    audioBuffer = null;
     loglevel = 1;
+    connectedNodes = [];
     
+    reloadBufferSource() {
+        this.source = audioContext.createBufferSource(); // creates a sound source
+        this.source.buffer = this.audioBuffer;
+        for(var i = 0; i < this.connectedNodes.length; i++) {
+            this.source.connect(this.connectedNodes[i]);
+        }
+    }
 // public
     constructor(url, callback) {
         this.loadSound(url, callback);
     }
 
+    get audioNode() { return source; }
     connect(node) {
         this.source.connect(node);
+        this.connectedNodes.push(node);
     }
-    get audioNode() { return source; }
+    disconnect(node) {
+        this.source.disconnect(node);
+        this.connectedNodes = this.connectedNodes.filter( function(e) { return e == node; } );
+    }
+    
+    get duration() { return this.audioBuffer.duration; } 
+    get currentTime() { 
+        if(this.paused) {
+            return this.pausedAt / 1000;
+        } else {
+            return (Date.now() - this.startedAt) / 1000;
+        }
+    }
 
     loadSound(url, callback) {
       var request = new XMLHttpRequest();
       request.open('GET', url, true);
       request.responseType = 'arraybuffer';
-      var node = this.source;
+      
+      var thisclass = this;
       
       // Decode asynchronously
       request.onload = function() {
         var audioData = request.response;
         
         audioContext.decodeAudioData(audioData, function(buffer) {
-            node.buffer = buffer;
+            thisclass.audioBuffer = buffer;
+            thisclass.reloadBufferSource();
+
+            log("PreloadedAudioNode, calling callback", thisclass.loglevel);
+            if(typeof callback == "function") {
+                callback();
+            } else {
+                console.error("callback is not a function");
+            }
         }, ()=>{console.log("error")});
-        
-        log("PreloadedAudioNode, calling callback", this.loglevel);
-        if(typeof callback == "function") {
-            callback();
-        } else {
-            console.error("callback is not a function");
-        }
       }
       
       request.send();
@@ -196,22 +221,24 @@ class PreloadedAudioNode {
         this.paused = false;
 
         if (this.pausedAt) {
+            log("PreloadedAudioNode: resume playing", this.loglevel);
             this.startedAt = Date.now() - this.pausedAt;
             this.source.start(timeToPlay, this.pausedAt / 1000);
-            log("PreloadedAudioNode: resume playing", this.loglevel);
         }
         else {
+            log("PreloadedAudioNode: start playing", this.loglevel);
             this.startedAt = Date.now();
             this.source.start(timeToPlay);
-            log("PreloadedAudioNode: start playing", this.loglevel);
         }
     };
 
     stop(timeToPlay=0) {
+        log("PreloadedAudioNode: stop playing called", this.loglevel);
         this.source.stop(timeToPlay);
+        this.reloadBufferSource();
+        
         this.pausedAt = Date.now() - this.startedAt;
         this.paused = true;
-        log("PreloadedAudioNode: stop playing called", this.loglevel);
     };
 };
 
@@ -265,6 +292,12 @@ class MultiPreloadedAudioNodes {
             this.nodes[i].connect(node);
         }
     }
+    connectToNodes(nodes) {
+        console.assert(nodes.length = this.numfiles, "MultiPreloadedAudioNodes, connecting failed: number of input nodes ("+nodes.length+") is not "+this.numfiles);
+        for(var i = 0; i < this.numfiles; i++) {
+            this.nodes[i].connect(nodes[i]);
+        }
+    }
     
     playAll(timeToPlay=0) {
         log("MultiPreloadedAudioNodes, play all", this.loglevel);
@@ -279,6 +312,15 @@ class MultiPreloadedAudioNodes {
             this.nodes[i].stop(timeToStop);
         }
     }
+    
+    get nodes() { 
+        var nodes = [];
+        for(var i = 0; i < this.numfiles; i++) {
+            nodes[i] = this.nodes[i].audioNode;
+        }
+        return nodes;
+    }
+    getAudioTrack(i) { return this.nodes[i]; }
     
 // private
     checkWhetherAllLoaded() {
@@ -351,20 +393,20 @@ class AudioListener {
 /*-----------------------------------------------------------------------------------------------------------------*/
 
 // test audiofile
-var audiofile = new PreloadedAudioNode("audio/aesthetics/aesthetics1.wav", ()=>{ 
-    audiofile.connect(audioContext.destination); 
-    audiofile.play(audioContext.currentTime); 
-    audiofile.stop(audioContext.currentTime+1); 
-    }
-);
+// var audiofile = new PreloadedAudioNode("audio/aesthetics/aesthetics1.wav", ()=>{ 
+    // audiofile.connect(audioContext.destination); 
+    // audiofile.play(audioContext.currentTime); 
+    // audiofile.stop(audioContext.currentTime+1); 
+    // }
+// );
 
 // test multiaudiofile
-urls = [];
-for(var i = 0; i < audioElements.length; i++) {
+/*urls = [];
+for(var i = 0; i < NUM_FILES; i++) {
     urls[i] = "audio/test/Harold_Insert "+(i+1)+".wav";
-}
+}*/
 // console.log(urls);
-var multiAudioNodes = new MultiPreloadedAudioNodes(urls, ()=> { multiAudioNodes.connectToAudioContext(); multiAudioNodes.playAll(); });
+// var multiAudioNodes = new MultiPreloadedAudioNodes(urls, ()=> { multiAudioNodes.connectToAudioContext(); multiAudioNodes.playAll(); });
 
 var audioListener = new AudioListener();
 
@@ -459,7 +501,7 @@ initListener();
 /*-----------------------------------------------------------------------------------------------------------------*/
 
 log("Start audiopipeline code");
-console.assert(audioElements.length == NUM_FILES, "Audioelements is not "+NUM_FILES+"! ("+audioElements.length+")");
+console.assert(urls.length == NUM_FILES, "Audiosources is not "+NUM_FILES+"! ("+urls.length+")");
 
 function init() 
 {
@@ -476,7 +518,7 @@ function init()
         log("master gain: "+ gainNode.gain.value, 1 );
     }, false);
     
-    setupAnalyzingNodes(audioElements.length);
+    setupAnalyzingNodes(NUM_FILES);
     
     // ---- CONNECT ALL NODES
     // connect panning nodes
@@ -486,17 +528,20 @@ function init()
         trackGainNode.connect(gainNode);
     }
     else {
-        for(var i = 0; i < audioElements.length; i++) {
+        for(var i = 0; i < NUM_FILES; i++) {
             analyserNodes[i].connect(gainNode);
         }
     }
 
     setupAudioTrackNodes();
-    // connectAnalyzingNodes(panner.slice(0, panner.length / 2));
-    connectAnalyzingNodes(tracks);
-    setupReverbNodes(tracks, gainNode);
-    setupDrawingFunctions();
     
+    var firstPanners = panner.slice(0, panner.length / 2);
+    tracks.connectToNodes(analyserNodes);
+    tracks.connectToNodes(firstPanners);
+    
+    setupReverbNodes(tracks.nodes, gainNode);
+    
+    setupDrawingFunctions();
     
     gainNode.connect(audioContext.destination);
     
@@ -509,34 +554,20 @@ function setupAudioTrackNodes()
     const playButton = document.getElementById('playbutton');
     
     //-----------------------------------------------------------------------------------------------//
-    // -----------------------          ASSERTIONS                  -------------------------------- /
-    for(var i = 0; i < audioElements.length; i++) 
-    {
-        console.assert(audioElements[i].duration > 0, "Audioelement "+i+" is not yet loaded! ("+audioElements[i].duration+")");
-        log("Duration: "+audioElements[i].duration);
-        log("AudioSource "+i+" is "+audioElements[i].currentSrc);
-        log("AudioSource "+ i+" readyState is "+audioElements[i].readyState);
-    }
-    
-    //-----------------------------------------------------------------------------------------------//
     // -----------------------          SETUP AUDIONODES            -------------------------------- /
-    for(var i = 0; i < audioElements.length; i++) 
-    {
-        tracks[i] = audioContext.createMediaElementSource(audioElements[i]);
-    }
     const track_init_volume = 1.0;
     trackVolumeControl.value = track_init_volume;
     trackGainNode.gain.value = track_init_volume;
     
     //-----------------------------------------------------------------------------------------------//
     // -----------------------          SETUP HTML ELEMENTS         -------------------------------- /
-    audioElements[0].addEventListener('ended', 
+    /*audioElements[0].addEventListener('ended', 
         () => 
         {
             playButton.dataset.playing = 'false';
             playButton.setAttribute( "aria-checked", "false" );
         }
-    , false);
+    , false);*/
 
     trackVolumeControl.addEventListener('input', 
         function() 
@@ -558,21 +589,12 @@ function setupAudioTrackNodes()
 
             if (this.dataset.playing === 'false') 
             {
-                for(var i = 0; i < audioElements.length; i++) 
-                {
-                    audioElements[i].play();
-                    log("playing "+i);
-                }
+                tracks.playAll();
                 this.dataset.playing = 'true';
             } 
             else if (this.dataset.playing === 'true') 
             {
-                for(var i = 0; i < audioElements.length; i++) 
-                {
-                    audioElements[i].pause();
-                    log("pausing "+i);
-                }
-                audioContext.suspend();
+                tracks.stopAll();
                 log("supsended audio context");
                 this.dataset.playing = 'false';
             }
@@ -603,7 +625,7 @@ function setupPanningNodes(inputNodes, outputNode)
     const orientationZ = 0.0;
 
     // CREATE PANNER NODES (for the reverbs and for the audiofiles)
-    for(var i = 0; i < 2*audioElements.length; i++) 
+    for(var i = 0; i < 2*NUM_FILES; i++) 
     {
         panner[i] = new PannerNode(audioContext, 
         {
@@ -627,9 +649,8 @@ function setupPanningNodes(inputNodes, outputNode)
     }
     // window.panner = panner;
     
-    for(var i = 0; i < audioElements.length; i++) {
+    for(var i = 0; i < NUM_FILES; i++) {
         panner[i].connect(outputNode);
-        inputNodes[i].connect(panner[i]);
     }
     
     // ---- set panning of all panners
@@ -643,7 +664,7 @@ function setupPanningNodes(inputNodes, outputNode)
     globals.fromRotatedPositionToStaticPosition = fromRotatedPositionToStaticPosition;
     function setPanning() {
         const angle = parseFloat(panControl.value);
-        for(var i = 0; i < audioElements.length; i++) {
+        for(var i = 0; i < NUM_FILES; i++) {
             const speakerR = Math.sqrt( Math.pow(panner[i].hg_staticPosX, 2) + Math.pow(panner[i].hg_staticPosY, 2));
             const speakerAngle = Math.atan2( panner[i].hg_staticPosY, panner[i].hg_staticPosX );
             // console.log(speakerAngle, panner[i].hg_staticPosY, panner[i].hg_staticPosX);
@@ -654,9 +675,9 @@ function setupPanningNodes(inputNodes, outputNode)
             
             // set positions
             panner[i].positionX.value = speakerX;
-            panner[audioElements.length+i].positionX.value = speakerX;
+            panner[NUM_FILES+i].positionX.value = speakerX;
             panner[i].positionY.value = speakerY;
-            panner[audioElements.length+i].positionY.value = speakerY;
+            panner[NUM_FILES+i].positionY.value = speakerY;
 
             // set angles
             const angleX = - speakerX / speakerR;
@@ -676,15 +697,15 @@ function setupPanningNodes(inputNodes, outputNode)
     }
     globals.setPanning = setPanning;
     function setDistributed(angle) {
-        const toAdd = 2*Math.PI / audioElements.length;
-        for(var i = 0; i < audioElements.length; i++) {
+        const toAdd = 2*Math.PI / NUM_FILES;
+        for(var i = 0; i < NUM_FILES; i++) {
             const speakerX = vars.R_EXTRA_VIEW_RADIUS * SPEAKER_DIST * 0.5 * ( Math.cos ( angle + i * toAdd ) );
             const speakerY = vars.R_EXTRA_VIEW_RADIUS * SPEAKER_DIST * 0.5 * ( Math.sin ( angle + i * toAdd ) );
             panner[i].positionX.value = speakerX;
-            panner[audioElements.length+i].positionX.value = speakerX;
+            panner[NUM_FILES+i].positionX.value = speakerX;
             panner[i].hg_staticPosX = speakerX;
             panner[i].positionY.value = speakerY;
-            panner[audioElements.length+i].positionY.value = speakerY;
+            panner[NUM_FILES+i].positionY.value = speakerY;
             panner[i].hg_staticPosY = speakerY;
             
             panner[i].hg_angle = (angle + i*toAdd) % (2*Math.PI);
@@ -830,7 +851,7 @@ function setupReverbNodes(inputNodes, endNode)
 function setupAnalyzingNodes(numNodes) 
 {
     console.assert(numNodes > 0, "Num nodes shouldn't be zero!");
-    console.assert(numNodes == audioElements.length, "Num nodes shoulb equal to num audio elements!");
+    console.assert(numNodes == NUM_FILES, "Num nodes shoulb equal to num audio elements!");
     
     //----------------------------------------------------------------------------//
     // ------------------------ INIT + CONNECT AUDIONODES ------------------------//
@@ -849,7 +870,7 @@ function connectAnalyzingNodes(startNodes)
     const numNodes = startNodes.length;
     
     console.assert(numNodes != 0);
-    console.assert(numNodes == audioElements.length, "analyzing nodes has a different amount of inputs then the number of audiofiles presented (given:"+numNodes+")");
+    console.assert(numNodes == NUM_FILES, "analyzing nodes has a different amount of inputs then the number of audiofiles presented (given:"+numNodes+")");
     
     console.assert(numNodes == NUM_FILES, "numNodes ("+numNodes+") should be NUM_FILES!");
     console.assert(startNodes.length == numNodes, "startNodes ("+startNodes.length+") is not of same length as numNodes ("+numNodes+")!");
@@ -934,7 +955,7 @@ function setupDrawingFunctions()
             vars.canvasDiam, 
             vars.canvasDiam
         );
-        for(var i = 0; i < audioElements.length; i++) {
+        for(var i = 0; i < NUM_FILES; i++) {
             vars.speakerPositionCanvas[i] = new Rectangle( 
                 vars.canvasXMid + vars.positionToCanvasMultY * panner[i].positionX.value - vars.canvasRad, 
                 vars.canvasYMid + vars.positionToCanvasMultY * panner[i].positionY.value - vars.canvasRad, 
@@ -975,7 +996,7 @@ function setupDrawingFunctions()
     function canvasMouseUp() {
         if(vars.drawMode == 1) {
             vars.listenerIsBeingDragged = false;
-            for(var i = 0; i < audioElements.length; i++) {
+            for(var i = 0; i < NUM_FILES; i++) {
                 vars.speakerIsBeingDragged[i] = false;
             }
         }
@@ -1013,7 +1034,7 @@ function setupDrawingFunctions()
                 vars.listenerXPositionOnMouseDown = listenerPosition[0];
                 vars.listenerYPositionOnMouseDown = listenerPosition[1];
             }
-            for(var i = 0; i < audioElements.length; i++) {
+            for(var i = 0; i < NUM_FILES; i++) {
                 if( vars.speakerPositionCanvas[i].isInside( mousePositionCanvas[0], mousePositionCanvas[1] ) ) {
                     vars.speakerIsBeingDragged[i] = true;
                     
@@ -1046,7 +1067,7 @@ function setupDrawingFunctions()
                 const xy = [vars.listenerXPositionOnMouseDown + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.listenerYPositionOnMouseDown + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ]
                 setListenerPosition(xy[0], xy[1], listenerPosition[2]);
             }
-            for(var i = 0; i < audioElements.length; i++) {
+            for(var i = 0; i < NUM_FILES; i++) {
                 if(vars.speakerIsBeingDragged[i] == true) {
                     const xy = [vars.speakerPositionXOnMouseDown[i] + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.speakerPositionYOnMouseDown[i] + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ]
                     panner[i].positionX.value = xy[0];
@@ -1084,7 +1105,7 @@ function setupDrawingFunctions()
 
         // get average gain for all audiofiles
         var average = [];
-        for(var i = 0; i < audioElements.length; i++) 
+        for(var i = 0; i < NUM_FILES; i++) 
         {
             analyserNodes[i].getByteFrequencyData(drawArray);
             average[i] = getAverageVolume(drawArray) / 130;
@@ -1097,13 +1118,13 @@ function setupDrawingFunctions()
             // constants
             const bottombar = Math.max(vars.drawSpaceCanvas.h / 12, 20);
             const height = vars.drawSpaceCanvas.h - bottombar;
-            const widthPerElement = vars.drawSpaceCanvas.w / audioElements.length;
+            const widthPerElement = vars.drawSpaceCanvas.w / NUM_FILES;
 
-            for(var i = 0; i < audioElements.length; i++) 
+            for(var i = 0; i < NUM_FILES; i++) 
             {
                 log(average[i], 1);
                 // audio specific constants
-                const audioEl = document.getElementsByTagName("audio")[i];
+            const audioEl = tracks.getAudioTrack(i);
                 const currentTime = convertElapsedTime(audioEl.currentTime);
                 const x = i * widthPerElement;
                 
@@ -1114,9 +1135,9 @@ function setupDrawingFunctions()
                 
                 // report whether sync!
                 var durationIsSync = true;
-                for(var j = 0; j < audioElements.length; j++) 
+                for(var j = 0; j < NUM_FILES; j++) 
                 {
-                    durationIsSync = Math.abs(audioEl.currentTime - audioElements[j].currentTime) >= 0.1 ? false : durationIsSync; 
+                durationIsSync = Math.abs(audioEl.currentTime - tracks.getAudioTrack(j).currentTime) >= 0.1 ? false : durationIsSync; 
                 }
                 if(!durationIsSync) 
                 {
@@ -1125,7 +1146,7 @@ function setupDrawingFunctions()
                     if(SHOULD_LOG >= 2) 
                     {
                         var toPrint = "";
-                        for(var j = 0; j < audioElements.length; j++) {
+                        for(var j = 0; j < NUM_FILES; j++) {
                             toPrint += convertElapsedTime(document.getElementsByTagName("audio")[j].currentTime)+", ";
                         }
                         log("["+toPrint+"]", 2);
@@ -1162,7 +1183,7 @@ function setupDrawingFunctions()
             if(vars.hoverListener)
                 drawContext.stroke();
             
-            for(var i = 0; i < audioElements.length; i++) {
+            for(var i = 0; i < NUM_FILES; i++) {
                 
                 drawContext.fillStyle = colorFromAmplitude(average[i], 0.5);
                 drawContext.beginPath();
@@ -1199,19 +1220,6 @@ function setupDrawingFunctions()
     draw();
 }
 
-// for debugging
-window.addEventListener("mousemove", (e) => {
-    // const z = -100 + 400 * e.clientX / window.innerWidth;
-    // setListenerPosition(listenerPosition[0], listenerPosition[1], z);
-    // for(var i = 0; i < audioElements.length; i++) {
-        // panner[i].positionZ.value = z - 5;
-    // }
-    // document.getElementById("debug-z").innerHTML = z;
-    // // const dist = 
-    // // document.getElementById("debug-dist").innerHTML = 
-});
-
-
 
 
 
@@ -1219,42 +1227,33 @@ window.addEventListener("mousemove", (e) => {
 /*--------------------------------------------- loading resources  ------------------------------------------------*/
 /*-----------------------------------------------------------------------------------------------------------------*/
 
-// to move past loading screen
-function enableHTMLView() {
-    var loaddiv = document.getElementById("loading screen");
-    loaddiv.style = "display:none";
-    var playerdiv = document.getElementById("octophonic player");
-    playerdiv.style = "";
-}
-
-var initializeCallback = null;
-var initCalled = false;
 var reverbNodesLoaded = [];
-var canplay = [];
+var canplay = false;
 function initIfAllLoaded() {
-    var _allLoaded = true;
-    for(var i = 0; i < audioElements.length; i++) {
-        if(canplay[i] != true) {
-            _allLoaded = false;
-        }
-        if(reverbNodesLoaded[i] != true) {
-            _allLoaded = false;
-        }
+    var al = true;
+    
+    if(canplay != true)
+        al = false;
+    for(var i = 0; i < NUM_FILES; i++) {
+        if(reverbNodesLoaded[i] != true)
+            al = false;
     }
-    if(_allLoaded) {
-        initCalled = true;
+    
+    if(al) {
         log("init called");
         init();
-        if(initializeCallback != null) {
-            initializeCallback();
-        }
         log("init finished");
+        
         // audioContext.resume();
-        enableHTMLView();
+        
+        var loaddiv = document.getElementById("loading screen");
+        loaddiv.style = "display:none";
+        var playerdiv = document.getElementById("octophonic player");
+        playerdiv.style = "";
     }
 }
 
-
+// RUN EVERYTHING
 jQuery('document').ready(() => {
 
 // init reverb nodes
@@ -1263,7 +1262,7 @@ if(USE_REVERB_NODES) {
     var reverbUrl = "http://reverbjs.org/Library/AbernyteGrainSilo.m4a";
     // var reverbUrl = "http://reverbjs.org/Library/DomesticLivingRoom.m4a";
     
-    for(var i = 0; i < audioElements.length; i++) {
+    for(var i = 0; i < NUM_FILES; i++) {
         reverbNodesLoaded[i] = false;
         reverbNodes[i] = audioContext.createReverbFromUrl(reverbUrl, function(_i) {
             return function() {
@@ -1272,64 +1271,14 @@ if(USE_REVERB_NODES) {
             }
         }(i));
     }
-}
-
-// request.addEventListener('load', () => {
-    // console.log("XMLR-eventlist ->loading audio");
-
-// check whether audio is loaded
-for(var i = 0; i < audioElements.length; i++) {
-    console.assert(audioElements[i].readyState < 2);
-    if(SHOULD_LOG >= 0) {
-        audioElements[i].addEventListener('error', function(_i) {
-            () => {
-                console.error(`Error on: audioelement`+_i);
-            };
-        }(i));
-        audioElements[i].addEventListener('waiting', function(event, _i) {
-            () => {
-                console.log("audioelement "+_i+" is waiting for more data");
-            };
-        }(i));    
-        audioElements[i].addEventListener('stalled', function(event, _i) {
-            () => {
-                console.log("audioelement "+_i+" is stalled");
-            };
-        }(i));
-        audioElements[i].addEventListener('emptied', function(event, _i) {
-            () => {
-                console.log("audioelement "+_i+" is emptied");
-            };
-        }(i));
+} else {
+    for(var i = 0; i < NUM_FILES; i++) {
+        reverbNodesLoaded[i] = true;
     }
-    audioElements[i].onloadeddata = (function(_i) {
-        return function() {
-            if(!initCalled) {
-                canplay[_i] = true;
-
-                log("Audio "+(_i+1)+": oncanplay()");
-                log("Audio "+(_i+1)+" is ready!");
-                // const timerange_buffered = audioElements[_i].buffered;
-
-                const loadingText = document.getElementById("loading-text");
-                loadingText.innerHTML = parseFloat(loadingText.innerHTML[0])+1 + "/"+audioElements.length+"<br><br>file loaded: <br>"+document.getElementsByTagName("audio")[_i].src;
-                
-                // assert states
-                console.assert(audioElements[_i].readyState == 4);
-                console.assert(audioElements[_i].duration > 0);
-                
-                // load next audioelement
-                // if(_i < audioElements.length - 1)
-                    // audioElements[_i+1].load();
-                
-                // init if everything ready
-                initIfAllLoaded();
-            }
-        };
-    }) (i);
-    audioElements[i].load();
-    log("audio "+i+" is being loaded");
 }
+
+
+tracks = new MultiPreloadedAudioNodes(urls, ()=> { canplay = true; initIfAllLoaded(); } );
 
 });
 
