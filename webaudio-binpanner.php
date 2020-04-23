@@ -90,7 +90,7 @@
         <div>        
             <div id="loading screen" style="position:relative;z-index:1;">
                 <p style="margin-top:10vw;font-size:4vw;text-align:center">loading resources</p>
-                <p id="loading-text" style="margin-top: 7vw;font-size:2.2vw;text-align:center;padding:7wh">0/0</p>
+                <p id="loading-text" style="margin-top: 7vw;font-size:2.2vw;text-align:center;padding:7wh">waiting for server...</p>
             </div>
             
             <!--<div>

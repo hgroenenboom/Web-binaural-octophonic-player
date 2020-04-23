@@ -231,8 +231,8 @@ class PreloadedAudioNode {
         }
     }
 // public
-    constructor(url, callback) {
-        this.loadSound(url, callback);
+    constructor(url, callback, loadingCallback=null) {
+        this.loadSound(url, callback, loadingCallback);
     }
 
     connect(node) {
@@ -256,7 +256,8 @@ class PreloadedAudioNode {
         return time > this.duration ? 0 : time;
     }
 
-    loadSound(url, callback) {
+    loadingProgress = 0;
+    loadSound(url, callback, loadingCallback = null) {
       var request = new XMLHttpRequest();
       request.open('GET', url, true);
       request.responseType = 'arraybuffer';
@@ -278,6 +279,13 @@ class PreloadedAudioNode {
                 console.error("callback is not a function");
             }
         }, ()=>{console.log("error")});
+      }
+      request.onprogress = function(e) {
+        thisclass.loadingProgress = e.loaded / e.total;
+        // console.log(this.loadingProgress);
+        if(typeof loadingCallback == "function") {
+            loadingCallback();
+        }
       }
       
       request.send();
@@ -358,9 +366,17 @@ class MultiPreloadedAudioNodes {
                         }
                     }
                 }
-            }(this, i)
+            }(this, i), ()=> { this.progressReporter(this.nodes); }
             );
         }
+    }
+    progressReporter(nodes) {
+        var total = 0;
+        for(var i = 0; i < nodes.length; i++) {
+            total += nodes[i].loadingProgress;
+        }
+        var loadingProgress = "" + parseInt(100 * (total / nodes.length))+"%";
+        document.getElementById("loading-text").innerHTML = loadingProgress;
     }
     
     connectToAudioContext() {   this.connectToSingleNode(audioContext.destination);     }
