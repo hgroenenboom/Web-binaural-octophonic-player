@@ -99,7 +99,7 @@
         <!-- <img id="drag1" src="img_logo.gif" draggable="true" ondragstart="drag(event)" width="336" height="69"> -->
     <!-- </div> -->
     <div class="container">
-        <form class="centered" ACTION="" METHOD="GET"> <!-- action="console.log('test')"> -->
+        <form id="inputdata" class="centered" ACTION="" METHOD="GET"> <!-- action="console.log('test')"> -->
             <label for="background_image">background image url</label>
             <input type="text" id="background_image" name="background_image" value="https://images.fineartamerica.com/images/artworkimages/mediumlarge/2/pastel-lake-sean-duan.jpg&opacity=0.5&colortheme=dark">
             <br>
@@ -117,9 +117,9 @@
             <input type="text" id="numchannels" name="channels" value="8">
             <br>
             
-            <label for="colorgradient">drawing gradient</label>
-            <input type="text" id="colorgradient" name="colorgradient" value="">
-            <br>
+            <!-- <label for="colorgradient">drawing gradient</label> -->
+            <!-- <input type="text" id="colorgradient" name="colorgradient" value=""> -->
+            <!-- <br> -->
             
             <select name="example">
                 <option value="dark">dark</option>
@@ -130,7 +130,7 @@
             <input type="button" value="Submit" onClick="onForm(this.form);">
         </form>
     </div>
-    <div id="frameSpace" style="resize:both; overflow:auto; margin: auto; width:50%;  border: 2px solid;">
+    <div id="frameSpace" style="resize:both; overflow:auto; margin: auto; width:50%; height:400px; border: 2px solid;">
         <iframe id="frame" crossorigin="anonymous">
         </iframe>
     </div>
@@ -145,6 +145,8 @@
         frame.height = document.getElementById("frameSpace").offsetHeight - 15;
         <!-- document.getElementById("copyable").innerHTML = e.outerHTML; -->
     }
+    onForm(document.getElementById("inputdata"));
+    document.getElementById("frameSpace").onmouseup();
     </script>
 </body>
 </html>
