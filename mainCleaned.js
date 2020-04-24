@@ -1085,7 +1085,7 @@ function setupDrawingFunctions()
             if(!vars.listenerIsBeingDragged && !vars.aSpeakerIsAlreadyBeingDragged) {
                 var x = vars.windowTocanvasMultX * vars.windowMouseDownX - ( vars.listenerPositionCanvas.x + 0.5 * vars.listenerPositionCanvas.w );
                 var z = vars.windowTocanvasMultX * vars.windowMouseDownY - ( vars.listenerPositionCanvas.y + 0.5 * vars.listenerPositionCanvas.h );
-                audioListener.setListenerDirection(x, 0, z);
+                audioListener.setListenerDirection(x, 0, -z);
             }
         }
     }
@@ -1129,7 +1129,7 @@ function setupDrawingFunctions()
                 if(!vars.listenerIsBeingDragged && !vars.aSpeakerIsAlreadyBeingDragged) {
                     var x = vars.windowTocanvasMultX * vars.windowDragX - ( vars.listenerPositionCanvas.x + 0.5 * vars.listenerPositionCanvas.w );
                     var z = vars.windowTocanvasMultX * vars.windowDragY - ( vars.listenerPositionCanvas.y + 0.5 * vars.listenerPositionCanvas.h );
-                    audioListener.setListenerDirection(x, 0, z);
+                    audioListener.setListenerDirection(x, 0, -z);
                 }
                 globals.setPanning();
             }
