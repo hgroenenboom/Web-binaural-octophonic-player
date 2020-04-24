@@ -589,24 +589,17 @@ function initNodes()
     
     // ---- CONNECT ALL NODES
     tracks.connectToNodes(analyserNodes);
-    // tracks.connectToObjects(panner);
-    // console.log(tracks.getAudioTrack(0));
-    // tracks.getAudioTrack(0).connect(panner[0].node);
-    // tracks.getAudioTrack(0).connect(panner[0].node);
     for(var i = 0; i < NUM_FILES; i++) {
         analyserNodes[i].connect(panner[i].panner);
-        // analyserNodes[i].connect(audioContext.destination);
-        // panner[i].connect(trackGainNode);
-        panner[i].connect(audioContext.destination);
-        // console.log(panner[i]);
+        panner[i].connect(trackGainNode);
     }
     
     if(USE_REVERB_NODES) {
         setupReverbNodes(tracks.nodes, masterGainNode);
     }
     
-    // trackGainNode.connect(masterGainNode);
-    // masterGainNode.connect(audioContext.destination);
+    trackGainNode.connect(masterGainNode);
+    masterGainNode.connect(audioContext.destination);
     
     // ---- SETUP DRAWING
     setupDrawingFunctions();

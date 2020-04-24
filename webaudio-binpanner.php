@@ -171,11 +171,15 @@
                             <option value="6.28" label="max"></option>
                         </datalist>
                     </div>
-                    <div class="sliders">
-                        <button data-reverb="false" id="reverbbutton" role="switch" aria-checked="false">
-                            <span>Reverb on</span>
-                        </button>                    
-                    </div>
+                    <?php
+                    if (isset( $array["reverbon"] )) {
+                        echo '<div class="sliders">
+                            <button data-reverb="false" id="reverbbutton" role="switch" aria-checked="false">
+                                <span>Reverb on</span>
+                            </button>                    
+                        </div>';
+                    }
+                    ?>
                     <div class="sliders">
                         <button data-playing="false" id="playbutton" role="switch" aria-checked="false">
                         <span>Play/Pause</span>
