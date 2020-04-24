@@ -59,6 +59,7 @@
             if(isset($array["channels"])) {
                 $NUM_AUDIO_FILES = (int)$array["channels"];
             }
+            
             echo '<script type="text/javascript">';
             parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
             if(isset($array["debuglevel"])) {
@@ -71,6 +72,7 @@
             } else {
                 echo 'var colorPoints = [[0, [198, 207, 199, 0.7]],[0.1, [32, 209, 33, 1.0]], [0.33, [36, 66, 36, 1.0]], [0.666, [242, 128, 13, 1.0]], [1, [255, 0, 0, 1.0]]];';
             }
+            echo 'var USE_REVERB_NODES = ' . (isset( $array["reverbon"] ) ? "true" : "false") . ';';
             echo "</script>";
         ?>
         

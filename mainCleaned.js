@@ -1,13 +1,14 @@
-// const audioElements = document.getElementsByTagName('audio');
 const NUM_FILES = urls.length;
-const USE_REVERB_NODES = true;
 const EXPERIMENTAL_REVERB_ENABLED = false;
 console.log("LOGGING LEVEL:",SHOULD_LOG);
+console.log("USE REVERB:", USE_REVERB_NODES);
+console.log("NUM FILES:", NUM_FILES);
 
 // cross browser audio context
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioContext;
 audioContext = new AudioContext();
+audioContext.suspend();
 
 reverbjs.extend(audioContext);
 
@@ -28,13 +29,17 @@ const SPEAKER_DIST = 20.0;
 // AUDIO NODES
 var tracks = [];
 var panner = [];
-var tempgainNodes = [];
-var reverbNodes = [];
 var analyserNodes = [];
 
-const reverbGainNode = audioContext.createGain();
+const reverbGainNode = USE_REVERB_NODES ? audioContext.createGain() : null;
+var reverbNodes = USE_REVERB_NODES ? [] : null;
+var tempgainNodes = USE_REVERB_NODES ? [] : null;
+
 const trackGainNode = audioContext.createGain();
 const masterGainNode = audioContext.createGain();
+
+
+
 
 function log(txt, niveau=0) {
     if(niveau <= SHOULD_LOG) {
@@ -47,7 +52,6 @@ function log(txt, niveau=0) {
         }
     }
 }
-log("Num audio sources found: "+ urls.length);
 
 // drawingvariables container
 class DrawingVariables {
@@ -64,7 +68,7 @@ class DrawingVariables {
     
     speakerPositionCanvas = [];
     speakerPositionXOnMouseDown = [];
-    speakerPositionYOnMouseDown = [];
+    speakerPositionZOnMouseDown = [];
     speakerIsBeingDragged = [];
     
     constructor() {}
@@ -77,24 +81,26 @@ vars = new DrawingVariables();
 // empty container for functions that should be globally available
 class GlobalFunctions {
     constructor() {}
+    
+    getAngle(x, y) {
+        var val = Math.atan2(x, y) + 2 * Math.PI;
+        return val % (2 * Math.PI);
+    }
+    
+    angleToArrow(angle) {
+        const D_PI = 2 * Math.PI;
+        const arrows = ["\u2191", "\u2197", "\u2192", "\u2198", "\u2193", "\u2199", "\u2190", "\u2196"];
+        angle = (angle + 10 * D_PI) % (D_PI);
+        
+        for(var i = 0; i < 8; i++) {
+            if(angle < ( (0.125 + 0.25 * i) * Math.PI ) ) {
+                return arrows[i];
+            }
+        }
+        return arrows[0];
+    }
 }
 globals = new GlobalFunctions();
-globals.getAngle = function(x, y) {
-    var val = Math.atan2(x, y) + 2 * Math.PI;
-    return val % (2 * Math.PI);
-}
-globals.angleToArrow = function(angle) {
-    const D_PI = 2 * Math.PI;
-    const arrows = ["\u2191", "\u2197", "\u2192", "\u2198", "\u2193", "\u2199", "\u2190", "\u2196"];
-    angle = (angle + 10 * D_PI) % (D_PI);
-    
-    for(var i = 0; i < 8; i++) {
-        if(angle < ( (0.125 + 0.25 * i) * Math.PI ) ) {
-            return arrows[i];
-        }
-    }
-    return arrows[0];
-}
 
 
 
@@ -176,7 +182,7 @@ class AudioListener {
 // const
     LISTENER_INITIAL_X = 0;
     LISTENER_INITIAL_Y = 0;
-    LISTENER_INITIAL_Z = 40;
+    LISTENER_INITIAL_Z = 0;
     
 // private
     listener = audioContext.listener;
@@ -230,6 +236,7 @@ class AudioListener {
     get horizontalAngle() { return this.listenerHorizontalAngle; }
     get horizontalAngleInDegrees() { return parseInt(360 * (this.listenerHorizontalAngle / (2 * Math.PI))); }
     get initialPosition() { return [this.LISTENER_INITIAL_X, this.LISTENER_INITIAL_Y, this.LISTENER_INITIAL_Z]; }
+    
     get info() { return "AudioListener: " + "pos(" + this.listenerPosition + "); dir(" + this.listenerDirection + "); angle(" + this.horizontalAngleInDegrees + ", " + globals.angleToArrow(this.horizontalAngle) + ");" }
     log() { console.log(this.info); }
 };
@@ -240,7 +247,7 @@ audioListener.log();
 
 class PreloadedAudioNode {
 // private
-    source = null;
+    source = audioContext.createBufferSource();
     audioBuffer = null;
     loglevel = 1;
     connectedNodes = [];
@@ -266,7 +273,7 @@ class PreloadedAudioNode {
         this.connectedNodes = this.connectedNodes.filter( function(e) { return e == node; } );
     }
     
-    get audioNode() { return source; }
+    get node() { return source; }
     get duration() { return this.audioBuffer.duration; } 
     get currentTime() { 
         var time;
@@ -413,6 +420,12 @@ class MultiPreloadedAudioNodes {
             this.nodes[i].connect(nodes[i]);
         }
     }
+    connectToObjects(objects) {
+        console.assert(objects.length = this.numfiles, "MultiPreloadedAudioNodes, connecting failed: number of input objects ("+objects.length+") is not "+this.numfiles);
+        for(var i = 0; i < this.numfiles; i++) {
+            this.nodes[i].connect(objects[i].node);
+        }
+    }
     
     playAll(timeToPlay=0) {
         log("MultiPreloadedAudioNodes, play all", this.loglevel);
@@ -428,13 +441,13 @@ class MultiPreloadedAudioNodes {
         }
     }
     
-    get nodes() { 
-        var nodes = [];
-        for(var i = 0; i < this.numfiles; i++) {
-            nodes[i] = this.nodes[i].audioNode;
-        }
-        return nodes;
-    }
+    // get nodes() { 
+        // var nodes = [];
+        // for(var i = 0; i < this.numfiles; i++) {
+            // nodes[i] = this.nodes[i].audioNode;
+        // }
+        // return nodes;
+    // }
     getAudioTrack(i) { return this.nodes[i]; }
     
 // private
@@ -475,7 +488,7 @@ class BinauralPanner {
             distanceModel: 'inverse',
             refDistance: 1,                     // 0 - INF  def: 1
             maxDistance: 10000,                 // 0 - INF  def: 10000
-            rolloffFactor: 1,                   // 0 - 1    def: 1
+            rolloffFactor: 0.5,                   // 0 - 1    def: 1
             coneInnerAngle: 50,
             coneOuterAngle: 150,
             coneOuterGain: 0.3
@@ -508,26 +521,19 @@ class BinauralPanner {
         this.orientation = [x, y, z];
     }
     
-    get orientation() { this.orientation };
-    get position() { this.position };
-    connect(node) { panner.connect(node); }
-    get node() { return panner; }
+    get orientation() { return this.orientation };
+    get position() { return this.position };
+    get positionX() { return this.position[0]; }
+    get positionY() { return this.position[1]; }
+    get positionZ() { return this.position[2]; }
+    get node() { return this.panner; }
     get horizontalAngleFromCenterInDegrees() { return parseInt(360 * (this.horizontalAngleFromCenter / (2 * Math.PI))); }
+    
+    connect(node) { this.panner.connect(node); }
     
     get info() { return "BinauralPanner: " + "pos(" + this.position + ");\t horizontalAngleFromCenter(" + this.horizontalAngleFromCenterInDegrees + ", " + globals.angleToArrow(this.horizontalAngleFromCenter) + ");\t dir(" + this.orientation + ");" }
     log() { console.log(this.info); }
 }
-
-var p = new BinauralPanner();
-p.log();
-p.setPosition(124, 0, 123);
-p.log();
-p.setPosition(124, 0, -123);
-p.log();
-p.setPosition(-124, 0, -123);
-p.log();
-p.setPosition(-124, 0, 123);
-p.log();
 
 // test audiofile
 // var audiofile = new PreloadedAudioNode("audio/aesthetics/aesthetics1.wav", ()=>{ 
@@ -546,9 +552,9 @@ for(var i = 0; i < NUM_FILES; i++) {
 // var multiAudioNodes = new MultiPreloadedAudioNodes(urls, ()=> { multiAudioNodes.connectToAudioContext(); multiAudioNodes.playAll(); });
 
 
-class OctophonicReverb {
+// class OctophonicReverb {
     
-}
+// }
 
 
 
@@ -562,9 +568,8 @@ class OctophonicReverb {
 /*-----------------------------------------------------------------------------------------------------------------*/
 
 log("Start audiopipeline code");
-console.assert(urls.length == NUM_FILES, "Audiosources is not "+NUM_FILES+"! ("+urls.length+")");
 
-function init() 
+function initNodes() 
 {
     log("Start initializing");
     console.assert(audioContext);
@@ -580,29 +585,36 @@ function init()
     }, false);
     
     setupAnalyzingNodes(NUM_FILES);
+    setupPanningNodes();
     
     // ---- CONNECT ALL NODES
-    // connect panning nodes
-    setupPanningNodes(analyserNodes, trackGainNode);
-    trackGainNode.connect(masterGainNode);
-
-    setupAudioTrackNodes();
-    
-    var firstPanners = panner.slice(0, panner.length / 2);
     tracks.connectToNodes(analyserNodes);
-    // tracks.connectToSingleNode(audioContext.destination);
-    tracks.connectToNodes(firstPanners);
+    // tracks.connectToObjects(panner);
+    // console.log(tracks.getAudioTrack(0));
+    // tracks.getAudioTrack(0).connect(panner[0].node);
+    // tracks.getAudioTrack(0).connect(panner[0].node);
+    for(var i = 0; i < NUM_FILES; i++) {
+        analyserNodes[i].connect(panner[i].panner);
+        // analyserNodes[i].connect(audioContext.destination);
+        // panner[i].connect(trackGainNode);
+        panner[i].connect(audioContext.destination);
+        // console.log(panner[i]);
+    }
     
-    setupReverbNodes(tracks.nodes, masterGainNode);
+    if(USE_REVERB_NODES) {
+        setupReverbNodes(tracks.nodes, masterGainNode);
+    }
     
+    // trackGainNode.connect(masterGainNode);
+    // masterGainNode.connect(audioContext.destination);
+    
+    // ---- SETUP DRAWING
     setupDrawingFunctions();
-    
-    masterGainNode.connect(audioContext.destination);
     
     log("Finished initializing");
 }
 
-function setupAudioTrackNodes() 
+function enableInteractions() 
 {
     const trackVolumeControl = document.querySelector('[data-action="trackVolume"]');
     const playButton = document.getElementById('playbutton');
@@ -649,6 +661,7 @@ function setupAudioTrackNodes()
             else if (this.dataset.playing === 'true') 
             {
                 tracks.stopAll();
+                audioContext.suspend();
                 log("supsended audio context");
                 this.dataset.playing = 'false';
             }
@@ -660,108 +673,71 @@ function setupAudioTrackNodes()
     
 }
 
-function setupPanningNodes(inputNodes, outputNode) 
+function setupPanningNodes() 
 {
-    // PANNER NODE SETTINGS
-    const pannerModel = 'HRTF';
-    const innerCone = 50;
-    const outerCone = 150;
-    const outerGain = 0.3;
-    const distanceModel = 'inverse';
-    const maxDistance = 10000;          // 0 - INF  def: 10000
-    const refDistance = 1;              // 0 - INF  def: 1
-    const rollOff = 1;                  // 0 - 1    def: 1
-    const positionX = audioListener.LISTENER_INITIAL_X;
-    const positionY = audioListener.LISTENER_INITIAL_Y;
-    const positionZ = audioListener.LISTENER_INITIAL_Z - 5;
-    const orientationX = 1.0;
-    const orientationY = 0.0;
-    const orientationZ = 0.0;
-
     // CREATE PANNER NODES (for the reverbs and for the audiofiles)
-    for(var i = 0; i < 2*NUM_FILES; i++) 
+    for(var i = 0; i < 2 * NUM_FILES; i++) 
     {
-        panner[i] = new PannerNode(audioContext, 
-        {
-            panningModel: pannerModel,
-            distanceModel: distanceModel,
-            positionX: positionX,
-            positionY: positionY,
-            positionZ: positionZ,
-            orientationX: orientationX,
-            orientationY: orientationY,
-            orientationZ: orientationZ,
-            refDistance: refDistance,
-            maxDistance: maxDistance,
-            rolloffFactor: rollOff,
-            coneInnerAngle: innerCone,
-            coneOuterAngle: outerCone,
-            coneOuterGain: outerGain
-        })
+        panner[i] = new BinauralPanner();
     }
-    
-    for(var i = 0; i < NUM_FILES; i++) {
-        panner[i].connect(outputNode);
-    }
-    
+
     // ---- set panning of all panners
-    function fromRotatedPositionToStaticPosition(i) {
+    globals.fromRotatedPositionToStaticPosition = function(i) {
         // const angle = parseFloat(panControl.value);
-        const staticAngle = Math.atan2( panner[i].positionY.value, panner[i].positionX.value ) - parseFloat(panControl.value);
-        const staticRadius = Math.sqrt( Math.pow(panner[i].positionY.value, 2) + Math.pow(panner[i].positionX.value, 2));
+        const staticAngle = globals.getAngle( panner[i].positionX, panner[i].positionZ ) - parseFloat(panControl.value);
+        // console.log(i, globals.angleToArrow(staticAngle));
+        const staticRadius = Math.sqrt( Math.pow( panner[i].positionZ, 2 ) + Math.pow( panner[i].positionX, 2 ) );
         
-        return [staticRadius * ( Math.cos ( staticAngle ) ), staticRadius * ( Math.sin ( staticAngle ) )];
+        return [staticRadius * ( Math.cos ( staticAngle ) ), staticRadius * ( Math.sin ( staticAngle ) )]; // new [X,Z];
     }
-    globals.fromRotatedPositionToStaticPosition = fromRotatedPositionToStaticPosition;
     function setPanning() {
         const angle = parseFloat(panControl.value);
         for(var i = 0; i < NUM_FILES; i++) {
-            const speakerR = Math.sqrt( Math.pow(panner[i].hg_staticPosX, 2) + Math.pow(panner[i].hg_staticPosY, 2));
-            const speakerAngle = Math.atan2( panner[i].hg_staticPosY, panner[i].hg_staticPosX );
-            // console.log(speakerAngle, panner[i].hg_staticPosY, panner[i].hg_staticPosX);
+            const speakerR = Math.sqrt( Math.pow(panner[i].hg_staticPosX, 2) + Math.pow(panner[i].hg_staticPosZ, 2));
+            const speakerAngle = globals.getAngle( panner[i].hg_staticPosX, panner[i].hg_staticPosZ );
+            // console.log(speakerR, speakerAngle);
         
             const speakerX = speakerR * ( Math.cos ( angle + speakerAngle ) );
-            const speakerY = speakerR * ( Math.sin ( angle + speakerAngle ) );
-            // console.log(i, speakerX / speakerR, speakerY / speakerR);
+            const speakerZ = speakerR * ( Math.sin ( angle + speakerAngle ) );
+            // console.log(speakerX, speakerZ);
             
             // set positions
-            panner[i].positionX.value = speakerX;
-            panner[NUM_FILES+i].positionX.value = speakerX;
-            panner[i].positionY.value = speakerY;
-            panner[NUM_FILES+i].positionY.value = speakerY;
+            panner[i].setPosition(          speakerX, panner[i].positionY, speakerZ);
 
             // set to point speakers in direction of center
             const angleX = - speakerX / speakerR;
-            const angleY = - speakerY / speakerR;
-            if(panner[i].orientationX) {
-                panner[i].orientationX.value = angleX;
-                panner[i].orientationY.value = angleY;
-            } else {
-                panner[i].setOrientation(angleX, angleY, 0.0);
+            const angleZ = - speakerZ / speakerR;
+            panner[i].setOrientation(             angleX, 0, angleZ);
+            
+            if(USE_REVERB_NODES) {
+                panner[NUM_FILES+i].setPosition(speakerX, panner[i].positionY, speakerZ);
+                panner[NUM_FILES + i].setOrientation( angleX, 0, angleZ);
             }
 
-            panner[i].hg_angle = (angle + speakerAngle) % (2*Math.PI);
+            panner[i].hg_angle = (angle + speakerAngle) % (2 * Math.PI);
             panner[i].hg_radius = speakerR;
             
-            log("panner:\tx: "+panner[i].positionX.value+" \t y: "+panner[i].positionY.value, 2); 
+            log("panner:\tx: "+panner[i].positionX +" \t z: "+panner[i].positionZ , 2); 
         }
     }
     globals.setPanning = setPanning;
     function setDistributed(angle) {
-        const toAdd = 2*Math.PI / NUM_FILES;
+        const toAdd = 2 * Math.PI / NUM_FILES;
         for(var i = 0; i < NUM_FILES; i++) {
             const speakerX = vars.R_EXTRA_VIEW_RADIUS * SPEAKER_DIST * 0.5 * ( Math.cos ( angle + i * toAdd ) );
-            const speakerY = vars.R_EXTRA_VIEW_RADIUS * SPEAKER_DIST * 0.5 * ( Math.sin ( angle + i * toAdd ) );
-            panner[i].positionX.value = speakerX;
-            panner[NUM_FILES+i].positionX.value = speakerX;
-            panner[i].hg_staticPosX = speakerX;
-            panner[i].positionY.value = speakerY;
-            panner[NUM_FILES+i].positionY.value = speakerY;
-            panner[i].hg_staticPosY = speakerY;
+            const speakerZ = vars.R_EXTRA_VIEW_RADIUS * SPEAKER_DIST * 0.5 * ( Math.sin ( angle + i * toAdd ) );
             
-            panner[i].hg_angle = (angle + i*toAdd) % (2*Math.PI);
-            panner[i].hg_radius = 0.5*SPEAKER_DIST;
-            log("panner:\tx: "+panner[i].positionX.value+" \t y: "+panner[i].positionY.value, 2); 
+            panner[i].setPosition(              speakerX, panner[i].positionY, speakerZ);
+            panner[i].hg_staticPosX = speakerX;
+            panner[i].hg_staticPosZ = speakerZ;
+            
+            if(USE_REVERB_NODES) {
+                panner[NUM_FILES + i].setPosition(  speakerX, panner[i].positionY, speakerZ);
+            }
+            
+            panner[i].hg_angle = (angle + i * toAdd) % (2 * Math.PI);
+            panner[i].hg_radius = 0.5 * SPEAKER_DIST;
+            log("panner:\tx: "+panner[i].positionX +" \t z: "+panner[i].positionZ , 2); 
         }
     }
     
@@ -988,14 +964,14 @@ function setupDrawingFunctions()
         
         vars.listenerPositionCanvas = new Rectangle( 
             vars.canvasXMid + vars.positionToCanvasMultY * audioListener.listenerPosition[0] - vars.canvasRad, 
-            vars.canvasYMid + vars.positionToCanvasMultY * audioListener.listenerPosition[1] - vars.canvasRad, 
+            vars.canvasYMid + vars.positionToCanvasMultY * audioListener.listenerPosition[2] - vars.canvasRad, 
             vars.canvasDiam, 
             vars.canvasDiam
         );
         for(var i = 0; i < NUM_FILES; i++) {
             vars.speakerPositionCanvas[i] = new Rectangle( 
-                vars.canvasXMid + vars.positionToCanvasMultY * panner[i].positionX.value - vars.canvasRad, 
-                vars.canvasYMid + vars.positionToCanvasMultY * panner[i].positionY.value - vars.canvasRad, 
+                vars.canvasXMid + vars.positionToCanvasMultY * panner[i].positionX - vars.canvasRad, 
+                vars.canvasYMid + vars.positionToCanvasMultY * panner[i].positionZ - vars.canvasRad, 
                 vars.canvasDiam, 
                 vars.canvasDiam
             );
@@ -1018,7 +994,8 @@ function setupDrawingFunctions()
             log("vars.positionToCanvasMultX: "+ vars.positionToCanvasMultX, debuglevel);
             log("vars.canvasRad: "+ vars.canvasRad, debuglevel);
             log("vars.canvasDiam: "+ vars.canvasDiam, debuglevel);
-            log("vars.listenerPositionCanvas: "+ vars.listenerPositionCanvas, debuglevel);
+            log("vars.listenerPositionCanvas: ", debuglevel);
+            log(vars.listenerPositionCanvas, debuglevel);
         }
     }
     setDrawingVariables();
@@ -1069,7 +1046,7 @@ function setupDrawingFunctions()
                 
                 // save old listener position
                 vars.listenerXPositionOnMouseDown = audioListener.x;
-                vars.listenerYPositionOnMouseDown = audioListener.y;
+                vars.listenerZPositionOnMouseDown = audioListener.z;
             }
             vars.aSpeakerIsAlreadyBeingDragged = false;
             for(var i = 0; i < NUM_FILES; i++) {
@@ -1078,8 +1055,8 @@ function setupDrawingFunctions()
                     vars.aSpeakerIsAlreadyBeingDragged = true;
                     
                     // save old listener position
-                    vars.speakerPositionXOnMouseDown[i] = panner[i].positionX.value;
-                    vars.speakerPositionYOnMouseDown[i] = panner[i].positionY.value;
+                    vars.speakerPositionXOnMouseDown[i] = panner[i].positionX;
+                    vars.speakerPositionZOnMouseDown[i] = panner[i].positionZ;
                 }
             }
             if(!vars.listenerIsBeingDragged && !vars.aSpeakerIsAlreadyBeingDragged) {
@@ -1109,23 +1086,25 @@ function setupDrawingFunctions()
                 const canvasXDistanceFromDragStart = (vars.windowDragX - vars.windowMouseDownX) * vars.windowTocanvasMultX;
                 const canvasYDistanceFromDragStart = (vars.windowDragY - vars.windowMouseDownY) * vars.windowTocanvasMultX;
                 
+                // listener drag
                 if(vars.listenerIsBeingDragged == true) {
-                    const xy = [vars.listenerXPositionOnMouseDown + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.listenerYPositionOnMouseDown + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ]
-                    audioListener.setListenerPosition(xy[0], xy[1], audioListener.listenerPosition[2]);
+                    const xy = [vars.listenerXPositionOnMouseDown + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.listenerZPositionOnMouseDown + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ]
+                    audioListener.setListenerPosition(xy[0], audioListener.listenerPosition[1], xy[1]);
                 }
+                // speaker drag
                 if(!vars.listenerIsBeingDragged) {
                     for(var i = 0; i < NUM_FILES; i++) {
                         if(vars.speakerIsBeingDragged[i] == true) {
-                            const xy = [vars.speakerPositionXOnMouseDown[i] + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.speakerPositionYOnMouseDown[i] + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ]
-                            panner[i].positionX.value = xy[0];
-                            panner[i].positionY.value = xy[1];
+                            const xy = [vars.speakerPositionXOnMouseDown[i] + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.speakerPositionZOnMouseDown[i] + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ];
+                            panner[i].setPosition( xy[0], this.panner[i].positionY, xy[1] );
                             
                             staticPosition = globals.fromRotatedPositionToStaticPosition(i);
                             panner[i].hg_staticPosX = staticPosition[0];
-                            panner[i].hg_staticPosY = staticPosition[1];
+                            panner[i].hg_staticPosZ = staticPosition[1];
                         }
                     }
                 }
+                // listener direction
                 if(!vars.listenerIsBeingDragged && !vars.aSpeakerIsAlreadyBeingDragged) {
                     var x = vars.windowTocanvasMultX * vars.windowDragX - ( vars.listenerPositionCanvas.x + 0.5 * vars.listenerPositionCanvas.w );
                     var z = vars.windowTocanvasMultX * vars.windowDragY - ( vars.listenerPositionCanvas.y + 0.5 * vars.listenerPositionCanvas.h );
@@ -1303,20 +1282,24 @@ var canplay = false;
 function initIfAllLoaded() {
     var al = true;
     
+    // check whether all tracks are loaded
     if(canplay != true)
         al = false;
-    for(var i = 0; i < NUM_FILES; i++) {
-        if(reverbNodesLoaded[i] != true)
-            al = false;
+    
+    // check whether reverb nodes are loaded
+    if(USE_REVERB_NODES) {
+        for(var i = 0; i < NUM_FILES; i++) {
+            if(reverbNodesLoaded[i] != true)
+                al = false;
+        }
     }
     
     if(al) {
         log("init called");
-        init();
+        enableInteractions();
         log("init finished");
         
-        // audioContext.resume();
-        
+        // enable view
         var loaddiv = document.getElementById("loading screen");
         loaddiv.style = "display:none";
         var playerdiv = document.getElementById("octophonic player");
@@ -1326,31 +1309,28 @@ function initIfAllLoaded() {
 
 // RUN EVERYTHING
 jQuery('document').ready(() => {
-
-// init reverb nodes
-if(USE_REVERB_NODES) {
-    //------------------------ the reverb to use ------------------------------
-    var reverbUrl = "http://reverbjs.org/Library/AbernyteGrainSilo.m4a";
-    // var reverbUrl = "http://reverbjs.org/Library/DomesticLivingRoom.m4a";
-    
-    for(var i = 0; i < NUM_FILES; i++) {
-        reverbNodesLoaded[i] = false;
-        reverbNodes[i] = audioContext.createReverbFromUrl(reverbUrl, function(_i) {
-            return function() {
-                reverbNodesLoaded[_i] = true;
-                initIfAllLoaded();
-            }
-        }(i));
+    // init reverb nodes
+    if(USE_REVERB_NODES) {
+        //------------------------ the reverb to use ------------------------------
+        const reverbUrl = "http://reverbjs.org/Library/AbernyteGrainSilo.m4a";
+        // var reverbUrl = "http://reverbjs.org/Library/DomesticLivingRoom.m4a";
+        
+        for(var i = 0; i < NUM_FILES; i++) {
+            reverbNodesLoaded[i] = false;
+            reverbNodes[i] = audioContext.createReverbFromUrl(reverbUrl, function(_i) {
+                return function() {
+                    reverbNodesLoaded[_i] = true;
+                    initIfAllLoaded();
+                }
+            }(i));
+        }
     }
-} else {
-    for(var i = 0; i < NUM_FILES; i++) {
-        reverbNodesLoaded[i] = true;
-    }
-}
 
+    // load all tracks
+    tracks = new MultiPreloadedAudioNodes(urls, ()=> { canplay = true; initIfAllLoaded(); } );
 
-tracks = new MultiPreloadedAudioNodes(urls, ()=> { canplay = true; initIfAllLoaded(); } );
-
+    // initialize all nodes
+    initNodes();
 });
 
 
