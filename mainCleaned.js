@@ -83,6 +83,18 @@ globals.getAngle = function(x, y) {
     var val = Math.atan2(x, y) + 2 * Math.PI;
     return val % (2 * Math.PI);
 }
+globals.angleToArrow = function(angle) {
+    const D_PI = 2 * Math.PI;
+    const arrows = ["\u2191", "\u2197", "\u2192", "\u2198", "\u2193", "\u2199", "\u2190", "\u2196"];
+    angle = (angle + 10 * D_PI) % (D_PI);
+    
+    for(var i = 0; i < 8; i++) {
+        if(angle < ( (0.125 + 0.25 * i) * Math.PI ) ) {
+            return arrows[i];
+        }
+    }
+    return arrows[0];
+}
 
 
 
@@ -218,7 +230,7 @@ class AudioListener {
     get horizontalAngle() { return this.listenerHorizontalAngle; }
     get horizontalAngleInDegrees() { return parseInt(360 * (this.listenerHorizontalAngle / (2 * Math.PI))); }
     get initialPosition() { return [this.LISTENER_INITIAL_X, this.LISTENER_INITIAL_Y, this.LISTENER_INITIAL_Z]; }
-    get info() { return "AudioListener: " + "pos(" + this.listenerPosition + "); dir(" + this.listenerDirection + "); angle(" + this.horizontalAngleInDegrees + ");" }
+    get info() { return "AudioListener: " + "pos(" + this.listenerPosition + "); dir(" + this.listenerDirection + "); angle(" + this.horizontalAngleInDegrees + ", " + globals.angleToArrow(this.horizontalAngle) + ");" }
     log() { console.log(this.info); }
 };
 var audioListener = new AudioListener();
@@ -502,7 +514,7 @@ class BinauralPanner {
     get node() { return panner; }
     get horizontalAngleFromCenterInDegrees() { return parseInt(360 * (this.horizontalAngleFromCenter / (2 * Math.PI))); }
     
-    get info() { return "BinauralPanner: " + "pos(" + this.position + ");\t horizontalAngleFromCenter(" + this.horizontalAngleFromCenterInDegrees + ");\t dir(" + this.orientation + ");" }
+    get info() { return "BinauralPanner: " + "pos(" + this.position + ");\t horizontalAngleFromCenter(" + this.horizontalAngleFromCenterInDegrees + ", " + globals.angleToArrow(this.horizontalAngleFromCenter) + ");\t dir(" + this.orientation + ");" }
     log() { console.log(this.info); }
 }
 
