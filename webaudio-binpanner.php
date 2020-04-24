@@ -25,6 +25,7 @@
     
     powerusers
     - debuglevel=<0-10>, the debuglevel to run on. Higher level creates more console output. only to use when debugging.
+    - reverbon, enables reverb
     
     unused / disabled
     - height=<200-1000>, the height of the iFrame
