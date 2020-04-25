@@ -74,7 +74,7 @@
         var i;
         for (i = 0; i < form.length ;i++) { 
             var e = form.elements[i];
-            if(e.type == "text") {
+            if(e.type != "button") {
                 text += (i == 0 ? "?" : "&");
                 if(form.elements[i].value != "") {
                     text += e.name+"=" + form.elements[i].value;
@@ -121,10 +121,18 @@
             <!-- <input type="text" id="colorgradient" name="colorgradient" value=""> -->
             <!-- <br> -->
             
-            <select name="example">
+            <select name="colortheme">
                 <option value="dark">dark</option>
                 <option value="light">light</option>
             </select>
+            <br>
+            <br>
+            
+            <input type="hidden" id="colorgradient" name="colorgradient">
+            <h3>colorgradient</h3>
+            <div id="colorpicker" style="width=50%;">
+            </div>
+            <br>
             <br>
             
             <input type="button" value="Submit" onClick="onForm(this.form);">
@@ -139,12 +147,116 @@
     </div>
     <script>
     document.getElementById("frameSpace").onmouseup = function() { 
-        console.log("test"); 
+        <!-- console.log("test");  -->
         var e = document.getElementById("frame");
         frame.width = document.getElementById("frameSpace").offsetWidth - 15;
         frame.height = document.getElementById("frameSpace").offsetHeight - 15;
         <!-- document.getElementById("copyable").innerHTML = e.outerHTML; -->
     }
+    
+    function hexToRgb(hex) {
+      // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+      var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+      hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+        return r + r + g + g + b + b;
+      });
+
+      var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : null;
+    }
+    
+    class ColorPicker {
+        div = document.createElement("div");
+        removebutton = document.createElement("button");
+        addbutton = document.createElement("button");
+        colorinput = document.createElement("input");
+        textinput = document.createElement("input");
+        divToAddTo = null;
+        
+        constructor(divToAddTo, startColor="#000000") {
+            this.divToAddTo = divToAddTo;
+            this.div.appendChild(this.removebutton);
+            this.div.appendChild(this.addbutton);
+            this.div.appendChild(this.colorinput);
+            this.div.appendChild(this.textinput);
+            divToAddTo.appendChild(this.div);
+            
+            this.removebutton.innerHTML = "remove";
+            this.removebutton.type = "button";
+            var div = this.div;
+            this.removebutton.onclick = function(e) {
+                if(divToAddTo.childElementCount > 1) {
+                    divToAddTo.removeChild(div);
+                }
+            }
+            
+            var that = this;
+            this.colorinput.type = "color";
+            this.colorinput.value = startColor;
+            this.colorinput.style = "width:200px;margin-left:10px;";
+            this.colorinput.onchange = function() {
+                that.textinput.value = that.colorinput.value;
+                that.setInputElement();
+            }
+            
+            this.textinput.type = "text";
+            this.textinput.value = startColor;
+            this.textinput.style = "width:100px;margin-left:10px;";
+            this.textinput.onchange = function() {
+                if(hexToRgb(that.textinput.value) != null) {
+                    that.colorinput.value = that.textinput.value;
+                    that.setInputElement();
+                }
+            }
+            
+            this.addbutton.innerHTML = "add";
+            this.addbutton.type = "button";
+            this.addbutton.onclick = function(e) {
+                var test = new ColorPicker(divToAddTo, that.colorinput.value);
+            }
+            
+            this.setInputElement();
+        }
+        
+        setInputElement() {
+            var input = document.getElementById("colorgradient");
+            var text = "[";
+            var inputs = this.divToAddTo.getElementsByTagName("input");
+            
+            var ins = [];
+            for(var i = 0; i < inputs.length; i++) {
+                if(inputs[i].type == "color") {
+                    ins.push(inputs[i]);
+                }
+            }
+            inputs = ins;
+            
+            for(var i = 0; i < inputs.length; i++) {
+                text += "["+ (i / (inputs.length - 1)) + ",";
+                <!-- console.log(inputs[i]); -->
+                const c = hexToRgb(inputs[i].value);
+                text += "[" + c.r + ", "+ c.g + ", " + c.b + ", 1]]";
+                if(i < inputs.length - 1) {
+                    text += ", ";
+                }
+            }
+            input.value = text+"]";
+            <!-- console.log(input); -->
+        }
+    };
+    
+    var colorpicker = document.getElementById("colorpicker");
+    var newtest = new ColorPicker(colorpicker, "#e1eee2");
+    newtest = new ColorPicker(colorpicker, "#aaffaa");
+    newtest = new ColorPicker(colorpicker, "#33aa33");
+    newtest = new ColorPicker(colorpicker, "#ecdb64");
+    newtest = new ColorPicker(colorpicker, "#ffa020");
+    newtest = new ColorPicker(colorpicker, "#ff4444");
+
     onForm(document.getElementById("inputdata"));
     document.getElementById("frameSpace").onmouseup();
     </script>
