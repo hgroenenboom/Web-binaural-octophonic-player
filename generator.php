@@ -97,7 +97,7 @@
         window.form = text;
         
         var frame = document.getElementById("frame");
-        frame.src = "webaudio-binpanner.php"+text;
+        frame.src = "http://www.haroldgroenenboom.nl/other/binauralplayer/webaudio-binpanner.php"+text;
         <!-- console.log(frame); -->
         // framehtml = frame.outerHTML;
         document.getElementById("copyable").innerHTML = "" + frame.outerHTML;
@@ -158,7 +158,7 @@
 
                 <h5>numbered audio files to look for</h5>
                 <label for="file">audiofiles</label>
-                <input type="text" id="audiofiles" name="file" value="audio/ai/Harold%20">
+                <input type="text" id="audiofiles" name="file" value="http://www.haroldgroenenboom.nl/other/binauralplayer/audio/ai/Harold%20">
                 <br>
                 <label for="ext">extension</label>
                 <input type="text" id="extension" name="ext" value=".wav">

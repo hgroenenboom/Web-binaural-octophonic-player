@@ -1,4 +1,7 @@
-<?php include("./generator.php"); ?>
+<?php 
+    header("Location: generator.php"); /* Redirect browser */
+    exit();
+?>
 <!-- <html>
 <head>
 </head>
