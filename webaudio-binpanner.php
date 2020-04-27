@@ -288,7 +288,7 @@
         
         <!-- main scripts -->
         <!--<script src="main.js" type="text/javascript"></script>-->
-        <script src="mainCleaned.js" type="text/javascript"></script>
+        <script src="main.js" type="text/javascript"></script>
         <script src="circularslider/circularslider.js"></script>
         
         <?php
