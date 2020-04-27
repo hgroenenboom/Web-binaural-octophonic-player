@@ -1,7 +1,11 @@
 <?php 
-    header("Location: generator.php"); /* Redirect browser */
+    $url = "http" . (($_SERVER['SERVER_PORT'] == 443) ? "s" : "") . "://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']."/generator.php";
+    echo $url;
+    // echo pathinfo($url)['dirname']."/generator.php";
+    header("Location: ".$url); /* Redirect browser */
     exit();
 ?>
+
 <!-- <html>
 <head>
 </head>

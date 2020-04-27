@@ -61,7 +61,9 @@
     </style>
     
     <script src="jquery-3.4.1.min.js"></script>
-    <script>
+    <script>    
+    const homepage = window.location.href.split("/").slice(0,-1).join("/");
+    
     /*
     function allowDrop(ev) {
       ev.preventDefault();
@@ -97,8 +99,8 @@
         window.form = text;
         
         var frame = document.getElementById("frame");
-        frame.src = "http://www.haroldgroenenboom.nl/other/binauralplayer/webaudio-binpanner.php"+text;
-        <!-- console.log(frame); -->
+        frame.src = homepage + "/webaudio-binpanner.php"+text;
+        console.log(frame.src);
         // framehtml = frame.outerHTML;
         document.getElementById("copyable").innerHTML = "" + frame.outerHTML;
     }
@@ -158,7 +160,7 @@
 
                 <h5>numbered audio files to look for</h5>
                 <label for="file">audiofiles</label>
-                <input type="text" id="audiofiles" name="file" value="http://www.haroldgroenenboom.nl/other/binauralplayer/audio/ai/Harold%20">
+                <input type="text" id="audiofiles" name="file">
                 <br>
                 <label for="ext">extension</label>
                 <input type="text" id="extension" name="ext" value=".wav">
@@ -187,6 +189,8 @@
     <?php include("../../footer.html"); ?>
     
     <script>
+    document.getElementById("audiofiles").value = homepage + "/audio/ai/Harold%20";
+    
     // COPYABLE ELEMENT AUTO RESIZE
     document.getElementById("copyable").setAttribute('style', 'width:50%;height:' + (document.getElementById("copyable").scrollHeight) + 'px;overflow-y:hidden;');
     document.getElementById("copyable").oninput = () => {
