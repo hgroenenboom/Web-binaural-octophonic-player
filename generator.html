@@ -185,12 +185,9 @@
     
     // RESIZING IFRAME WINDOW
     document.getElementById("frameSpace").onmouseup = function() { 
-        <!-- console.log("test");  -->
-        var e = document.getElementById("frame");
         frame.width = document.getElementById("frameSpace").offsetWidth - 15;
         frame.height = document.getElementById("frameSpace").offsetHeight - 15;
         onForm();
-        <!-- document.getElementById("copyable").innerHTML = e.outerHTML; -->
     }
     
     // HEX COLOR TO RGB FUNCTION
@@ -200,8 +197,8 @@
       hex = hex.replace(shorthandRegex, function(m, r, g, b) {
         return r + r + g + g + b + b;
       });
-
       var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      
       return result ? {
         r: parseInt(result[1], 16),
         g: parseInt(result[2], 16),
@@ -211,13 +208,16 @@
     
     // COLOR PICKER
     class ColorPicker {
-        buttonDiv = document.createElement("div");
-        colorDiv = document.createElement("div");
         div = document.createElement("div");
+        
+        buttonDiv = document.createElement("div");
         removebutton = document.createElement("button");
         addbutton = document.createElement("button");
+        
+        colorDiv = document.createElement("div");
         colorinput = document.createElement("input");
         textinput = document.createElement("input");
+        
         divToAddTo = null;
         
         constructor(divToAddTo, startColor="#000000") {
@@ -228,9 +228,10 @@
             this.div.classList.add("centered");
             this.div.style = "padding: 0 50px; margin: 5px 0";
             
-            var buttonDiv = this.buttonDiv;
             this.buttonDiv.classList.add("col-lg-5");
             this.buttonDiv.classList.add("centered");
+            
+            var buttonDiv = this.buttonDiv;
             this.removebutton.classList.add("col-lg-5");
             this.removebutton.style = "margin: 0 4%;left: 10%;";
             buttonDiv.appendChild(this.removebutton);
@@ -249,6 +250,7 @@
             
             divToAddTo.appendChild(this.div);
             
+            // set remove button
             this.removebutton.innerHTML = "remove";
             this.removebutton.type = "button";
             var div = this.div;
@@ -258,6 +260,7 @@
                 }
             }
             
+            // set color input
             var that = this;
             this.colorinput.type = "color";
             this.colorinput.value = startColor;
@@ -267,6 +270,7 @@
                 that.setInputElement();
             }
             
+            // set color hex text input 
             this.textinput.type = "text";
             this.textinput.value = startColor;
             this.textinput.style = "width:90px;margin-left:10px;";
@@ -277,6 +281,7 @@
                 }
             }
             
+            // set add button
             this.addbutton.innerHTML = "add";
             this.addbutton.type = "button";
             this.addbutton.onclick = function(e) {
@@ -286,10 +291,12 @@
             this.setInputElement();
         }
         
-        setInputElement() {
-            var input = document.getElementById("colorgradient");
-            var inputs = this.divToAddTo.getElementsByTagName("input");
+        // sets the colorgradient value for the hidden input element used by the main form (the elements inside this class should not be used in the form!)
+        setInputElement(hiddenInputElement = document.getElementById("colorgradient")) {
+            var inputToSet = hiddenInputElement;
             
+            // find all color inputs
+            var inputs = this.divToAddTo.getElementsByTagName("input");
             var ins = [];
             for(var i = 0; i < inputs.length; i++) {
                 if(inputs[i].type == "color") {
@@ -298,10 +305,10 @@
             }
             inputs = ins;
             
+            // generate text for all inputs
             var text = "[ ";
             for(var i = 0; i < inputs.length; i++) {
                 text += "[ "+ (i / (inputs.length - 1)) + ", ";
-                <!-- console.log(inputs[i]); -->
                 const c = hexToRgb(inputs[i].value);
                 text += "[" + c.r + ", "+ c.g + ", " + c.b + ", 1] ]";
                 if(i < inputs.length - 1) {
@@ -309,24 +316,27 @@
                 }
             }
             text += " ]";
-            input.value = text;
-            // document.getElementById("colorgradienttext").value = text;
-            <!-- console.log(input); -->
+            
+            inputToSet.value = text;
         }
     };
     
     var colorpicker = document.getElementById("colorpicker");
-    var newtest = new ColorPicker(colorpicker, "#e1eee2");
-    newtest = new ColorPicker(colorpicker, "#aaffaa");
-    newtest = new ColorPicker(colorpicker, "#33aa33");
-    newtest = new ColorPicker(colorpicker, "#ecdb64");
-    newtest = new ColorPicker(colorpicker, "#ffa020");
-    newtest = new ColorPicker(colorpicker, "#ff4444");
+    var defaultColorGradient = new ColorPicker(colorpicker, "#e1eee2");
+    defaultColorGradient = new ColorPicker(colorpicker, "#aaffaa");
+    defaultColorGradient = new ColorPicker(colorpicker, "#33aa33");
+    defaultColorGradient = new ColorPicker(colorpicker, "#ecdb64");
+    defaultColorGradient = new ColorPicker(colorpicker, "#ffa020");
+    defaultColorGradient = new ColorPicker(colorpicker, "#ff4444");
 
+    // set iframe according to default form values
     onForm(document.getElementById("inputdata"));
+    // resize iframe on load
     document.getElementById("frameSpace").onmouseup();
+    // resize copyable window
     document.getElementById("copyable").oninput();
     
+    // WIP:
     /*
     document.getElementById("colorgradienttext").oninput = (el)=> {
         var text = "";
