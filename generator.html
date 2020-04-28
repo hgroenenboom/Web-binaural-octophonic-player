@@ -120,11 +120,12 @@
                 </div>
             </div>
             
-            <h4>Numbered audio files to look for</h4>
+            <h4>Audio files to look for</h4>
             
+            <p class="small-margin" style="font-style:italic;">numbered audiofiles</p>
             <div class="row small-margin">
                 <div class="col-lg-4">
-                    <label for="file">audiofiles</label>
+                    <label for="file">audiofiles base url</label>
                 </div>
                 <div class="col-lg-6">
                     <input type="text" id="audiofiles" name="file"><br>
@@ -145,7 +146,18 @@
                     <label for="channels">numchannels</label>
                 </div>
                 <div class="col-lg-6">
-                    <input type="text" id="numchannels" name="channels" value="8"><br><br>
+                    <input type="text" id="numchannels" name="channels" value="8"><br>
+                </div>
+            </div>
+            
+            <p class="small-margin" style="font-style:italic;">or...</p>
+            
+            <div class="row small-margin">
+                <div class="col-lg-4">
+                    <label for="filelist">js array of audiofile urls</label>
+                </div>
+                <div class="col-lg-6">
+                    <input type="text" id="filelist" name="filelist" value=""><br><br>
                 </div>
             </div>
             
@@ -204,7 +216,7 @@
                 <button onclick="copyToClipboard()">Copy to clipboard</button>
             </div>
             <div class="row centered">
-                <textarea id="copyable"></textarea>
+                <textarea id="copyable" class="autoresizing"></textarea>
             </div>
         </div>
     </div>
@@ -214,11 +226,17 @@
     document.getElementById("audiofiles").value = homepage + "/audio/ai/Harold%20";
     
     // COPYABLE ELEMENT AUTO RESIZE
-    document.getElementById("copyable").setAttribute('style', 'width:80%;height:' + (document.getElementById("copyable").scrollHeight) + 'px;overflow-y:hidden;');
-    document.getElementById("copyable").oninput = () => {
-        document.getElementById("copyable").style.height = 'auto';
-        document.getElementById("copyable").style.height = (document.getElementById("copyable").scrollHeight) + 'px';
-    };
+    var resizables = document.getElementsByClassName("autoresizing");
+    for(var i = 0; i < resizables.length; i++) {
+        const e = resizables[i];
+        e.setAttribute('style', 'width:80%;height:' + e.scrollHeight + 'px;overflow-y:hidden;');
+        e.oninput = function(e) {
+            return () => {
+                e.style.height = 'auto';
+                e.style.height = e.scrollHeight + 'px';
+            };
+        }(e);
+    }
     
     // RESIZING IFRAME WINDOW
     document.getElementById("frameSpace").onmouseup = function() { 
