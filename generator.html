@@ -40,11 +40,15 @@
         <!-- get data from all form elements -->
         for (i = 0; i < form.length ;i++) { 
             var e = form.elements[i];
-            if(e.type != "button") {
+            if(e.type != "button")
                 text += (i == 0 ? "?" : "&");
-                if(form.elements[i].value != "") {
+            if(e.type == "checkbox") {
+                if(form.elements[i].checked)
                     text += e.name+"=" + form.elements[i].value;
-                }
+            }
+            else if(e.type != "button") {
+                if(form.elements[i].value != "")
+                    text += e.name+"=" + form.elements[i].value;
             }
         }
         
@@ -145,13 +149,46 @@
                 </div>
             </div>
             
+            <h4>Experimental (alpha) features</h4>
+            
+            <div class="row small-margin">
+                <div class="col-lg-4">
+                    <label for="debuglevel">debuglevel</label>
+                </div>
+                <div class="col-lg-6">
+                    <select name="debuglevel">
+                        <option value="-1" selected="selected">disabled (default)</option>
+                        <option value="0">printing execution details</option>
+                        <option value="1">printing state variables (heavy!)</option>
+                        <option value="2">even more state variables (heaviest!)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row small-margin">
+                <div class="col-lg-4">
+                    <label for="reverbon">enable reverb</label>
+                </div>
+                <div class="col-lg-6">
+                    <input type="checkbox" id="reverbon" name="reverbon" value="1">
+                </div>
+            </div>
+            
+            <div class="row small-margin">
+                <div class="col-lg-4">
+                    <label for="rotatespeakers">rotate speakers</label>
+                </div>
+                <div class="col-lg-6">
+                    <input type="checkbox" id="rotatespeakers" name="rotatespeakers" value="1">
+                </div>
+            </div>
+            
             <!-- <div class="row small-margin"> -->
                 <!-- <div class="col-lg-4"> -->
                 <!-- </div> -->
                 <!-- <div class="col-lg-6"> -->
                 <!-- </div> -->
             <!-- </div> -->
-            
 
 
             

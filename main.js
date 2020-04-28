@@ -1,8 +1,8 @@
 const NUM_FILES = urls.length;
 const EXPERIMENTAL_REVERB_ENABLED = false;
 console.log("LOGGING LEVEL:",SHOULD_LOG);
-console.log("USE REVERB:", USE_REVERB_NODES);
-console.log("NUM FILES:", NUM_FILES);
+console.log("USE_REVERB_NODES:", USE_REVERB_NODES);
+console.log("NUM_FILES:", NUM_FILES);
 
 // cross browser audio context
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -784,7 +784,7 @@ function setupReverbNodes(inputNodes, endNode)
                 for(var i = 0; i < inputNodes.length; i++) 
                 {
                     connectToReverbNodes(inputNodes[i], i);
-                    reverbNodes[i].connect(panner[inputNodes.length+i]).connect(reverbGainNode);
+                    reverbNodes[i].connect(panner[inputNodes.length+i].node).connect(reverbGainNode);
                 }
                 reverbGainNode.connect(endNode);
             }
@@ -804,8 +804,8 @@ function setupReverbNodes(inputNodes, endNode)
                     {
                         inputNodes[i].disconnect(reverbNodes[i]);
                     }
-                    reverbNodes[i].disconnect(panner[inputNodes.length+i]);
-                    panner[inputNodes.length+i].disconnect(reverbGainNode);
+                    reverbNodes[i].disconnect(panner[inputNodes.length+i].node);
+                    panner[inputNodes.length+i].node.disconnect(reverbGainNode);
                     // reverbNodes[i].disconnect(analyserNodes[i]);
                 }
                 reverbGainNode.disconnect(endNode);

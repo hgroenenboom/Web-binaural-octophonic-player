@@ -15,7 +15,7 @@
     - ext=<audioextension>, audio extension to be used. (i.e. .wav/.mp3/.m4a)
     
     common
-    - channels=<0-16>, the number of audiofiles to look for.
+    - channels=<0-16>, the number of audiofiles to look for. (default = 8)
     
     style
     - background_image=<url>, the background image to use. Default is art designed by me
@@ -23,9 +23,10 @@
     - colortheme=<dark/light>, default=light, the color theme for all visible html elements
     - colorgradient=< [ n*[amplitude, [r,g,b,a]] ] >
     
-    powerusers
+    powerusers / alpha features
     - debuglevel=<0-10>, the debuglevel to run on. Higher level creates more console output. only to use when debugging.
     - reverbon, enables reverb
+    - rotatespeakers
     
     unused / disabled
     - height=<200-1000>, the height of the iFrame
@@ -151,8 +152,9 @@
                     <!-- master volume fader -->
                     <div class="sliders" 
                         <?php
-                        parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
-                        if(!isset($array["debug_level"])) { echo 'style="display:none;"'; }
+                        if($array["debug_level"] != "-1" && $array["debug_level"] != null) { 
+                            echo 'style="display:none;"'; 
+                        }
                         ?>
                     >
                         <label for="volume">master</label>
@@ -164,7 +166,13 @@
                     </div>
                     
                     <!-- panning fader -->
-                    <div class="sliders">
+                    <div class="sliders"
+                        <?php
+                        if(!isset($array["rotatespeakers"])) {
+                            echo " style='display:none;'";
+                        }
+                        ?>
+                    >
                         <label for="pan">rotate speakers</label>
                         <input type="range" id="pan" class="control-panning slider circular-slider" min="0" max="6.28" value="3.745" list="pan-vals" step="0.01" data-action="pan" />
                         <datalist id="pan-vals">
@@ -263,23 +271,30 @@
             ?>;">
             </div> <!--- background color -->
             
+            <div id="debugelements" style="top:100%;position:absolute;"> 
             <?php
                 # GENERATE DEBUG INTERFACE (PANNER CONTROLS)
                 parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
                 if(isset($array["debuglevel"])) {
-                    echo '<div style="overflow-y: auto; height:400px;background-color:rgb(255,255,255);display:inline-block;width:100%;">';
-                        echo '<div class="sliders"><input type="range" id="rollof" class="slider" min="0" max="1" step="0.01" /><label for="rollof">roloff</label></div>';
-                        echo '<div class="sliders"><input type="range" id="refDistance" class="slider" min="0" max="50" step="0.01" /><label for="refDistance">refDistance</label></div>';
-                        echo '<div class="sliders"><input type="range" id="maxDistance" class="slider" min="0" max="120" step="0.01" /><label for="maxDistance">maxDistance</label></div>';
-                    echo '</div>';
+                    if($array["debuglevel"] != "-1") {
+                        echo '<div style="overflow-y: auto; height:400px;background-color:rgb(255,255,255);display:block;width:100%;">';
+                            echo '<div class="sliders"><input type="range" id="rollof" class="slider" min="0" max="1" step="0.01" /><label for="rollof">roloff</label></div>';
+                            echo '<div class="sliders"><input type="range" id="refDistance" class="slider" min="0" max="50" step="0.01" /><label for="refDistance">refDistance</label></div>';
+                            echo '<div class="sliders"><input type="range" id="maxDistance" class="slider" min="0" max="120" step="0.01" /><label for="maxDistance">maxDistance</label></div>';
+                        echo '</div>';
+                    }
                 }
             ?>
             <?php
                 parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
                 if(isset($array["debuglevel"])) {
-                    echo '<div style="overflow-y: auto; height:400px;background-color:rgb(255,255,255);"><p id="console"></p></div>';
+                    if($array["debuglevel"] != "-1") {
+                        echo '<div style="overflow-y: auto; height:400px;background-color:rgb(255,255,255);"><p id="console"></p></div>';
+                    }
                 }
             ?>
+            </div>
+            <!-- /debugelements -->
         </div> <!-- main div -->
         
 
