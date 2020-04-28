@@ -1,51 +1,21 @@
 <!DOCTYPE HTML>
 <html>
 <head>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <!-- inline custom style -->
     <style>
-    <!-- .container {
-        text-align: center;
-        height: 100%;
-        line-height: 100%;
-        text-align: center;
-        padding-bottom: 15px;
-    } -->
-    
-    centered {
-        display: inline-block;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        width: 100%;
+    .small-margin {
+        margin: 1px;
+        padding: 1px;
     }
     
-    p {
-      text-align: center;
-      margin: auto;
-    }
-    
-    label {
-        position: absolute;
-        height: 100%;
-        margin-top: 5px;
-        text-align: right;
-        right: 70%;
-        font-style:normal;
-        font-size: 12px;
+    input {
+        width: 95%;
     }
     
     select {
-        width: 50%;
-        // margin-left: 5%;
-        margin-bottom: 5px;
-        position: relative;
-        left: 32px;
-    }
-    input {
-        width: 50%;
-        // margin-left: 5%;
-        margin-bottom: 5px;
-        position: relative;
-        left: 32px;
+        width: 95%;
     }
     
     button {
@@ -54,36 +24,20 @@
     
     .submit {
         height: 60px;
-        margin: 30px;
+        margin: 20px;
     }
     </style>
     
     <script src="jquery-3.4.1.min.js"></script>
+    <!-- onload script -->
     <script>    
+    // get homepage directory
     const homepage = window.location.href.split("/").slice(0,-1).join("/");
-    
-    /*
-    function allowDrop(ev) {
-      ev.preventDefault();
-    }
 
-    function drag(ev) {
-      ev.dataTransfer.setData("text", ev.target.id);
-    }
-
-    function drop(ev) {
-      console.log(ev);
-      window.ev = ev;
-      ev.preventDefault();
-      var data = ev.dataTransfer.getData("text");
-      ev.target.appendChild(document.getElementById(data));
-    }
-    */
-    
-    // var framehtml = "";
     function onForm(form = document.getElementById("inputdata")) {
         var text = '';
         var i;
+        <!-- get data from all form elements -->
         for (i = 0; i < form.length ;i++) { 
             var e = form.elements[i];
             if(e.type != "button") {
@@ -92,14 +46,11 @@
                     text += e.name+"=" + form.elements[i].value;
                 }
             }
-        } 
-        // console.log(text);
-        window.form = text;
+        }
         
+        // set iframe and copyable text
         var frame = document.getElementById("frame");
         frame.src = homepage + "/webaudio-binpanner.php"+text;
-        console.log(frame.src);
-        // framehtml = frame.outerHTML;
         document.getElementById("copyable").innerHTML = "" + frame.outerHTML;
     }
     
@@ -107,87 +58,126 @@
       document.getElementById("copyable").select();
       document.getElementById("copyable").setSelectionRange(0, 99999); /*For mobile devices*/
 
-      /* Copy the text inside the text field */
       document.execCommand("copy");
 
-      /* Alert the copied text */
-      alert("Copied the text: " + document.getElementById("copyable").value);
+      alert("Copied to clipboard:\n" + document.getElementById("copyable").value);
     }
     </script>
 </head>
 <body>
-    
-    <!-- <div class="container" style="line-height:100px;"> -->
-        <!-- <div id="div1" class="centered" ondrop="drop(event)" ondragover="allowDrop(event)" style="border-style: dotted;width:200px;margin:auto;height:100px;"> -->
-            <!-- <p>drop background link here</p> -->
-        <!-- </div> -->
-        <!-- <img id="drag1" src="img_logo.gif" draggable="true" ondragstart="drag(event)" width="336" height="69"> -->
-    <!-- </div> -->
     <div class="container pt">
+        <h2 class="centered">Embedded binaural player generator</h2>
+        
+        <!-- resizable iframe window -->
         <div class="row mt">
-            <h3>EMBEDABLE BINAURAL PANNER GENERATOR</h3>
-            <div class="row mt" id="frameSpace" style="resize:both; overflow:auto; margin: auto; width:50%; height:400px; border: 1px solid;margin-bottom: 20px;">
-                <iframe id="frame" crossorigin="anonymous">
-                </iframe>
+            <div id="frameSpace" style="resize:both; overflow:auto; margin: auto; width:50%; height:400px; border: 1px solid;margin-bottom: 20px;">
+                <!-- to be filled by top js script -->
+                <iframe id="frame" crossorigin="anonymous"></iframe>
             </div>
-            <div>
-                <h5>colorgradient</h5>
-                <div id="colorpicker" style="width=50%;">
+        </div>
+        
+        <div class="row mt">
+            <h4 class="centered">Responsive colorgradient</h4>
+            <div class="col-lg-10 centered" id="colorpicker" style="width=50%;">
+            <!-- to be filled by bottom js script -->
+            </div>
+        </div>
+        
+        <form id="inputdata" class="centered" ACTION="" METHOD="GET" autocomplete="on"> <!-- action="console.log('test')"> -->
+            <h4 class="centered">Other visual settings</h4>
+            
+            <div class="row small-margin">
+                <div class="col-lg-4">
+                    <label for="background_image">background image url</label>
                 </div>
-                <!--<p>or...</p>
-                <textarea id="colorgradienttext" name="colorgradienttext" rows="10" cols="30">The cat was playing in the garden.</textarea> -->
+                <div class="col-lg-6">
+                    <input type="text" id="background_image" name="background_image" value="https://images.fineartamerica.com/images/artworkimages/mediumlarge/2/pastel-lake-sean-duan.jpg&opacity=0.5&colortheme=dark">
+                </div>
             </div>
-            <br>
-            <br>
-            <form id="inputdata" class="centered" ACTION="" METHOD="GET" autocomplete="on"> <!-- action="console.log('test')"> -->
-                <h5>other visual settings</h5>
-                <label for="background_image">background image url</label>
-                <input type="text" id="background_image" name="background_image" value="https://images.fineartamerica.com/images/artworkimages/mediumlarge/2/pastel-lake-sean-duan.jpg&opacity=0.5&colortheme=dark">
-                <br>
-                <label for="opacity">background image opacity</label>
-                <input type="text" id="opacity" name="opacity" value="0.7">
-                <br>
-                <label for="colortheme">colortheme</label>
-                <select name="colortheme">
-                    <option value="dark">dark</option>
-                    <option value="light" selected="selected">light</option>
-                </select>
-                <br>
-                <br>
+            
+            <div class="row small-margin">
+                <div class="col-lg-4">
+                    <label for="opacity">background image opacity</label>
+                </div>
+                <div class="col-lg-6">
+                    <input type="text" id="opacity" name="opacity" value="0.7"><br>
+                </div>
+            </div>
+            
+            <div class="row small-margin">
+                <div class="col-lg-4">
+                    <label for="colortheme">colortheme</label>
+                </div>
+                <div class="col-lg-6">
+                    <select name="colortheme">
+                        <option value="dark" selected="selected">dark</option>
+                        <option value="light">light</option>
+                    </select><br><br>
+                </div>
+            </div>
+            
+            <h4>Numbered audio files to look for</h4>
+            
+            <div class="row small-margin">
+                <div class="col-lg-4">
+                    <label for="file">audiofiles</label>
+                </div>
+                <div class="col-lg-6">
+                    <input type="text" id="audiofiles" name="file"><br>
+                </div>
+            </div>
+            
+            <div class="row small-margin">
+                <div class="col-lg-4">
+                    <label for="ext">extension</label>
+                </div>
+                <div class="col-lg-6">
+                    <input type="text" id="extension" name="ext" value=".wav"><br>
+                </div>
+            </div>
+            
+            <div class="row small-margin">
+                <div class="col-lg-4">
+                    <label for="channels">numchannels</label>
+                </div>
+                <div class="col-lg-6">
+                    <input type="text" id="numchannels" name="channels" value="8"><br><br>
+                </div>
+            </div>
+            
+            <!-- <div class="row small-margin"> -->
+                <!-- <div class="col-lg-4"> -->
+                <!-- </div> -->
+                <!-- <div class="col-lg-6"> -->
+                <!-- </div> -->
+            <!-- </div> -->
+            
 
-                <h5>numbered audio files to look for</h5>
-                <label for="file">audiofiles</label>
-                <input type="text" id="audiofiles" name="file">
-                <br>
-                <label for="ext">extension</label>
-                <input type="text" id="extension" name="ext" value=".wav">
-                <br>
-                <label for="channels">numchannels</label>
-                <input type="text" id="numchannels" name="channels" value="8">
-                <br>
-                <br>
-                
-                <!-- <label for="colorgradient">drawing gradient</label> -->
-                <!-- <input type="text" id="colorgradient" name="colorgradient" value=""> -->
-                <!-- <br> -->
-                
-                
-                <input type="hidden" id="colorgradient" name="colorgradient">
-                
-                <input class="submit" type="button" value="Submit" onClick="onForm(this.form);">
-            </form>
-            <div>
-                <button onclick="copyToClipboard()" style="display:block;">Copy to clipboard</button>
+
+            
+            
+            <!-- hidden colorgradient input element (filled in by bottom js) -->
+            <input type="hidden" id="colorgradient" name="colorgradient">
+            
+            <input class="submit" style="width:50%;" type="button" value="Submit" onClick="onForm(this.form);">
+        </form>
+        
+        <div class="containter mt">
+            <div class="row centered mt">
+                <button onclick="copyToClipboard()">Copy to clipboard</button>
+            </div>
+            <div class="row centered">
                 <textarea id="copyable"></textarea>
             </div>
         </div>
     </div>
+    <!-- /container -->
     
     <script>
     document.getElementById("audiofiles").value = homepage + "/audio/ai/Harold%20";
     
     // COPYABLE ELEMENT AUTO RESIZE
-    document.getElementById("copyable").setAttribute('style', 'width:50%;height:' + (document.getElementById("copyable").scrollHeight) + 'px;overflow-y:hidden;');
+    document.getElementById("copyable").setAttribute('style', 'width:80%;height:' + (document.getElementById("copyable").scrollHeight) + 'px;overflow-y:hidden;');
     document.getElementById("copyable").oninput = () => {
         document.getElementById("copyable").style.height = 'auto';
         document.getElementById("copyable").style.height = (document.getElementById("copyable").scrollHeight) + 'px';
@@ -221,6 +211,8 @@
     
     // COLOR PICKER
     class ColorPicker {
+        buttonDiv = document.createElement("div");
+        colorDiv = document.createElement("div");
         div = document.createElement("div");
         removebutton = document.createElement("button");
         addbutton = document.createElement("button");
@@ -230,10 +222,31 @@
         
         constructor(divToAddTo, startColor="#000000") {
             this.divToAddTo = divToAddTo;
-            this.div.appendChild(this.removebutton);
-            this.div.appendChild(this.addbutton);
-            this.div.appendChild(this.colorinput);
-            this.div.appendChild(this.textinput);
+            
+            this.div.classList.add("row");
+            this.div.classList.add("small-margin");
+            this.div.classList.add("centered");
+            this.div.style = "padding: 0 50px; margin: 5px 0";
+            
+            var buttonDiv = this.buttonDiv;
+            this.buttonDiv.classList.add("col-lg-5");
+            this.buttonDiv.classList.add("centered");
+            this.removebutton.classList.add("col-lg-5");
+            this.removebutton.style = "margin: 0 4%;left: 10%;";
+            buttonDiv.appendChild(this.removebutton);
+            this.addbutton.classList.add("col-lg-3");
+            this.addbutton.style = "margin: 0 6%;left: 10%;";
+            buttonDiv.appendChild(this.addbutton);
+            
+            var colorDiv = this.colorDiv;
+            this.colorinput.classList.add("col-lg-6");
+            colorDiv.appendChild(this.colorinput);
+            this.textinput.classList.add("col-lg-3");
+            colorDiv.appendChild(this.textinput);
+            
+            this.div.appendChild(buttonDiv);
+            this.div.appendChild(colorDiv);
+            
             divToAddTo.appendChild(this.div);
             
             this.removebutton.innerHTML = "remove";
@@ -256,7 +269,7 @@
             
             this.textinput.type = "text";
             this.textinput.value = startColor;
-            this.textinput.style = "width:15%;margin-left:10px;";
+            this.textinput.style = "width:90px;margin-left:10px;";
             this.textinput.onchange = function() {
                 if(hexToRgb(that.textinput.value) != null) {
                     that.colorinput.value = that.textinput.value;
