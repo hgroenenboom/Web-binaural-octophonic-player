@@ -4,6 +4,10 @@ console.log("LOGGING LEVEL:",SHOULD_LOG);
 console.log("USE_REVERB_NODES:", USE_REVERB_NODES);
 console.log("NUM_FILES:", NUM_FILES);
 
+window.binauralplayer = new class{}; // empty functionpointer container
+// available functions:
+// - window.binauralplayer.playPause()
+
 // cross browser audio context
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioContext;
@@ -176,6 +180,17 @@ function colorFromAmplitude(val, exponent = 1.0) {
     return fillStyle;
 }
 
+const abrevs = [ [0, "b"], [1000, "Kb"], [1000000, "Kb"], [1000000000, "Mb"], [1000000000000, "Gb"], [1000000000000000, "Tb"] ];
+function bytesToAbrieviatedSize(bytes) {
+    var out = "";
+    for(var i = 0; i < abrevs.length-1; i++) {
+        if(bytes < abrevs[i+1][0]) {
+            out = "" + Math.round(bytes / abrevs[i][0]) + abrevs[i+1][1];
+            return out;
+        }
+    }
+}
+
 
 
 class AudioListener {
@@ -286,6 +301,8 @@ class PreloadedAudioNode {
     }
 
     loadingProgress = 0;  // value from 0 to 1
+    fileSize = 0;
+    
     loadSound(url, callback, loadingCallback = null) {
       var request = new XMLHttpRequest();
       request.open('GET', url, true);
@@ -294,6 +311,17 @@ class PreloadedAudioNode {
       var thisclass = this;
       
       // Decode asynchronously
+      request.onreadystatechange = function() {
+        if(request.readyState == 2) {
+            var headers = request.getAllResponseHeaders().split('\r\n').reduce((result, current) => {
+                let [name, value] = current.split(': ');
+                result[name] = value;
+                return result;
+              }, {});
+            
+            thisclass.fileSize = parseInt(headers['content-length']);
+        }
+      }
       request.onload = function() {
         var audioData = request.response;
         
@@ -310,7 +338,9 @@ class PreloadedAudioNode {
         }, ()=>{console.log("error")});
       }
       request.onprogress = function(e) {
-        thisclass.loadingProgress = e.loaded / e.total;
+        if (e.lengthComputable) {
+            thisclass.loadingProgress = e.loaded / e.total;
+        }
         // console.log(this.loadingProgress);
         if(typeof loadingCallback == "function") {
             loadingCallback();
@@ -404,7 +434,11 @@ class MultiPreloadedAudioNodes {
         for(var i = 0; i < nodes.length; i++) {
             total += nodes[i].loadingProgress;
         }
-        var loadingProgress = "" + parseInt(100 * (total / nodes.length))+"%";
+        var size = 0;
+        for(var i = 0; i < nodes.length; i++) {
+            size += nodes[i].fileSize;
+        }
+        var loadingProgress = "" + parseInt(100 * (total / nodes.length))+"% of " + bytesToAbrieviatedSize(size);
         elementToReportTo.innerHTML = loadingProgress;
     }
     
@@ -440,14 +474,7 @@ class MultiPreloadedAudioNodes {
             this.nodes[i].stop(timeToStop);
         }
     }
-    
-    // get nodes() { 
-        // var nodes = [];
-        // for(var i = 0; i < this.numfiles; i++) {
-            // nodes[i] = this.nodes[i].audioNode;
-        // }
-        // return nodes;
-    // }
+
     getAudioTrack(i) { return this.nodes[i]; }
     
 // private
@@ -464,11 +491,6 @@ class MultiPreloadedAudioNodes {
     // wip
     // assertSync() {}
 };
-
-
-/*-----------------------------------------------------------------------------------------------------------------*/
-/*---------------------------------------------  Testing       ----------------------------------------------------*/
-/*-----------------------------------------------------------------------------------------------------------------*/
 
 
 
@@ -534,6 +556,67 @@ class BinauralPanner {
     get info() { return "BinauralPanner: " + "pos(" + this.position + ");\t horizontalAngleFromCenter(" + this.horizontalAngleFromCenterInDegrees + ", " + globals.angleToArrow(this.horizontalAngleFromCenter) + ");\t dir(" + this.orientation + ");" }
     log() { console.log(this.info); }
 }
+
+/*-----------------------------------------------------------------------------------------------------------------*/
+/*---------------------------------------------  Testing       ----------------------------------------------------*/
+/*-----------------------------------------------------------------------------------------------------------------*/
+
+class PositionableElement {
+    drawRadius = vars.canvasRad;
+    drawSpaceOnCanvas = new Rectangle(0, 0, 2*drawRadius, 2*drawRadius);
+    hoveredOver = false;
+    isBeingDragged = false;
+    
+    elementPositionOnMouseDown = [0, 0];
+    
+    // THESE FUNCTIONS WILL HANDLE CANVAS <-> AUDIO POSITION CONVERSION
+    // function to set the position of the element from canvas coordinates
+    setPositionFromCanvasFunction = null;
+    // function to get the drawPosition of the element
+    getPositionFromElementFunction = null;
+    
+    constructor(setPositionFromCanvasFunction, getPositionFromElementFunction) {
+        this.setPositionFromCanvasFunction = setPositionFromCanvasFunction;
+        this.getPositionFromElementFunction = getPositionFromElementFunction;
+        updateDrawingVariables();
+    }
+    
+    // when should this be called?
+    updateDrawingVariables() {
+        this.drawRadius = vars.canvasRad;    
+        var posOnCanvas = this.getPositionFromElementFunction();
+        this.drawSpaceOnCanvas = new Rectangle(
+            vars.canvasXMid + vars.positionToCanvasMultY * posOnCanvas[0] - this.drawRadius, 
+            vars.canvasYMid + vars.positionToCanvasMultY * posOnCanvas[1] - this.drawRadius, 
+            2 * this.drawRadius, 
+            2 * this.drawRadius
+        );
+    }
+    
+    mouseMove(mousePos) {
+        this.hoveredOver = vars.isBeingDragged == true || vars.drawSpaceOnCanvas.isInside( mousePos[0], mousePos[1] );
+    }
+    mouseDrag(dragDistance) {
+    }
+    mouseDown(mousePos) {
+        this.isBeingDragged =  this.drawSpaceCanvas.isInside(mousePos[0], mousePos[1]);
+        if(this.isBeingDragged) {
+            var pos = this.getPositionFromElementFunction();
+            this.elementPositionOnMouseDown[0] = pos[0];
+            this.elementPositionOnMouseDown[1] = pos[1];
+        }
+    }
+    mouseUp() {
+        this.isBeingDragged = false;
+    }
+    
+    // future work -> draws it's own SVG -> also keeps track of SVG drawing size and rotation.
+    // drawElement() {
+    // }
+};
+
+
+
 
 // test audiofile
 // var audiofile = new PreloadedAudioNode("audio/aesthetics/aesthetics1.wav", ()=>{ 
@@ -610,7 +693,6 @@ function initNodes()
 function enableInteractions() 
 {
     const trackVolumeControl = document.querySelector('[data-action="trackVolume"]');
-    const playButton = document.getElementById('playbutton');
     
     //-----------------------------------------------------------------------------------------------//
     // -----------------------          SETUP AUDIONODES            -------------------------------- /
@@ -637,32 +719,32 @@ function enableInteractions()
     , false);
     
     // play pause audio
-    playButton.addEventListener('click', 
-        function() 
-        {
-            // check if context is in suspended state (autoplay policy)
-            if (audioContext.state === 'suspended') {
-                audioContext.resume();
-                log("resuming audio context");
-            }
-
-            if (this.dataset.playing === 'false') 
-            {
-                tracks.playAll();
-                this.dataset.playing = 'true';
-            } 
-            else if (this.dataset.playing === 'true') 
-            {
-                tracks.stopAll();
-                audioContext.suspend();
-                log("supsended audio context");
-                this.dataset.playing = 'false';
-            }
-
-            let state = this.getAttribute('aria-checked') === "true" ? true : false;
-            this.setAttribute( 'aria-checked', state ? "false" : "true" );
+    const playButton = document.getElementById('playbutton');
+    window.binauralplayer.playPause = function() 
+    {
+        // check if context is in suspended state (autoplay policy)
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+            log("resuming audio context");
         }
-    , false);
+
+        if (playButton.dataset.playing === 'false') 
+        {
+            tracks.playAll();
+            playButton.dataset.playing = 'true';
+        } 
+        else if (playButton.dataset.playing === 'true') 
+        {
+            tracks.stopAll();
+            audioContext.suspend();
+            log("supsended audio context");
+            playButton.dataset.playing = 'false';
+        }
+
+        let state = playButton.getAttribute('aria-checked') === "true" ? true : false;
+        playButton.setAttribute( 'aria-checked', state ? "false" : "true" );
+    };
+    playButton.addEventListener('click', window.binauralplayer.playPause, false);
     
 }
 
@@ -1021,6 +1103,13 @@ function setupDrawingFunctions()
     function getEventX(e) { return (e.clientX != null ? e.clientX : e.changedTouches[0].clientX); }
     function getEventY(e) { return (e.clientY != null ? e.clientY : e.changedTouches[0].clientY); }
     
+    drawCanvas.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        canvasMouseDown(e);
+    }, { passive:false });
+    drawCanvas.addEventListener("mousedown", (e) => {
+        canvasMouseDown(e);
+    }, false);
     function getMouseDown(e) {
         setDrawingVariables();
         vars.isMouseDown = true;
@@ -1031,9 +1120,10 @@ function setupDrawingFunctions()
         setDrawingVariables();
         getMouseDown(e);
         
-        // check whether mouse down on listener (to drag the listener position)
         if(vars.drawMode == 1) {
             const mousePositionCanvas = [vars.windowTocanvasMultX * vars.windowMouseDownX, vars.windowTocanvasMultY * vars.windowMouseDownY];
+            
+            // check whether mouse down on listener (to drag the listener position)
             if( vars.listenerPositionCanvas.isInside( mousePositionCanvas[0], mousePositionCanvas[1] ) ) {
                 vars.listenerIsBeingDragged = true;
                 
@@ -1059,54 +1149,7 @@ function setupDrawingFunctions()
             }
         }
     }
-    drawCanvas.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        canvasMouseDown(e);
-    }, { passive:false });
-    drawCanvas.addEventListener("mousedown", (e) => {
-        canvasMouseDown(e);
-    }, false);
 
-    function canvasDrag(e) {
-        setDrawingVariables();
-        vars.windowDragX = getEventX(e) - drawCanvas.offsetLeft;
-        vars.windowDragY = getEventY(e) - drawCanvas.offsetTop;
-        
-        vars.hoverListener = (vars.listenerIsBeingDragged == true || vars.listenerPositionCanvas.isInside( vars.windowTocanvasMultX * vars.windowDragX, vars.windowTocanvasMultY * vars.windowDragY ) );
-        
-        if(vars.isMouseDown) {
-            if(vars.drawMode == 1) {
-                const canvasXDistanceFromDragStart = (vars.windowDragX - vars.windowMouseDownX) * vars.windowTocanvasMultX;
-                const canvasYDistanceFromDragStart = (vars.windowDragY - vars.windowMouseDownY) * vars.windowTocanvasMultX;
-                
-                // listener drag
-                if(vars.listenerIsBeingDragged == true) {
-                    const xy = [vars.listenerXPositionOnMouseDown + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.listenerZPositionOnMouseDown + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ]
-                    audioListener.setListenerPosition(xy[0], audioListener.listenerPosition[1], xy[1]);
-                }
-                // speaker drag
-                if(!vars.listenerIsBeingDragged) {
-                    for(var i = 0; i < NUM_FILES; i++) {
-                        if(vars.speakerIsBeingDragged[i] == true) {
-                            const xy = [vars.speakerPositionXOnMouseDown[i] + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.speakerPositionZOnMouseDown[i] + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ];
-                            panner[i].setPosition( xy[0], this.panner[i].positionY, xy[1] );
-                            
-                            staticPosition = globals.fromRotatedPositionToStaticPosition(i);
-                            panner[i].hg_staticPosX = staticPosition[0];
-                            panner[i].hg_staticPosZ = staticPosition[1];
-                        }
-                    }
-                }
-                // listener direction
-                if(!vars.listenerIsBeingDragged && !vars.aSpeakerIsAlreadyBeingDragged) {
-                    var x = vars.windowTocanvasMultX * vars.windowDragX - ( vars.listenerPositionCanvas.x + 0.5 * vars.listenerPositionCanvas.w );
-                    var z = vars.windowTocanvasMultX * vars.windowDragY - ( vars.listenerPositionCanvas.y + 0.5 * vars.listenerPositionCanvas.h );
-                    audioListener.setListenerDirection(x, 0, -z);
-                }
-                globals.setPanning();
-            }
-        }
-    }
     drawCanvas.addEventListener("touchmove", (e) => {
         e.preventDefault();
         canvasDrag(e);
@@ -1114,6 +1157,46 @@ function setupDrawingFunctions()
     drawCanvas.addEventListener("mousemove", (e) => {
         canvasDrag(e);
     }, false);
+    function canvasDrag(e) {
+        setDrawingVariables();
+        vars.windowDragX = getEventX(e) - drawCanvas.offsetLeft;
+        vars.windowDragY = getEventY(e) - drawCanvas.offsetTop;
+        
+        vars.hoverListener = (vars.listenerIsBeingDragged == true || vars.listenerPositionCanvas.isInside( vars.windowTocanvasMultX * vars.windowDragX, vars.windowTocanvasMultY * vars.windowDragY ) );
+        
+        if(vars.isMouseDown && vars.drawMode == 1) {
+            const canvasXDistanceFromDragStart = (vars.windowDragX - vars.windowMouseDownX) * vars.windowTocanvasMultX;
+            const canvasYDistanceFromDragStart = (vars.windowDragY - vars.windowMouseDownY) * vars.windowTocanvasMultX;
+            
+            // listener drag
+            if(vars.listenerIsBeingDragged == true) {
+                const xy = [vars.listenerXPositionOnMouseDown + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.listenerZPositionOnMouseDown + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ]
+                
+                audioListener.setListenerPosition(xy[0], audioListener.listenerPosition[1], xy[1]);
+            }
+            // speaker drag
+            if(!vars.listenerIsBeingDragged) {
+                for(var i = 0; i < NUM_FILES; i++) {
+                    if(vars.speakerIsBeingDragged[i] == true) {
+                        const xy = [vars.speakerPositionXOnMouseDown[i] + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.speakerPositionZOnMouseDown[i] + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ];
+                        
+                        panner[i].setPosition( xy[0], this.panner[i].positionY, xy[1] );
+                        staticPosition = globals.fromRotatedPositionToStaticPosition(i);
+                        panner[i].hg_staticPosX = staticPosition[0];
+                        panner[i].hg_staticPosZ = staticPosition[1];
+                    }
+                }
+            }
+            
+            // listener direction
+            if(!vars.listenerIsBeingDragged && !vars.aSpeakerIsAlreadyBeingDragged) {
+                var x = vars.windowTocanvasMultX * vars.windowDragX - ( vars.listenerPositionCanvas.x + 0.5 * vars.listenerPositionCanvas.w );
+                var z = vars.windowTocanvasMultX * vars.windowDragY - ( vars.listenerPositionCanvas.y + 0.5 * vars.listenerPositionCanvas.h );
+                audioListener.setListenerDirection(x, 0, -z);
+            }
+            globals.setPanning();
+        }
+    }
     
     function drawSVG(svgData, rotation, positionX, positionY, scale=1, offsetX = 0, offsetY = 0) {
         drawContext.save();
