@@ -606,6 +606,7 @@ class PositionableElement {
     svg = null;
     
     drawRadius = vars.canvasRad;
+    drawSize = 10;
     drawSpaceOnCanvas = new Rectangle(0, 0, 2 * this.drawRadius, 2 * this.drawRadius);
     hoveredOver = false;
     isBeingDragged = false;
@@ -625,21 +626,23 @@ class PositionableElement {
         this.getAngleFunction = getAngleFunction;
         this.updateDrawingVariables();
         
-        console.log(svg);
+        // console.log(svg);
         if(svg != null) {
             this.loadSVG(svg);
         }
     }
     
-    loadSVG(svg) {
+    loadSVG(svg, size=10) {
+        this.drawSize = size;
         this.svg = [];
+        
+        // FIND OUT SIZE OF SVG
         var svgElem = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svgElem.setAttribute("id", "test");
         svgElem.setAttribute("width", 200);
         svgElem.setAttribute("height", 200);
         svgElem.setAttribute("style", "position:absolute;top:100%;");
         
-        // FIND OUT SIZE OF SVG
         var x = 1000000000000;
         var y = 1000000000000;
         var endx = 0; 
@@ -647,37 +650,60 @@ class PositionableElement {
         
         var pathElem = [];
         for(var i = 0; i < svg.length; i++) {
-            this.svg[i] = new Path2D(svg[i]);
             pathElem[i] = document.createElementNS("http://www.w3.org/2000/svg", "path");
             pathElem[i].setAttribute("d", svg[i]);
-            console.log(pathElem);
             svgElem.appendChild(pathElem[i]);
         }
         document.getElementsByTagName("body")[0].appendChild(svgElem);
-        var bboxes = document.getElementById("test").children;
+        const bboxes = document.getElementById("test").children;
         for(var i = 0; i < svg.length; i++) {
-            var box = bboxes[i].getBBox();
+            const box = bboxes[i].getBBox();
             x = Math.min(x, box.x);
             y = Math.min(y, box.y);
-            var newendx = box.x + box.width;
-            var newendy = box.y + box.height;
-            endx = Math.max(newendx, endx);
-            endy = Math.max(newendy, endy);
+            endx = Math.max(box.x + box.width, endx);
+            endy = Math.max(box.y + box.height, endy);
         }
         const width = endx - x;
         const height = endy - y;
         
-        console.log(x, y, endx, endy);
+        document.getElementsByTagName("body")[0].removeChild(svgElem);
+        // SIZE OF SVG FOUND
         
+        // NORMALIZE SVG TO 1
         var newSvg = [];
         for(var i = 0; i < svg.length; i++) {
+            // split svg by spaces
             var splitsvgpart = svg[i].split(" ");
-            for(var j = 1; j < 3; j++) {
-                splitsvgpart[j] = ( parseFloat( splitsvgpart[j] ) - x - 0.5 * width ) / (0.5 * width);
-            }
-            for(var j = 3; j < splitsvgpart.length; j++) {
-                if(!isNaN(splitsvgpart[j])) { // if is number
-                    splitsvgpart[j] = parseFloat(splitsvgpart[j]) / (0.5 * width);
+            
+            var isRelative = false;         // uppercase or lowercase svg (M/m)
+            var elementsToBypass = [];      // indices to non-normalizable 
+            var isX = true;                 // x or y coord flag
+            
+            for(var j = 0; j < splitsvgpart.length; j++) {
+                // if not supposed to be bypassed
+                if(!elementsToBypass.includes(j)) {
+                    // if is number
+                    if(!isNaN(splitsvgpart[j])) 
+                    { 
+                        if(isX) {
+                            splitsvgpart[j] = !isRelative ? ( parseFloat( splitsvgpart[j] ) - x - 0.5 * width ) / (0.5 * width) : parseFloat(splitsvgpart[j]) / (0.5 * width);
+                        } else {
+                            splitsvgpart[j] = !isRelative ? ( parseFloat( splitsvgpart[j] ) - y - 0.5 * height ) / (0.5 * width) : parseFloat(splitsvgpart[j]) / (0.5 * width);
+                        }
+                        
+                        isX = !isX;
+                        splitsvgpart[j] = parseFloat(splitsvgpart[j].toFixed(2));   // reduce decimal points
+                    } 
+                    else 
+                    {
+                        isRelative = splitsvgpart[j] == splitsvgpart[j].toUpperCase() ? false : true;
+                        
+                        // detecting non-normalizable elements
+                        if(splitsvgpart[j] == "a") {
+                            for(var n = 3; n < 3+3; n++) 
+                                elementsToBypass.push(j+n);
+                        }
+                    }
                 }
             }
             
@@ -686,14 +712,10 @@ class PositionableElement {
                 newSvg[i] += splitsvgpart[j] + " ";
             }
         }
-        console.log( newSvg );
         
         for(var i = 0; i < svg.length; i++) {
             this.svg[i] = new Path2D(newSvg[i]);
         }
-        
-        window.svgs = bboxes;
-        
     }
     
     updateDrawingVariables() {
@@ -732,18 +754,13 @@ class PositionableElement {
     
     draw() {
         if(this.svg != null) {
-            // console.log("test");
-            /*
-            if(this.hoveredOver) {
-                drawContext.stroke();
-                drawPath( this.svg, this.getAngleFunction(), this.drawSpaceOnCanvas.x + 74, this.drawSpaceOnCanvas.y + 70, 0.05, -128, -128);
-            } else {
-                 drawPath( this.svg, this.getAngleFunction(), this.drawSpaceOnCanvas.x + 74, this.drawSpaceOnCanvas.y + 72, 0.043, -110, -110);
-            }*/
-            drawPath( this.svg, this.getAngleFunction(), this.drawSpaceOnCanvas.x + 0.5 * this.drawSpaceOnCanvas.w, this.drawSpaceOnCanvas.y + 0.5 * this.drawSpaceOnCanvas.h, 10 * vars.RAD * vars.canvasToWindowMultX);
+            drawPath( this.svg, this.getAngleFunction(), this.drawSpaceOnCanvas.x + 0.5 * this.drawSpaceOnCanvas.w, this.drawSpaceOnCanvas.y + 0.5 * this.drawSpaceOnCanvas.h, (this.hoveredOver ? 1.2 : 1) * this.drawSize * vars.DIAM * vars.windowTocanvasMultX);
         } else {
+            drawContext.beginPath();
+            drawContext.rect(this.drawSpaceOnCanvas.x, this.drawSpaceOnCanvas.y, this.drawSpaceOnCanvas.w, this.drawSpaceOnCanvas.h);
+            drawContext.stroke();
         }
-    }
+    }   
     get drawSpace() { return this.drawSpaceOnCanvas; } 
     get hovered() { return this.hoveredOver; }
 };
@@ -801,10 +818,14 @@ class PositionableElementsContainer {
     // draw()
     getDrawSpace(i) { return this.positionableElements[i].drawSpace; }
     isHovered(i) { return this.positionableElements[i].hovered; }
+    setDrawSize(i, size) { this.positionableElements[i].drawSize = size; }
     draw() {
         for(var i = 0; i < this.positionableElements.length; i++) {
             this.positionableElements[i].draw();
         }
+    }
+    drawElement(i) {
+        this.positionableElements[i].draw();
     }
 }
 
@@ -1191,8 +1212,8 @@ function setupDrawingFunctions()
         (newPosition)=>{ audioListener.setListenerPosition(newPosition[0], audioListener.listenerPosition[1], newPosition[1]); }
         , ()=>{ return [audioListener.x, audioListener.z]; }
         , ()=>{ return audioListener.horizontalAngle; } 
-        , [/*"M 2454 3791 c -21 -34 -48 -64 -59 -66 -11 -3 -48 -9 -83 -15 -284 -49 -563 -237 -737 -499 -59 -89 -154 -285 -155 -318 0 -7 -11 -13 -24 -13 -18 0 -27 -8 -35 -30 -6 -20 -17 -30 -30 -30 -49 0 -81 -110 -81 -279 1 -145 26 -248 67 -266 15 -6 23 -21 28 -54 10 -65 61 -214 102 -296 157 -313 425 -536 755 -627 76 -21 104 -23 318 -23 214 0 242 2 318 23 330 91 598 314 755 627 41 82 92 231 102 296 5 33 13 48 28 54 78 35 93 409 21 523 -8 12 -24 22 -35 22 -13 0 -24 10 -30 30 -9 23 -17 30 -37 30 -25 0 -30 9 -65 99 -147 386 -494 672 -892 736 -85 14 -92 17 -120 52 -16 20 -39 48 -51 61 l -20 25 -40 -62 z m 178 -146 c 308 -41 584 -210 751 -462 94 -141 177 -353 193 -488 l6 -53 -48 -10 c -27 -6 -112 -20 -189 -33 l -141 -22 -314 130 -315 130 -3 -749 -2 -748 -50 0 -50 0 -2 748 -3 749 -314 -130 -315 -130 -110 17 c -61 10 -149 25 -195 33 l -83 16 6 52 c 16 135 100 347 193 488 165 248 443 421 742 462 125 17 119 17 243 0 z"
-        ,*/ "M 2084 3309 c -41 -45 -15 -159 36 -159 31 0 55 39 55 90 0 51 -24 90 -55 90 -9 0 -25 -9 -36 -21 z"
+        , ["M 2454 3791 c -21 -34 -48 -64 -59 -66 -11 -3 -48 -9 -83 -15 -284 -49 -563 -237 -737 -499 -59 -89 -154 -285 -155 -318 0 -7 -11 -13 -24 -13 -18 0 -27 -8 -35 -30 -6 -20 -17 -30 -30 -30 -49 0 -81 -110 -81 -279 1 -145 26 -248 67 -266 15 -6 23 -21 28 -54 10 -65 61 -214 102 -296 157 -313 425 -536 755 -627 76 -21 104 -23 318 -23 214 0 242 2 318 23 330 91 598 314 755 627 41 82 92 231 102 296 5 33 13 48 28 54 78 35 93 409 21 523 -8 12 -24 22 -35 22 -13 0 -24 10 -30 30 -9 23 -17 30 -37 30 -25 0 -30 9 -65 99 -147 386 -494 672 -892 736 -85 14 -92 17 -120 52 -16 20 -39 48 -51 61 l -20 25 -40 -62 z m 178 -146 c 308 -41 584 -210 751 -462 94 -141 177 -353 193 -488 l 6 -53 -48 -10 c -27 -6 -112 -20 -189 -33 l -141 -22 -314 130 -315 130 -3 -749 -2 -748 -50 0 -50 0 -2 748 -3 749 -314 -130 -315 -130 -110 17 c -61 10 -149 25 -195 33 l -83 16 6 52 c 16 135 100 347 193 488 165 248 443 421 742 462 125 17 119 17 243 0"
+        , "M 2084 3309 c -41 -45 -15 -159 36 -159 31 0 55 39 55 90 0 51 -24 90 -55 90 -9 0 -25 -9 -36 -21"
         , "M 2844 3309 c -41 -45 -15 -159 36 -159 31 0 55 39 55 90 0 51 -24 90 -55 90 -9 0 -25 -9 -36 -21 z"]
     );
     for(var i = 0; i < NUM_FILES; i++) {
@@ -1204,11 +1225,20 @@ function setupDrawingFunctions()
                     panner[i].hg_staticPosX = staticPosition[0];
                     panner[i].hg_staticPosZ = staticPosition[1];
                 }
-            }(i), 
-            function(i) {
+            }(i) 
+            , function(i) {
                 return ()=>{ return[panner[i].positionX, panner[i].positionZ]; }
             }(i)
+            , function(i) {
+                return ()=>{ return panner[i].hg_angle; }
+            }(i)
+            // wikimedia svg: https://upload.wikimedia.org/wikipedia/commons/2/21/Speaker_Icon.svg
+            , ["M 39.389 13.769 L 22.235 28.606 L 6 28.606 L 6 47.699 L 21.989 47.699 L 39.389 62.75 L 39.389 13.769 z"
+            , "M 48 27.6 a 19.5 19.5 0 0 1 0 21.4"
+            , "M 55.1 20.5 a 30 30 0 0 1 0 35.6"
+            , "M 61.6 14 a 38.8 38.8 0 0 1 0 48.6"]
         );
+        positionableElements.setDrawSize(i+1, 8);
     }
     
     //----------------------------------------------------------------------------//
@@ -1400,10 +1430,7 @@ function setupDrawingFunctions()
         }
         
         // draw all elements
-        if(vars.drawMode == 0) {
-            // draw track gain meters
-            
-            // constants
+        if(vars.drawMode == 0) {    // draw track gain meters
             const bottombar = Math.max(vars.drawSpaceCanvas.h / 12, 20);
             const height = vars.drawSpaceCanvas.h - bottombar;
             const widthPerElement = vars.drawSpaceCanvas.w / NUM_FILES;
@@ -1411,8 +1438,7 @@ function setupDrawingFunctions()
             for(var i = 0; i < NUM_FILES; i++) 
             {
                 log(average[i], 1);
-                // audio specific constants
-            const audioEl = tracks.getAudioTrack(i);
+                const audioEl = tracks.getAudioTrack(i);
                 const currentTime = convertElapsedTime(audioEl.currentTime);
                 const x = i * widthPerElement;
                 
@@ -1461,33 +1487,30 @@ function setupDrawingFunctions()
             drawContext.lineTo(vars.drawSpaceCanvas.w, vars.canvasYMid);
             drawContext.stroke();
             
+            // draw elements
+            for(var i = 0; i < positionableElements.positionableElements.length; i++) {
+                if(i == 0) {
+                    drawContext.fillStyle = "rgba(120, 120, 120, 0.9)";
+                    drawContext.lineWidth = 5;
+                } else {
+                    drawContext.fillStyle = colorFromAmplitude(average[i-1], 0.5);
+                }
+            
+                positionableElements.drawElement(i);
+            }
+            
+            // draw speaker numbers
             for(var i = 0; i < NUM_FILES; i++) {
-                drawContext.beginPath();
-                const SPEAKER_ANGLE = panner[i].hg_angle;
-                const speakerXMid = vars.canvasXMid + vars.positionToCanvasMultX * panner[i].hg_radius * Math.cos(SPEAKER_ANGLE);
-                const speakerYMid = vars.canvasYMid + vars.positionToCanvasMultY * panner[i].hg_radius * Math.sin(SPEAKER_ANGLE);
-                
-                drawContext.fillStyle = colorFromAmplitude(average[i], 0.5);
-                // wikimedia svg: https://upload.wikimedia.org/wikipedia/commons/2/21/Speaker_Icon.svg
-                drawSVG(["M48,27.6a19.5,19.5 0 0 1 0,21.4M55.1,20.5a30,30 0 0 1 0,35.6M61.6,14a38.8,38.8 0 0 1 0,48.6", "M39.389,13.769 L22.235,28.606 L6,28.606 L6,47.699 L21.989,47.699 L39.389,62.75 L39.389,13.769z"], SPEAKER_ANGLE, speakerXMid, speakerYMid, 1.4, -43, -43);
-
+                const drawSpace = positionableElements.getDrawSpace(i+1);
+                const speakerXMid = drawSpace.x + 0.5 * drawSpace.w;
+                const speakerYMid = drawSpace.y + 0.5 * drawSpace.h;
                 drawContext.fillStyle = "rgb(0, 0, 0)";
                 drawContext.font = 'normal '+ vars.canvasRad  * 0.5 + 'px sans-serif'; 
                 drawContext.textAlign = 'center'; 
                 drawContext.fillText( i+1, speakerXMid - 0.5*vars.canvasRad, speakerYMid - 0.5*vars.canvasRad  );
-                
             }
-            
-            // draw listener position
-            drawContext.beginPath();
-            const listenerIsHovered = positionableElements.isHovered(0);
-            const sizeMult = listenerIsHovered ? 1.15 : 1;
-            drawContext.fillStyle = "rgba(120, 120, 120, 0.9)";
-            drawContext.lineWidth = 5;
-            
-            positionableElements.draw();
         }   
-        
+                
         // autorotate
         if(false) {
             var panControl = document.querySelector('[data-action="pan"]');
