@@ -50,7 +50,7 @@
         <link href="css/bootstrap.min.css" rel="stylesheet">
         <link href="css/style.css" rel="stylesheet">
         <link href="css/customStyle.css" rel="stylesheet">
-        <!--<link href="circularslider/circularslider.css" rel="stylesheet">-->
+        <link href="circularslider/circularslider.css" rel="stylesheet">
         
         <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script>
         
@@ -96,7 +96,7 @@
     <body>
         <div id="loading screen" style="position:relative; z-index:1;">
             <p style="margin-top:10vw;font-size:4vw;text-align:center">loading resources</p>
-            <p id="loading-text" style="margin-top: 7vw;font-size:2.2vw;text-align:center;padding:7wh">waiting for server...</p>
+            <p id="loading-text" style="margin-top: 7vw;font-size:2.2vw;text-align:center;padding:7wh;overflow:auto;height:50vh;">waiting for server...</p>
         </div>
         
         <?php

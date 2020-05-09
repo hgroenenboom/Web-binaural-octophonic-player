@@ -17,13 +17,13 @@
     width: 25px;
     height: 25px;
     cursor: pointer;
-    background: #4CAF50;
+    background: #000/*#4CAF50;*/
     border-radius: 50%;
 }
 .circular-slider::-moz-range-thumb {
     width: 25px;
     height: 25px;
     cursor: pointer;
-    background: #4CAF50;
+    background: #000;
     border-radius: 50%;
 }

@@ -266,6 +266,8 @@ class PreloadedAudioNode {
     audioBuffer = null;
     loglevel = 1;
     connectedNodes = [];
+    fileExists = null;
+    fileURL = null;
     
     reloadBufferSource() {
         this.source = audioContext.createBufferSource(); // creates a sound source
@@ -291,12 +293,7 @@ class PreloadedAudioNode {
     get node() { return source; }
     get duration() { return this.audioBuffer.duration; } 
     get currentTime() { 
-        var time;
-        if(this.paused) {
-            time = this.pausedAt / 1000;
-        } else {
-            time = (Date.now() - this.startedAt) / 1000;
-        }
+        var time = this.paused ? this.pausedAt / 1000 : (Date.now() - this.startedAt) / 1000;
         return time > this.duration ? 0 : time;
     }
 
@@ -304,44 +301,49 @@ class PreloadedAudioNode {
     fileSize = 0;
     
     loadSound(url, callback, loadingCallback = null) {
+      this.fileURL = url;
       var request = new XMLHttpRequest();
       request.open('GET', url, true);
       request.responseType = 'arraybuffer';
       
+      // pointer to this object
       var thisclass = this;
       
       // Decode asynchronously
       request.onreadystatechange = function() {
+        thisclass.fileExists = this.status === 404 ? false : true;
         if(request.readyState == 2) {
-            var headers = request.getAllResponseHeaders().split('\r\n').reduce((result, current) => {
+            const headers = request.getAllResponseHeaders().split('\r\n').reduce((result, current) => {
                 let [name, value] = current.split(': ');
                 result[name] = value;
                 return result;
               }, {});
-            
             thisclass.fileSize = parseInt(headers['content-length']);
         }
       }
       request.onload = function() {
-        var audioData = request.response;
-        
-        audioContext.decodeAudioData(audioData, function(buffer) {
-            thisclass.audioBuffer = buffer;
-            thisclass.reloadBufferSource();
+        thisclass.fileExists = this.status === 404 ? false : true;
+        if (thisclass.fileExists) {
+            var audioData = request.response;
+            
+            audioContext.decodeAudioData(audioData, function(buffer) {
+                thisclass.audioBuffer = buffer;
+                thisclass.reloadBufferSource();
 
-            log("PreloadedAudioNode, calling callback", thisclass.loglevel);
-            if(typeof callback == "function") {
-                callback();
-            } else {
-                console.error("callback is not a function");
-            }
-        }, ()=>{console.log("error")});
+                log("PreloadedAudioNode, calling callback", thisclass.loglevel);
+                if(typeof callback == "function") {
+                    callback();
+                } else {
+                    console.error("callback is not a function");
+                }
+            }, ()=>{console.log("error")});
+        }
       }
       request.onprogress = function(e) {
+        thisclass.fileExists = this.status === 404 ? false : true;
         if (e.lengthComputable) {
             thisclass.loadingProgress = e.loaded / e.total;
         }
-        // console.log(this.loadingProgress);
         if(typeof loadingCallback == "function") {
             loadingCallback();
         }
@@ -431,14 +433,24 @@ class MultiPreloadedAudioNodes {
     }
     progressReporter(nodes, elementToReportTo) {
         var total = 0;
+        var size = 0;
+        var allFilesValid = true;
         for(var i = 0; i < nodes.length; i++) {
             total += nodes[i].loadingProgress;
-        }
-        var size = 0;
-        for(var i = 0; i < nodes.length; i++) {
             size += nodes[i].fileSize;
+            if(nodes[i].fileExists == false) {
+                allFilesValid = false;
+            }
         }
-        var loadingProgress = "" + parseInt(100 * (total / nodes.length))+"% of " + bytesToAbrieviatedSize(size);
+        
+        var loadingProgress = allFilesValid ? "" + parseInt(100 * (total / nodes.length))+"% of " + bytesToAbrieviatedSize(size) : "";
+        if(allFilesValid == false) {            
+            for(var i = 0; i < nodes.length; i++) {
+                if(nodes[i].fileExists == false) {
+                    loadingProgress += "File '" + nodes[i].fileURL + "' not found!<br>";
+                }
+            }
+        }
         elementToReportTo.innerHTML = loadingProgress;
     }
     
@@ -563,7 +575,7 @@ class BinauralPanner {
 
 class PositionableElement {
     drawRadius = vars.canvasRad;
-    drawSpaceOnCanvas = new Rectangle(0, 0, 2*drawRadius, 2*drawRadius);
+    drawSpaceOnCanvas = new Rectangle(0, 0, 2 * this.drawRadius, 2 * this.drawRadius);
     hoveredOver = false;
     isBeingDragged = false;
     
@@ -578,7 +590,7 @@ class PositionableElement {
     constructor(setPositionFromCanvasFunction, getPositionFromElementFunction) {
         this.setPositionFromCanvasFunction = setPositionFromCanvasFunction;
         this.getPositionFromElementFunction = getPositionFromElementFunction;
-        updateDrawingVariables();
+        this.updateDrawingVariables();
     }
     
     // when should this be called?
@@ -596,24 +608,33 @@ class PositionableElement {
     mouseMove(mousePos) {
         this.hoveredOver = vars.isBeingDragged == true || vars.drawSpaceOnCanvas.isInside( mousePos[0], mousePos[1] );
     }
-    mouseDrag(dragDistance) {
-    }
-    mouseDown(mousePos) {
-        this.isBeingDragged =  this.drawSpaceCanvas.isInside(mousePos[0], mousePos[1]);
+    mouseDrag(dragDistanceOnCanvas) {
         if(this.isBeingDragged) {
-            var pos = this.getPositionFromElementFunction();
+            const xy = [ this.elementPositionOnMouseDown[0] + dragDistanceOnCanvas[0], this.elementPositionOnMouseDown[1] + dragDistanceOnCanvas[1] ];
+            this.setPositionFromCanvasFunction(xy);
+        }
+    }
+    mouseDown(mousePosOnCanvas) {
+        this.isBeingDragged =  this.drawSpaceCanvas.isInside(mousePosOnCanvas[0], mousePosOnCanvas[1]);
+        if(this.isBeingDragged) {
+            const pos = this.getPositionFromElementFunction();
             this.elementPositionOnMouseDown[0] = pos[0];
             this.elementPositionOnMouseDown[1] = pos[1];
         }
+        return this.isBeingDragged;
     }
-    mouseUp() {
-        this.isBeingDragged = false;
-    }
+    mouseUp() { this.isBeingDragged = false; }
+    touchEnd() { this.hoverListener = false; }
     
     // future work -> draws it's own SVG -> also keeps track of SVG drawing size and rotation.
     // drawElement() {
     // }
 };
+
+var positionableElements = new PositionableElement(
+    (newPosition)=>{ console.log(newPosition); }, 
+    ()=>{ return[0, 0]; }
+);
 
 
 
@@ -1142,6 +1163,7 @@ function setupDrawingFunctions()
                     vars.speakerPositionZOnMouseDown[i] = panner[i].positionZ;
                 }
             }
+            // listener direction
             if(!vars.listenerIsBeingDragged && !vars.aSpeakerIsAlreadyBeingDragged) {
                 var x = vars.windowTocanvasMultX * vars.windowMouseDownX - ( vars.listenerPositionCanvas.x + 0.5 * vars.listenerPositionCanvas.w );
                 var z = vars.windowTocanvasMultX * vars.windowMouseDownY - ( vars.listenerPositionCanvas.y + 0.5 * vars.listenerPositionCanvas.h );
@@ -1152,12 +1174,12 @@ function setupDrawingFunctions()
 
     drawCanvas.addEventListener("touchmove", (e) => {
         e.preventDefault();
-        canvasDrag(e);
+        canvasMove(e);
     }, vars.hoverListener ? { passive:false } : { passive:true });
     drawCanvas.addEventListener("mousemove", (e) => {
-        canvasDrag(e);
+        canvasMove(e);
     }, false);
-    function canvasDrag(e) {
+    function canvasMove(e) {
         setDrawingVariables();
         vars.windowDragX = getEventX(e) - drawCanvas.offsetLeft;
         vars.windowDragY = getEventY(e) - drawCanvas.offsetTop;
