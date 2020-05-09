@@ -42,6 +42,7 @@ var tempgainNodes = USE_REVERB_NODES ? [] : null;
 const trackGainNode = audioContext.createGain();
 const masterGainNode = audioContext.createGain();
 
+var positionableElements = null;
 
 
 
@@ -569,9 +570,7 @@ class BinauralPanner {
     log() { console.log(this.info); }
 }
 
-/*-----------------------------------------------------------------------------------------------------------------*/
-/*---------------------------------------------  Testing       ----------------------------------------------------*/
-/*-----------------------------------------------------------------------------------------------------------------*/
+
 
 class PositionableElement {
     drawRadius = vars.canvasRad;
@@ -593,7 +592,6 @@ class PositionableElement {
         this.updateDrawingVariables();
     }
     
-    // when should this be called?
     updateDrawingVariables() {
         this.drawRadius = vars.canvasRad;    
         var posOnCanvas = this.getPositionFromElementFunction();
@@ -605,21 +603,23 @@ class PositionableElement {
         );
     }
     
-    mouseMove(mousePos) {
-        this.hoveredOver = vars.isBeingDragged == true || vars.drawSpaceOnCanvas.isInside( mousePos[0], mousePos[1] );
-    }
-    mouseDrag(dragDistanceOnCanvas) {
-        if(this.isBeingDragged) {
-            const xy = [ this.elementPositionOnMouseDown[0] + dragDistanceOnCanvas[0], this.elementPositionOnMouseDown[1] + dragDistanceOnCanvas[1] ];
-            this.setPositionFromCanvasFunction(xy);
-        }
+    mouseMove(mousePosOnCanvas) {
+        this.hoveredOver = this.isBeingDragged == true || this.drawSpaceOnCanvas.isInside( mousePosOnCanvas[0], mousePosOnCanvas[1] );
     }
     mouseDown(mousePosOnCanvas) {
-        this.isBeingDragged =  this.drawSpaceCanvas.isInside(mousePosOnCanvas[0], mousePosOnCanvas[1]);
+        this.isBeingDragged = this.drawSpaceOnCanvas.isInside(mousePosOnCanvas[0], mousePosOnCanvas[1]);
         if(this.isBeingDragged) {
             const pos = this.getPositionFromElementFunction();
             this.elementPositionOnMouseDown[0] = pos[0];
             this.elementPositionOnMouseDown[1] = pos[1];
+        }
+        return this.isBeingDragged;
+    }
+    mouseDrag(dragDistanceOnCanvas) {
+        console.assert(dragDistanceOnCanvas.length == 2);
+        if(this.isBeingDragged) {
+            const xy = [ this.elementPositionOnMouseDown[0] + dragDistanceOnCanvas[0], this.elementPositionOnMouseDown[1] + dragDistanceOnCanvas[1] ];
+            this.setPositionFromCanvasFunction(xy);
         }
         return this.isBeingDragged;
     }
@@ -631,10 +631,64 @@ class PositionableElement {
     // }
 };
 
-var positionableElements = new PositionableElement(
-    (newPosition)=>{ console.log(newPosition); }, 
-    ()=>{ return[0, 0]; }
-);
+
+
+
+class PositionableElementsContainer {
+    positionableElements = [];
+    
+    constructor() {};
+    
+    addElement(setPositionFromCanvasFunction, getPositionFromElementFunction) {
+        this.positionableElements[this.positionableElements.length] = new PositionableElement(setPositionFromCanvasFunction, getPositionFromElementFunction);
+        console.log(this.positionableElements);
+    }
+    
+    updateDrawingVariables() {
+        for(var i = 0; i < this.positionableElements.length; i++) {
+            this.positionableElements[i].updateDrawingVariables();
+        }
+    }
+    
+    mouseMove(mousePosOnCanvas) {
+        for(var i = 0; i < this.positionableElements.length; i++) {
+            this.positionableElements[i].mouseMove(mousePosOnCanvas);
+        }
+    }
+    mouseDown(mousePosOnCanvas) {
+        for(var i = 0; i < this.positionableElements.length; i++) {
+            if(this.positionableElements[i].mouseDown(mousePosOnCanvas)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    mouseDrag(dragDistanceOnCanvas) {
+        for(var i = 0; i < this.positionableElements.length; i++) {
+            if(this.positionableElements[i].mouseDrag(dragDistanceOnCanvas)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    mouseUp() {
+        for(var i = 0; i < this.positionableElements.length; i++) {
+            this.positionableElements[i].mouseUp();
+        }
+    }
+    touchEnd() {
+        for(var i = 0; i < this.positionableElements.length; i++) {
+            this.positionableElements[i].touchEnd();
+        }
+    }
+}
+
+
+
+/*-----------------------------------------------------------------------------------------------------------------*/
+/*---------------------------------------------  Testing       ----------------------------------------------------*/
+/*-----------------------------------------------------------------------------------------------------------------*/
+
 
 
 
@@ -713,6 +767,7 @@ function initNodes()
 
 function enableInteractions() 
 {
+    
     const trackVolumeControl = document.querySelector('[data-action="trackVolume"]');
     
     //-----------------------------------------------------------------------------------------------//
@@ -1006,6 +1061,27 @@ function connectAnalyzingNodes(startNodes)
 
 function setupDrawingFunctions() 
 {
+    positionableElements = new PositionableElementsContainer();
+    positionableElements.addElement(
+        (newPosition)=>{ audioListener.setListenerPosition(newPosition[0], audioListener.listenerPosition[1], newPosition[1]); }
+        , ()=>{ return [audioListener.x, audioListener.z]; }
+    );
+    for(var i = 0; i < NUM_FILES; i++) {
+        positionableElements.addElement(
+            function(i) {
+                return (newPosition)=>{ 
+                    panner[i].setPosition( newPosition[0], this.panner[i].positionY, newPosition[1] );
+                    var staticPosition = globals.fromRotatedPositionToStaticPosition(i);
+                    panner[i].hg_staticPosX = staticPosition[0];
+                    panner[i].hg_staticPosZ = staticPosition[1];
+                }
+            }(i), 
+            function(i) {
+                return ()=>{ return[panner[i].positionX, panner[i].positionZ]; }
+            }(i)
+        );
+    }
+    
     //----------------------------------------------------------------------------//
     // -------------------- ASSERT, PRIVATE FUNCTIONS & MAIN VARIABLES -----------//
     
@@ -1064,14 +1140,8 @@ function setupDrawingFunctions()
             vars.canvasDiam, 
             vars.canvasDiam
         );
-        for(var i = 0; i < NUM_FILES; i++) {
-            vars.speakerPositionCanvas[i] = new Rectangle( 
-                vars.canvasXMid + vars.positionToCanvasMultY * panner[i].positionX - vars.canvasRad, 
-                vars.canvasYMid + vars.positionToCanvasMultY * panner[i].positionZ - vars.canvasRad, 
-                vars.canvasDiam, 
-                vars.canvasDiam
-            );
-        }
+        
+        positionableElements.updateDrawingVariables();
         
         debugDrawingVariables(2);
     }
@@ -1090,8 +1160,6 @@ function setupDrawingFunctions()
             log("vars.positionToCanvasMultX: "+ vars.positionToCanvasMultX, debuglevel);
             log("vars.canvasRad: "+ vars.canvasRad, debuglevel);
             log("vars.canvasDiam: "+ vars.canvasDiam, debuglevel);
-            log("vars.listenerPositionCanvas: ", debuglevel);
-            log(vars.listenerPositionCanvas, debuglevel);
         }
     }
     setDrawingVariables();
@@ -1106,16 +1174,14 @@ function setupDrawingFunctions()
     function canvasMouseUp() {
         vars.isMouseDown = false;
         if(vars.drawMode == 1) {
-            vars.listenerIsBeingDragged = false;
-            for(var i = 0; i < NUM_FILES; i++) {
-                vars.speakerIsBeingDragged[i] = false;
-            }
+            positionableElements.mouseUp();
         }
     }
     drawCanvas.addEventListener("mouseup", (e) => { canvasMouseUp(); });
     drawCanvas.addEventListener("touchend", (e) => {
         e.preventDefault();
         canvasMouseUp();
+        positionableElements.touchEnd();
         vars.hoverListener = false;
     }, { passive:false });
    
@@ -1144,27 +1210,10 @@ function setupDrawingFunctions()
         if(vars.drawMode == 1) {
             const mousePositionCanvas = [vars.windowTocanvasMultX * vars.windowMouseDownX, vars.windowTocanvasMultY * vars.windowMouseDownY];
             
-            // check whether mouse down on listener (to drag the listener position)
-            if( vars.listenerPositionCanvas.isInside( mousePositionCanvas[0], mousePositionCanvas[1] ) ) {
-                vars.listenerIsBeingDragged = true;
-                
-                // save old listener position
-                vars.listenerXPositionOnMouseDown = audioListener.x;
-                vars.listenerZPositionOnMouseDown = audioListener.z;
-            }
-            vars.aSpeakerIsAlreadyBeingDragged = false;
-            for(var i = 0; i < NUM_FILES; i++) {
-                if( vars.speakerPositionCanvas[i].isInside( mousePositionCanvas[0], mousePositionCanvas[1]) && !vars.aSpeakerIsAlreadyBeingDragged ) {
-                    vars.speakerIsBeingDragged[i] = true;
-                    vars.aSpeakerIsAlreadyBeingDragged = true;
-                    
-                    // save old listener position
-                    vars.speakerPositionXOnMouseDown[i] = panner[i].positionX;
-                    vars.speakerPositionZOnMouseDown[i] = panner[i].positionZ;
-                }
-            }
+            var elementBeingDragged = positionableElements.mouseDown(mousePositionCanvas);
+            
             // listener direction
-            if(!vars.listenerIsBeingDragged && !vars.aSpeakerIsAlreadyBeingDragged) {
+            if(!elementBeingDragged) {
                 var x = vars.windowTocanvasMultX * vars.windowMouseDownX - ( vars.listenerPositionCanvas.x + 0.5 * vars.listenerPositionCanvas.w );
                 var z = vars.windowTocanvasMultX * vars.windowMouseDownY - ( vars.listenerPositionCanvas.y + 0.5 * vars.listenerPositionCanvas.h );
                 audioListener.setListenerDirection(x, 0, -z);
@@ -1184,39 +1233,30 @@ function setupDrawingFunctions()
         vars.windowDragX = getEventX(e) - drawCanvas.offsetLeft;
         vars.windowDragY = getEventY(e) - drawCanvas.offsetTop;
         
-        vars.hoverListener = (vars.listenerIsBeingDragged == true || vars.listenerPositionCanvas.isInside( vars.windowTocanvasMultX * vars.windowDragX, vars.windowTocanvasMultY * vars.windowDragY ) );
+        // vars.hoverListener = (vars.listenerIsBeingDragged == true || vars.listenerPositionCanvas.isInside( vars.windowTocanvasMultX * vars.windowDragX, vars.windowTocanvasMultY * vars.windowDragY ) );
         
-        if(vars.isMouseDown && vars.drawMode == 1) {
-            const canvasXDistanceFromDragStart = (vars.windowDragX - vars.windowMouseDownX) * vars.windowTocanvasMultX;
-            const canvasYDistanceFromDragStart = (vars.windowDragY - vars.windowMouseDownY) * vars.windowTocanvasMultX;
-            
-            // listener drag
-            if(vars.listenerIsBeingDragged == true) {
-                const xy = [vars.listenerXPositionOnMouseDown + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.listenerZPositionOnMouseDown + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ]
+        if(vars.drawMode == 1) {
+            if(vars.isMouseDown) 
+            {
+                const canvasXDistanceFromDragStart = (vars.windowDragX - vars.windowMouseDownX) * vars.windowTocanvasMultX;
+                const canvasYDistanceFromDragStart = (vars.windowDragY - vars.windowMouseDownY) * vars.windowTocanvasMultX;
+                const dragDistanceOnCanvas = [canvasXDistanceFromDragStart / vars.positionToCanvasMultX, canvasYDistanceFromDragStart / vars.positionToCanvasMultY];
                 
-                audioListener.setListenerPosition(xy[0], audioListener.listenerPosition[1], xy[1]);
-            }
-            // speaker drag
-            if(!vars.listenerIsBeingDragged) {
-                for(var i = 0; i < NUM_FILES; i++) {
-                    if(vars.speakerIsBeingDragged[i] == true) {
-                        const xy = [vars.speakerPositionXOnMouseDown[i] + canvasXDistanceFromDragStart / vars.positionToCanvasMultX, vars.speakerPositionZOnMouseDown[i] + canvasYDistanceFromDragStart / vars.positionToCanvasMultY ];
-                        
-                        panner[i].setPosition( xy[0], this.panner[i].positionY, xy[1] );
-                        staticPosition = globals.fromRotatedPositionToStaticPosition(i);
-                        panner[i].hg_staticPosX = staticPosition[0];
-                        panner[i].hg_staticPosZ = staticPosition[1];
-                    }
+                var elementIsBeingDragged = positionableElements.mouseDrag( dragDistanceOnCanvas );
+                
+                // listener direction
+                if(!elementIsBeingDragged) {
+                    var x = vars.windowTocanvasMultX * vars.windowDragX - ( vars.listenerPositionCanvas.x + 0.5 * vars.listenerPositionCanvas.w );
+                    var z = vars.windowTocanvasMultX * vars.windowDragY - ( vars.listenerPositionCanvas.y + 0.5 * vars.listenerPositionCanvas.h );
+                    audioListener.setListenerDirection(x, 0, -z);
                 }
+                globals.setPanning();
+            } 
+            else 
+            {
+                const mousePosOnCanvas = [vars.windowTocanvasMultX * vars.windowDragX, vars.windowTocanvasMultY * vars.windowDragY];
+                positionableElements.mouseMove(mousePosOnCanvas);
             }
-            
-            // listener direction
-            if(!vars.listenerIsBeingDragged && !vars.aSpeakerIsAlreadyBeingDragged) {
-                var x = vars.windowTocanvasMultX * vars.windowDragX - ( vars.listenerPositionCanvas.x + 0.5 * vars.listenerPositionCanvas.w );
-                var z = vars.windowTocanvasMultX * vars.windowDragY - ( vars.listenerPositionCanvas.y + 0.5 * vars.listenerPositionCanvas.h );
-                audioListener.setListenerDirection(x, 0, -z);
-            }
-            globals.setPanning();
         }
     }
     
