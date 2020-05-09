@@ -42,7 +42,10 @@ var tempgainNodes = USE_REVERB_NODES ? [] : null;
 const trackGainNode = audioContext.createGain();
 const masterGainNode = audioContext.createGain();
 
+// drawing
 var positionableElements = null;
+const drawContext = document.getElementById("canvas").getContext("2d");
+const drawCanvas = document.getElementById("canvas");
 
 
 
@@ -81,7 +84,34 @@ class DrawingVariables {
 // !!! extra variables will be dynamicly added to this object
 vars = new DrawingVariables();
 
-
+function drawSVG(svgData, rotation, positionX, positionY, scale=1, offsetX = 0, offsetY = 0) {
+    drawContext.save();
+    drawContext.translate(positionX, positionY);
+    drawContext.rotate( Math.PI + rotation );
+    drawContext.translate(offsetX, offsetY);
+    drawContext.scale(scale, scale);
+            
+    for(var i = 0; i < svgData.length; i++) {
+        var path = new Path2D(svgData[i]);
+        // console.log(path);
+        drawContext.fill(path);
+    }
+    
+    drawContext.restore();
+}
+function drawPath(path, rotation, positionX, positionY, scale=1, offsetX = 0, offsetY = 0) {
+    drawContext.save();
+    drawContext.translate(positionX, positionY);
+    drawContext.rotate( Math.PI + rotation );
+    drawContext.translate(offsetX, offsetY);
+    drawContext.scale(scale, scale);
+            
+    for(var i = 0; i < path.length; i++) {
+        drawContext.fill(path[i]);
+    }
+    
+    drawContext.restore();
+}
 
 // empty container for functions that should be globally available
 class GlobalFunctions {
@@ -573,6 +603,8 @@ class BinauralPanner {
 
 
 class PositionableElement {
+    svg = null;
+    
     drawRadius = vars.canvasRad;
     drawSpaceOnCanvas = new Rectangle(0, 0, 2 * this.drawRadius, 2 * this.drawRadius);
     hoveredOver = false;
@@ -585,11 +617,83 @@ class PositionableElement {
     setPositionFromCanvasFunction = null;
     // function to get the drawPosition of the element
     getPositionFromElementFunction = null;
+    getAngleFunction = null;
     
-    constructor(setPositionFromCanvasFunction, getPositionFromElementFunction) {
+    constructor(setPositionFromCanvasFunction, getPositionFromElementFunction, getAngleFunction = null, svg = null) {
         this.setPositionFromCanvasFunction = setPositionFromCanvasFunction;
         this.getPositionFromElementFunction = getPositionFromElementFunction;
+        this.getAngleFunction = getAngleFunction;
         this.updateDrawingVariables();
+        
+        console.log(svg);
+        if(svg != null) {
+            this.loadSVG(svg);
+        }
+    }
+    
+    loadSVG(svg) {
+        this.svg = [];
+        var svgElem = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svgElem.setAttribute("id", "test");
+        svgElem.setAttribute("width", 200);
+        svgElem.setAttribute("height", 200);
+        svgElem.setAttribute("style", "position:absolute;top:100%;");
+        
+        // FIND OUT SIZE OF SVG
+        var x = 1000000000000;
+        var y = 1000000000000;
+        var endx = 0; 
+        var endy = 0;
+        
+        var pathElem = [];
+        for(var i = 0; i < svg.length; i++) {
+            this.svg[i] = new Path2D(svg[i]);
+            pathElem[i] = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            pathElem[i].setAttribute("d", svg[i]);
+            console.log(pathElem);
+            svgElem.appendChild(pathElem[i]);
+        }
+        document.getElementsByTagName("body")[0].appendChild(svgElem);
+        var bboxes = document.getElementById("test").children;
+        for(var i = 0; i < svg.length; i++) {
+            var box = bboxes[i].getBBox();
+            x = Math.min(x, box.x);
+            y = Math.min(y, box.y);
+            var newendx = box.x + box.width;
+            var newendy = box.y + box.height;
+            endx = Math.max(newendx, endx);
+            endy = Math.max(newendy, endy);
+        }
+        const width = endx - x;
+        const height = endy - y;
+        
+        console.log(x, y, endx, endy);
+        
+        var newSvg = [];
+        for(var i = 0; i < svg.length; i++) {
+            var splitsvgpart = svg[i].split(" ");
+            for(var j = 1; j < 3; j++) {
+                splitsvgpart[j] = ( parseFloat( splitsvgpart[j] ) - x - 0.5 * width ) / (0.5 * width);
+            }
+            for(var j = 3; j < splitsvgpart.length; j++) {
+                if(!isNaN(splitsvgpart[j])) { // if is number
+                    splitsvgpart[j] = parseFloat(splitsvgpart[j]) / (0.5 * width);
+                }
+            }
+            
+            newSvg[i] = "";
+            for(var j = 0; j < splitsvgpart.length; j++) {
+                newSvg[i] += splitsvgpart[j] + " ";
+            }
+        }
+        console.log( newSvg );
+        
+        for(var i = 0; i < svg.length; i++) {
+            this.svg[i] = new Path2D(newSvg[i]);
+        }
+        
+        window.svgs = bboxes;
+        
     }
     
     updateDrawingVariables() {
@@ -626,9 +730,20 @@ class PositionableElement {
     mouseUp() { this.isBeingDragged = false; }
     touchEnd() { this.hoveredOver = false; }
     
-    // future work -> draws it's own SVG -> also keeps track of SVG drawing size and rotation.
-    // drawElement() {
-    // }
+    draw() {
+        if(this.svg != null) {
+            // console.log("test");
+            /*
+            if(this.hoveredOver) {
+                drawContext.stroke();
+                drawPath( this.svg, this.getAngleFunction(), this.drawSpaceOnCanvas.x + 74, this.drawSpaceOnCanvas.y + 70, 0.05, -128, -128);
+            } else {
+                 drawPath( this.svg, this.getAngleFunction(), this.drawSpaceOnCanvas.x + 74, this.drawSpaceOnCanvas.y + 72, 0.043, -110, -110);
+            }*/
+            drawPath( this.svg, this.getAngleFunction(), this.drawSpaceOnCanvas.x + 0.5 * this.drawSpaceOnCanvas.w, this.drawSpaceOnCanvas.y + 0.5 * this.drawSpaceOnCanvas.h, 10 * vars.RAD * vars.canvasToWindowMultX);
+        } else {
+        }
+    }
     get drawSpace() { return this.drawSpaceOnCanvas; } 
     get hovered() { return this.hoveredOver; }
 };
@@ -641,9 +756,8 @@ class PositionableElementsContainer {
     
     constructor() {};
     
-    addElement(setPositionFromCanvasFunction, getPositionFromElementFunction) {
-        this.positionableElements[this.positionableElements.length] = new PositionableElement(setPositionFromCanvasFunction, getPositionFromElementFunction);
-        console.log(this.positionableElements);
+    addElement(setPositionFromCanvasFunction, getPositionFromElementFunction, getAngleFunction=null, svg=null) {
+        this.positionableElements[this.positionableElements.length] = new PositionableElement(setPositionFromCanvasFunction, getPositionFromElementFunction, getAngleFunction, svg);
     }
     
     updateDrawingVariables() {
@@ -687,6 +801,11 @@ class PositionableElementsContainer {
     // draw()
     getDrawSpace(i) { return this.positionableElements[i].drawSpace; }
     isHovered(i) { return this.positionableElements[i].hovered; }
+    draw() {
+        for(var i = 0; i < this.positionableElements.length; i++) {
+            this.positionableElements[i].draw();
+        }
+    }
 }
 
 
@@ -1071,6 +1190,10 @@ function setupDrawingFunctions()
     positionableElements.addElement(
         (newPosition)=>{ audioListener.setListenerPosition(newPosition[0], audioListener.listenerPosition[1], newPosition[1]); }
         , ()=>{ return [audioListener.x, audioListener.z]; }
+        , ()=>{ return audioListener.horizontalAngle; } 
+        , [/*"M 2454 3791 c -21 -34 -48 -64 -59 -66 -11 -3 -48 -9 -83 -15 -284 -49 -563 -237 -737 -499 -59 -89 -154 -285 -155 -318 0 -7 -11 -13 -24 -13 -18 0 -27 -8 -35 -30 -6 -20 -17 -30 -30 -30 -49 0 -81 -110 -81 -279 1 -145 26 -248 67 -266 15 -6 23 -21 28 -54 10 -65 61 -214 102 -296 157 -313 425 -536 755 -627 76 -21 104 -23 318 -23 214 0 242 2 318 23 330 91 598 314 755 627 41 82 92 231 102 296 5 33 13 48 28 54 78 35 93 409 21 523 -8 12 -24 22 -35 22 -13 0 -24 10 -30 30 -9 23 -17 30 -37 30 -25 0 -30 9 -65 99 -147 386 -494 672 -892 736 -85 14 -92 17 -120 52 -16 20 -39 48 -51 61 l -20 25 -40 -62 z m 178 -146 c 308 -41 584 -210 751 -462 94 -141 177 -353 193 -488 l6 -53 -48 -10 c -27 -6 -112 -20 -189 -33 l -141 -22 -314 130 -315 130 -3 -749 -2 -748 -50 0 -50 0 -2 748 -3 749 -314 -130 -315 -130 -110 17 c -61 10 -149 25 -195 33 l -83 16 6 52 c 16 135 100 347 193 488 165 248 443 421 742 462 125 17 119 17 243 0 z"
+        ,*/ "M 2084 3309 c -41 -45 -15 -159 36 -159 31 0 55 39 55 90 0 51 -24 90 -55 90 -9 0 -25 -9 -36 -21 z"
+        , "M 2844 3309 c -41 -45 -15 -159 36 -159 31 0 55 39 55 90 0 51 -24 90 -55 90 -9 0 -25 -9 -36 -21 z"]
     );
     for(var i = 0; i < NUM_FILES; i++) {
         positionableElements.addElement(
@@ -1091,9 +1214,6 @@ function setupDrawingFunctions()
     //----------------------------------------------------------------------------//
     // -------------------- ASSERT, PRIVATE FUNCTIONS & MAIN VARIABLES -----------//
     
-    var drawContext = document.getElementById("canvas").getContext("2d");
-    var drawCanvas = document.getElementById("canvas");
-
     // convert time to string
     function convertElapsedTime(inputSeconds) 
     {
@@ -1256,21 +1376,6 @@ function setupDrawingFunctions()
             }
         }
     }
-    
-    function drawSVG(svgData, rotation, positionX, positionY, scale=1, offsetX = 0, offsetY = 0) {
-        drawContext.save();
-        drawContext.translate(positionX, positionY);
-        drawContext.rotate( Math.PI + rotation );
-        drawContext.translate(offsetX, offsetY);
-        drawContext.scale(scale, scale);
-                
-        for(var i = 0; i < svgData.length; i++) {
-            var path = new Path2D(svgData[i]);
-            drawContext.fill(path);
-        }
-        
-        drawContext.restore();
-    }
 
     //----------------------------------------------------------------------------//
     // ------------------------ DRAWING THE CANVAS  ------------------------------//
@@ -1380,14 +1485,7 @@ function setupDrawingFunctions()
             drawContext.fillStyle = "rgba(120, 120, 120, 0.9)";
             drawContext.lineWidth = 5;
             
-            const svgHead = ["M2454 3791 c-21 -34 -48 -64 -59 -66 -11 -3 -48 -9 -83 -15 -284 -49 -563 -237 -737 -499 -59 -89 -154 -285 -155 -318 0 -7 -11 -13 -24 -13 -18 0 -27 -8 -35 -30 -6 -20 -17 -30 -30 -30 -49 0 -81 -110 -81 -279 1 -145 26 -248 67 -266 15 -6 23 -21 28 -54 10 -65 61 -214 102 -296 157 -313 425 -536 755 -627 76 -21 104 -23 318 -23 214 0 242 2 318 23 330 91 598 314 755 627 41 82 92 231 102 296 5 33 13 48 28 54 78 35 93 409 21 523 -8 12 -24 22 -35 22 -13 0 -24 10 -30 30 -9 23 -17 30 -37 30 -25 0 -30 9 -65 99 -147 386 -494 672 -892 736 -85 14 -92 17 -120 52 -16 20 -39 48 -51 61 l-20 25 -40 -62z m178 -146 c308 -41 584 -210 751 -462 94 -141 177 -353 193 -488 l6 -53 -48 -10 c-27 -6 -112 -20 -189 -33 l-141 -22 -314 130 -315 130 -3 -749 -2 -748 -50 0 -50 0 -2 748 -3 749 -314 -130 -315 -130 -110 17 c-61 10 -149 25 -195 33 l-83 16 6 52 c16 135 100 347 193 488 165 248 443 421 742 462 125 17 119 17 243 0z", "M2084 3309 c-41 -45 -15 -159 36 -159 31 0 55 39 55 90 0 51 -24 90 -55 90 -9 0 -25 -9 -36 -21z", "M2844 3309 c-41 -45 -15 -159 36 -159 31 0 55 39 55 90 0 51 -24 90 -55 90 -9 0 -25 -9 -36 -21z"];
-            const listenerPositionCanvas = positionableElements.getDrawSpace(0);
-            if(listenerIsHovered) {
-                drawSVG( svgHead, audioListener.horizontalAngle, listenerPositionCanvas.x + 74, listenerPositionCanvas.y + 70, 0.05, -128, -128);
-                drawContext.stroke();
-            } else {
-                drawSVG( svgHead, audioListener.horizontalAngle, listenerPositionCanvas.x + 74, listenerPositionCanvas.y + 72, 0.043, -110, -110);
-            }
+            positionableElements.draw();
         }   
         
         // autorotate
