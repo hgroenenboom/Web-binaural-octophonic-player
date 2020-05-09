@@ -958,7 +958,7 @@ function enableInteractions()
         else if (playButton.dataset.playing === 'true') 
         {
             tracks.stopAll();
-            audioContext.suspend();
+            // audioContext.suspend();
             log("supsended audio context");
             playButton.dataset.playing = 'false';
         }
@@ -1004,11 +1004,9 @@ function setupPanningNodes()
             // set to point speakers in direction of center
             const angleX = - speakerX / speakerR;
             const angleZ = - speakerZ / speakerR;
-            panner[i].setOrientation(             angleX, 0, angleZ);
-            
+            panner[i].setOrientation(angleX, 0, angleZ);
             if(USE_REVERB_NODES) {
-                panner[NUM_FILES+i].setPosition(speakerX, panner[i].positionY, speakerZ);
-                panner[NUM_FILES + i].setOrientation( angleX, 0, angleZ);
+                panner[NUM_FILES+i].setOrientation( angleX, 0, angleZ);
             }
 
             panner[i].hg_angle = (angle + speakerAngle) % (2 * Math.PI);
@@ -1035,6 +1033,12 @@ function setupPanningNodes()
             panner[i].hg_angle = (angle + i * toAdd) % (2 * Math.PI);
             panner[i].hg_radius = 0.5 * SPEAKER_DIST;
             log("panner:\tx: "+panner[i].positionX +" \t z: "+panner[i].positionZ , 2); 
+            
+            if(USE_REVERB_NODES) {
+                const reverbX = vars.R_EXTRA_VIEW_RADIUS * 1.5 * SPEAKER_DIST * 0.5 * ( Math.cos ( angle + i * toAdd ) );
+                const reverbZ = vars.R_EXTRA_VIEW_RADIUS * 1.5 * SPEAKER_DIST * 0.5 * ( Math.sin ( angle + i * toAdd ) );
+                panner[NUM_FILES+i].setPosition(reverbX, panner[i].positionY, reverbZ);
+            }
         }
     }
     
