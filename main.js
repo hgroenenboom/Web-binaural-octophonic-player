@@ -1035,8 +1035,8 @@ function setupPanningNodes()
             log("panner:\tx: "+panner[i].positionX +" \t z: "+panner[i].positionZ , 2); 
             
             if(USE_REVERB_NODES) {
-                const reverbX = vars.R_EXTRA_VIEW_RADIUS * 1.5 * SPEAKER_DIST * 0.5 * ( Math.cos ( angle + i * toAdd ) );
-                const reverbZ = vars.R_EXTRA_VIEW_RADIUS * 1.5 * SPEAKER_DIST * 0.5 * ( Math.sin ( angle + i * toAdd ) );
+                const reverbX = vars.R_EXTRA_VIEW_RADIUS * 2.5 * SPEAKER_DIST * 0.5 * ( Math.cos ( angle + i * toAdd ) );
+                const reverbZ = vars.R_EXTRA_VIEW_RADIUS * 2.5 * SPEAKER_DIST * 0.5 * ( Math.sin ( angle + i * toAdd ) );
                 panner[NUM_FILES+i].setPosition(reverbX, panner[i].positionY, reverbZ);
             }
         }
@@ -1123,7 +1123,7 @@ function setupReverbNodes(inputNodes, endNode)
         //----------------------------------------------------------------------------//
         // ----------------------- SET REVERB ELEMENTS------------------------------- //
         
-        const init_reverb_level = 0.2;
+        const init_reverb_level = 0.5;
         reverbGainNode.gain.value = init_reverb_level;
         reverbControl.value = init_reverb_level;
         reverbControl.addEventListener('input', 
