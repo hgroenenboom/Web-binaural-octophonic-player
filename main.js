@@ -1,5 +1,4 @@
 const NUM_FILES = urls.length;
-const EXPERIMENTAL_REVERB_ENABLED = false;
 console.log("LOGGING LEVEL:",SHOULD_LOG);
 console.log("USE_REVERB_NODES:", USE_REVERB_NODES);
 console.log("NUM_FILES:", NUM_FILES);
@@ -16,7 +15,7 @@ audioContext.suspend();
 
 reverbjs.extend(audioContext);
 
-const SPEAKER_DIST = 10.0;
+const SPEAKER_DIST = 30.0;
 const REVERB_DIST = 50.0;
 
 // Table of contents:
