@@ -34,11 +34,14 @@ const SPEAKER_DIST = 20.0;
 var tracks = [];
 var panner = [];
 var analyserNodes = [];
+var binauralReverb = null;
 
+/*
 const reverbGainNode = USE_REVERB_NODES ? audioContext.createGain() : null;
 var reverbNodes = USE_REVERB_NODES ? [] : null;
 var tempgainNodes = USE_REVERB_NODES ? [] : null;
-
+*/
+    
 const trackGainNode = audioContext.createGain();
 const masterGainNode = audioContext.createGain();
 
@@ -837,6 +840,113 @@ class PositionableElementsContainer {
 
 
 
+class BinauralReverb {
+//private
+    init_reverb_level = 0.7;
+    relativeReverbDistance = 1.5;
+    
+    NUM_NODES = 3;
+    pannerNodes = [];
+    reverbNodes = [];
+    
+    gainNodes = [];
+    connectedNodes = [];
+    reverbGainNode = audioContext.createGain();
+        
+    setDistributed() {
+        const angle = 0;
+        const toAdd = 2 * Math.PI / this.NUM_NODES;
+        
+        for(var i = 0; i < this.NUM_NODES; i++) {
+            const r = vars.R_EXTRA_VIEW_RADIUS * this.relativeReverbDistance * SPEAKER_DIST * 0.5;
+            const curAng = angle + i * toAdd;
+            const speakerX = r * ( Math.cos ( curAng ) );
+            const speakerZ = r * ( Math.sin ( curAng ) );
+            this.pannerNodes[i].setPosition( speakerX, this.pannerNodes[i].positionY, speakerZ );
+            
+            const speakerR = Math.sqrt( Math.pow( speakerX, 2 ) + Math.pow( speakerZ, 2 ) );
+            const angleX = - speakerX / speakerR;
+            const angleZ = - speakerZ / speakerR;
+            this.pannerNodes[i].setOrientation( angleX, 0, angleZ );
+        }
+    }
+
+    reverbUrl = "http://reverbjs.org/Library/AbernyteGrainSilo.m4a";
+    // reverbUrl = "http://reverbjs.org/Library/DomesticLivingRoom.m4a";
+    
+    reverbsLoaded = [];
+    loadReverb(onLoadedCallback) {
+        for(var i = 0; i < this.NUM_NODES; i++) {
+            this.reverbsLoaded[i] = false;
+            var that = this;
+            
+            this.reverbNodes[i] = audioContext.createReverbFromUrl(this.reverbUrl, function(_i) {
+                return function() {
+                    that.reverbsLoaded[_i] = true;
+                    if( !that.reverbsLoaded.includes(false) ) {
+                        console.log("allLoaded!");
+                        if(typeof onLoadedCallback == "function") {
+                            onLoadedCallback();
+                        }
+                    }
+                }
+            }(i));
+        }
+    }
+//public
+    constructor(onLoadedCallback = null, reverbURL = "http://reverbjs.org/Library/AbernyteGrainSilo.m4a") {
+        this.reverbURL = reverbURL;
+        this.loadReverb(onLoadedCallback);
+
+        for(var i = 0; i < this.NUM_NODES; i++) {
+            this.pannerNodes[i] = new BinauralPanner();
+            this.pannerNodes[i].connect( this.reverbNodes[i] );
+            this.reverbNodes[i].connect( this.reverbGainNode );
+        }
+        this.setDistributed();
+        
+        this.reverbGainNode.gain.value = this.init_reverb_level;
+        this.reverbGainNode.connect( audioContext.destination );
+    }
+    
+    connectToReverb(binauralNode) {
+        var newGainNodes = [];
+        for(var i = 0; i < this.NUM_NODES; i++) {
+            newGainNodes.push( audioContext.createGain() );
+            
+            binauralNode.connect( newGainNodes[i] );
+            newGainNodes[i].connect( this.pannerNodes[i].node );
+        }
+        
+        this.connectedNodes.push( binauralNode );
+        this.gainNodes.push( newGainNodes );
+        this.calculateGains();
+    }
+    
+    disconnectFromReverb(binauralNode) {
+        if(this.connectedNodes.includes(binauralNode)) {
+            var index = this.connectedNodes.indexOf(binauralNode);
+            
+            for(var i = 0; i < this.NUM_NODES; i++) {
+                binauralNode.disconnect( this.gainNodes[index][i] );
+                this.gainNodes[index][i].disconnect( this.pannerNodes[i].node );
+            }
+            
+            this.gainNodes.splice( index, 1 );
+            this.connectedNodes.splice( index, 1 );
+        }
+    }
+    
+    calculateGains() {
+        for( var i = 0; i < this.connectedNodes.length; i++ ) {
+            for( var j = 0; j < this.NUM_NODES; j++ ) {
+                const distance = Math.sqrt( Math.pow( this.connectedNodes[i].positionX - this.pannerNodes[j].positionX , 2 ) + Math.pow( this.connectedNodes[i].positionZ - this.pannerNodes[j].positionZ , 2 ) );
+                this.gainNodes[i][j].gain.value = Math.sqrt( 0.5 / (distance * 0.1) );
+            }
+        }
+    }
+}
+
 
 
 // test audiofile
@@ -968,6 +1078,7 @@ function enableInteractions()
     };
     playButton.addEventListener('click', window.binauralplayer.playPause, false);
     
+    binauralReverb.calculateGains();
 }
 
 function setupPanningNodes() 
@@ -1052,8 +1163,10 @@ function setupPanningNodes()
     setPanning();
 }
 
+/*
 function setupReverbNodes(inputNodes, endNode) 
 {
+
     if(USE_REVERB_NODES) 
     {
         if(EXPERIMENTAL_REVERB_ENABLED) {
@@ -1175,6 +1288,7 @@ function setupReverbNodes(inputNodes, endNode)
         reverbButton.style = "display:none;"
     }
 }
+*/
 
 function setupAnalyzingNodes(numNodes) 
 {
@@ -1228,6 +1342,7 @@ function setupDrawingFunctions()
                     var staticPosition = globals.fromRotatedPositionToStaticPosition(i);
                     panner[i].hg_staticPosX = staticPosition[0];
                     panner[i].hg_staticPosZ = staticPosition[1];
+                    binauralReverb.calculateGains();
                 }
             }(i) 
             , function(i) {
@@ -1243,6 +1358,18 @@ function setupDrawingFunctions()
             , "M 61.6 14 a 38.8 38.8 0 0 1 0 48.6"]
         );
         positionableElements.setDrawSize(i+1, 8);
+    }
+    for(var i = 0; i < binauralReverb.NUM_NODES; i++) {
+        positionableElements.addElement(
+            function(i) {
+                return (newPosition)=>{}
+            }(i) 
+            , function(i) {
+                return ()=>{ return[ binauralReverb.pannerNodes[i].positionX , binauralReverb.pannerNodes[i].positionZ ]; }
+            }(i)
+            , ()=>{ return 0.0; }
+        );
+        positionableElements.setDrawSize(i+1+NUM_FILES, 4);
     }
     
     //----------------------------------------------------------------------------//
@@ -1496,7 +1623,7 @@ function setupDrawingFunctions()
                 if(i == 0) {
                     drawContext.fillStyle = "rgba(120, 120, 120, 0.9)";
                     drawContext.lineWidth = 5;
-                } else {
+                } else if(i < 1 + NUM_FILES) {
                     drawContext.fillStyle = colorFromAmplitude(average[i-1], 0.5);
                 }
             
@@ -1537,6 +1664,8 @@ function setupDrawingFunctions()
 
 var reverbNodesLoaded = [];
 var canplay = false;
+var reverbready = false;
+
 function initIfAllLoaded() {
     var al = true;
     
@@ -1545,12 +1674,15 @@ function initIfAllLoaded() {
         al = false;
     
     // check whether reverb nodes are loaded
-    if(USE_REVERB_NODES) {
-        for(var i = 0; i < NUM_FILES; i++) {
-            if(reverbNodesLoaded[i] != true)
-                al = false;
-        }
-    }
+    // if(USE_REVERB_NODES) {
+        // for(var i = 0; i < NUM_FILES; i++) {
+            // if(reverbNodesLoaded[i] != true)
+                // al = false;
+        // }
+    // }
+    
+    if(!reverbready)
+        al = false;
     
     if(al) {
         log("init called");
@@ -1568,7 +1700,7 @@ function initIfAllLoaded() {
 // RUN EVERYTHING
 jQuery('document').ready(() => {
     // init reverb nodes
-    if(USE_REVERB_NODES) {
+    /*if(USE_REVERB_NODES) {
         //------------------------ the reverb to use ------------------------------
         const reverbUrl = "http://reverbjs.org/Library/AbernyteGrainSilo.m4a";
         // var reverbUrl = "http://reverbjs.org/Library/DomesticLivingRoom.m4a";
@@ -1582,10 +1714,18 @@ jQuery('document').ready(() => {
                 }
             }(i));
         }
-    }
+    }*/
+
 
     // load all tracks
     tracks = new MultiPreloadedAudioNodes(urls, ()=> { canplay = true; initIfAllLoaded(); } );
+    binauralReverb = new BinauralReverb( ()=> { 
+        reverbready = true;
+        for(var i = 0; i < NUM_FILES; i++) {
+            binauralReverb.connectToReverb(panner[i]);
+        }
+        initIfAllLoaded(); 
+    } );
 
     // initialize all nodes
     initNodes();
