@@ -156,17 +156,6 @@
                     </datalist>
                 </div>
                 
-                <?php
-                if (isset( $array["reverbon"] )) {
-                    echo '<!-- reverb enabled button -->
-                    <div class="sliders">
-                        <button data-reverb="false" id="reverbbutton" role="switch" aria-checked="false">
-                            <span>Reverb on</span>
-                        </button>                    
-                    </div>';
-                }
-                ?>
-                
                 <!-- playbutton -->
                 <div class="sliders">
                     <button data-playing="false" id="playbutton" role="switch" aria-checked="false">
