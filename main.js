@@ -16,7 +16,8 @@ audioContext.suspend();
 
 reverbjs.extend(audioContext);
 
-const SPEAKER_DIST = 20.0;
+const SPEAKER_DIST = 10.0;
+const REVERB_DIST = 50.0;
 
 // Table of contents:
 // **TO BE FILLED IN**
@@ -63,7 +64,7 @@ class DrawingVariables {
     drawMode = 1;
     
     // drawing look constants
-    get DIAM() { return 3 };
+    get DIAM() { return 1 };
     get RAD() { return 0.5*this.DIAM };
     get EXTRA_VIEW_RAD() { return 1.4; };
     get R_EXTRA_VIEW_RADIUS() { return 1 / this.EXTRA_VIEW_RAD; };
@@ -764,7 +765,7 @@ class PositionableElement {
     
     draw() {
         if(this.svg != null) {
-            drawPath( this.svg, this.getAngleFunction(), this.drawSpaceOnCanvas.x + 0.5 * this.drawSpaceOnCanvas.w, this.drawSpaceOnCanvas.y + 0.5 * this.drawSpaceOnCanvas.h, (this.hoveredOver ? 1.2 : 1) * this.drawSize * vars.DIAM * vars.windowTocanvasMultX);
+            drawPath( this.svg, this.getAngleFunction(), this.drawSpaceOnCanvas.x + 0.5 * this.drawSpaceOnCanvas.w, this.drawSpaceOnCanvas.y + 0.5 * this.drawSpaceOnCanvas.h, (this.hoveredOver ? 1.2 : 1) * this.drawSize * vars.DIAM * vars.windowTocanvasMultX * ( 20.0 / SPEAKER_DIST ) );
         } else {
             drawContext.beginPath();
             drawContext.rect(this.drawSpaceOnCanvas.x, this.drawSpaceOnCanvas.y, this.drawSpaceOnCanvas.w, this.drawSpaceOnCanvas.h);
@@ -844,12 +845,12 @@ class PositionableElementsContainer {
 
 class BinauralReverb {
 //private
-    init_reverb_level = 0.6;
-    relativeReverbDistance = 1.65;
+    init_reverb_level = 0.4;
     
     NUM_NODES = 5;
     pannerNodes = [];
     reverbNodes = [];
+    preSumNodes = [];
     
     gainNodes = [];
     connectedNodes = [];
@@ -860,7 +861,7 @@ class BinauralReverb {
         const toAdd = 2 * Math.PI / this.NUM_NODES;
         
         for(var i = 0; i < this.NUM_NODES; i++) {
-            const r = vars.R_EXTRA_VIEW_RADIUS * this.relativeReverbDistance * SPEAKER_DIST * 0.5;
+            const r = vars.R_EXTRA_VIEW_RADIUS * REVERB_DIST * 0.5;
             const curAng = angle + i * toAdd;
             const speakerX = r * ( Math.cos ( curAng ) );
             const speakerZ = r * ( Math.sin ( curAng ) );
@@ -873,8 +874,8 @@ class BinauralReverb {
         }
     }
 
-    reverbUrl = "http://reverbjs.org/Library/AbernyteGrainSilo.m4a";
-    // reverbUrl = "http://reverbjs.org/Library/DomesticLivingRoom.m4a";
+    reverbURL = "";
+    defaultReverbs = ["http://reverbjs.org/Library/AbernyteGrainSilo.m4a", "http://reverbjs.org/Library/EmptyApartmentBedroom.m4a",  "http://reverbjs.org/Library/DomesticLivingRoom.m4a"];
     
     reverbsLoaded = [];
     loadReverb(onLoadedCallback) {
@@ -882,7 +883,7 @@ class BinauralReverb {
             this.reverbsLoaded[i] = false;
             var that = this;
             
-            this.reverbNodes[i] = audioContext.createReverbFromUrl(this.reverbUrl, function(_i) {
+            this.reverbNodes[i] = audioContext.createReverbFromUrl(this.reverbURL, function(_i) {
                 return function() {
                     that.reverbsLoaded[_i] = true;
                     if( !that.reverbsLoaded.includes(false) ) {
@@ -902,8 +903,14 @@ class BinauralReverb {
 
         for(var i = 0; i < this.NUM_NODES; i++) {
             this.pannerNodes[i] = new BinauralPanner();
-            this.pannerNodes[i].connect( this.reverbNodes[i] );
-            this.reverbNodes[i].connect( this.reverbGainNode );
+            this.preSumNodes[i] = audioContext.createGain();
+            this.preSumNodes[i].gain.value = 1;
+        }
+        
+        for(var i = 0; i < this.NUM_NODES; i++) {
+            this.preSumNodes[i].connect( this.reverbNodes[i] );
+            this.reverbNodes[i].connect( this.pannerNodes[i].node );
+            this.pannerNodes[i].connect( this.reverbGainNode );
         }
         this.setDistributed();
         
@@ -917,7 +924,7 @@ class BinauralReverb {
             newGainNodes.push( audioContext.createGain() );
             
             binauralNode.connect( newGainNodes[i] );
-            newGainNodes[i].connect( this.pannerNodes[i].node );
+            newGainNodes[i].connect( this.preSumNodes[i] );
         }
         
         this.connectedNodes.push( binauralNode );
@@ -931,7 +938,7 @@ class BinauralReverb {
             
             for(var i = 0; i < this.NUM_NODES; i++) {
                 binauralNode.disconnect( this.gainNodes[index][i] );
-                this.gainNodes[index][i].disconnect( this.pannerNodes[i].node );
+                this.gainNodes[index][i].disconnect( this.preSumNodes[i] );
             }
             
             this.gainNodes.splice( index, 1 );
@@ -1240,7 +1247,9 @@ function setupDrawingFunctions()
         for(var i = 0; i < binauralReverb.NUM_NODES; i++) {
             positionableElements.addElement(
                 function(i) {
-                    return (newPosition)=>{}
+                    return (newPosition)=>{
+                        binauralReverb.pannerNodes[i].setPosition( newPosition[0], binauralReverb.pannerNodes[i].positionY, newPosition[1] );
+                    }
                 }(i) 
                 , function(i) {
                     return ()=>{ return[ binauralReverb.pannerNodes[i].positionX , binauralReverb.pannerNodes[i].positionZ ]; }
