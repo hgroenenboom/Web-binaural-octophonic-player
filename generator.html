@@ -99,13 +99,25 @@
                 </div>
             </div>
             
+            <!-- <div class="row small-margin"> -->
+                <!-- <div class="col-lg-4"> -->
+                    <!-- <label for="opacity">background image opacity</label> -->
+                <!-- </div> -->
+                <!-- <div class="col-lg-6"> -->
+                    <!-- <input type="text" id="opacity" name="opacity" value="0.7"><br> -->
+                <!-- </div> -->
+            <!-- </div> -->
             <div class="row small-margin">
                 <div class="col-lg-4">
                     <label for="opacity">background image opacity</label>
                 </div>
-                <div class="col-lg-6">
-                    <input type="text" id="opacity" name="opacity" value="0.7"><br>
+                <div class="col-lg-5">
+                    <input type="range" min="0" step="0.01" max="1" id="opacity" name="opacity" value="0.7"><br>
                 </div>
+                <div class="col-lg-1">
+                    <span id="opacityval">0.7</span>
+                </div>
+                <script type="text/javascript">document.getElementById("opacity").oninput = function() { document.getElementById("opacityval").innerHTML = this.value; } </script>
             </div>
             
             <div class="row small-margin">
@@ -118,6 +130,7 @@
                         <option value="light">light</option>
                     </select><br><br>
                 </div>
+                <!-- <script type=""> -->
             </div>
             
             <h4>Audio files to look for</h4>
@@ -158,6 +171,32 @@
                 </div>
                 <div class="col-lg-6">
                     <input type="text" id="filelist" name="filelist" value=""><br><br>
+                </div>
+            </div>
+            
+            <h4>Audio settings</h4>
+            
+            <div class="row small-margin">
+                <div class="col-lg-4">
+                    <label for="speakerdist">Speaker distance</label>
+                </div>
+                <div class="col-lg-5">
+                    <input type="range" min="5" max="50" id="speakerdist" name="speakerdist" value="10"><br>
+                </div>
+                <div class="col-lg-1">
+                    <span id="speakerdistval">10</span>
+                </div>
+                <script type="text/javascript">document.getElementById("speakerdist").oninput = function() { document.getElementById("speakerdistval").innerHTML = this.value; } </script>
+            </div>
+            
+            <p class="small-margin" style="font-style:italic;">or...</p>
+            
+             <div class="row small-margin">
+                <div class="col-lg-4">
+                    <label for="speakerpositions">js array of speaker positions (Not yet implemented)</label>
+                </div>
+                <div class="col-lg-6">
+                    <!-- <input type="text" id="speakerpositions" name="speakerpositions" value=""><br><br> -->
                 </div>
             </div>
             
@@ -438,6 +477,14 @@
         // console.log(elements);
     }
     */
+    
+    var form = document.getElementById("inputdata");
+    var formelements = form.elements;
+    for(var i = 0; i < formelements.length; i++) {
+        formelements[i].addEventListener( "input", function() {
+            onForm();
+        });
+    }
     </script>
 </body>
 </html>

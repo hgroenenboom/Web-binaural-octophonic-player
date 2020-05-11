@@ -65,23 +65,23 @@
                 $NUM_AUDIO_FILES = (int)$array["channels"];
             }
             
-            # set logging level flag
             echo '<script type="text/javascript">';
-            if(isset($array["debuglevel"])) {
-                echo 'var SHOULD_LOG=parseFloat(' . $array["debuglevel"] . ');';
-            } else {
-                echo 'var SHOULD_LOG=-1;';
-            }
             
+            # set logging level flag
+            echo 'var SHOULD_LOG=' . ( isset($array["debuglevel"]) ? 'parseFloat(' . $array["debuglevel"] . ');' : '-1;' );
             # set default or submitted colorgradient
             if(isset($array["colorgradient"])) {
                 echo 'var colorPoints = ' . $array["colorgradient"] . ';';
             } else {
                 echo 'var colorPoints = [[0, [198, 207, 199, 0.7]],[0.1, [32, 209, 33, 1.0]], [0.33, [36, 66, 36, 1.0]], [0.666, [242, 128, 13, 1.0]], [1, [255, 0, 0, 1.0]]];';
             }
-            
             # set use reverb flag
             echo 'var USE_REVERB_NODES = ' . (isset( $array["reverbon"] ) ? "true" : "false") . ';';
+            echo 'var SPEAKER_DIST = ' . (isset( $array["speakerdist"] ) ? $array["speakerdist"] : '10') . ';';
+            $colortheme = 'var colortheme = "';
+            $colortheme = $colortheme. ( ( isset($array["colortheme"]) && $array["colortheme"] == "dark" ) ? "dark" : "light") . '";';
+            echo $colortheme;
+            
             echo "</script>";
 
             # set style sheet by colortheme

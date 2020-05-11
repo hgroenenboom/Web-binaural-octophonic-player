@@ -15,8 +15,8 @@ audioContext.suspend();
 
 reverbjs.extend(audioContext);
 
-const SPEAKER_DIST = 30.0;
-const REVERB_DIST = 50.0;
+// const SPEAKER_DIST = 30.0;
+const REVERB_DIST = SPEAKER_DIST*1.3;
 
 // Table of contents:
 // **TO BE FILLED IN**
@@ -76,6 +76,10 @@ class DrawingVariables {
     speakerIsBeingDragged = [];
     
     constructor() {}
+    
+    get frontColor() { return colortheme == "light" ? "rgba(30, 30, 30, 1)" : "rgba(222, 222, 222, 1)"; }
+    get midColor() { return colortheme == "light" ? "rgba(180, 180, 180, 0.6)" : "rgba(180, 180, 180, 0.6)"; }
+    get backColor() { return colortheme == "light" ? "rgba(222, 222, 222, 0.6)" : "rgba(120, 120, 120, 0.6)"; }
 };
 // !!! extra variables will be dynamicly added to this object
 vars = new DrawingVariables();
@@ -764,10 +768,11 @@ class PositionableElement {
     
     draw() {
         if(this.svg != null) {
-            drawPath( this.svg, this.getAngleFunction(), this.drawSpaceOnCanvas.x + 0.5 * this.drawSpaceOnCanvas.w, this.drawSpaceOnCanvas.y + 0.5 * this.drawSpaceOnCanvas.h, (this.hoveredOver ? 1.2 : 1) * this.drawSize * vars.DIAM * vars.windowTocanvasMultX * ( 20.0 / SPEAKER_DIST ) );
+            drawPath( this.svg, this.getAngleFunction(), this.drawSpaceOnCanvas.x + 0.5 * this.drawSpaceOnCanvas.w, this.drawSpaceOnCanvas.y + 0.5 * this.drawSpaceOnCanvas.h, 26 + (this.hoveredOver ? 10 : 0) + this.drawSize * vars.DIAM * vars.windowTocanvasMultX * ( 5.0 / SPEAKER_DIST ) );
         } else {
             drawContext.beginPath();
-            drawContext.rect(this.drawSpaceOnCanvas.x, this.drawSpaceOnCanvas.y, this.drawSpaceOnCanvas.w, this.drawSpaceOnCanvas.h);
+            const h = (this.hoveredOver ? 10 : 0);
+            drawContext.rect(this.drawSpaceOnCanvas.x - 0.5 * h, this.drawSpaceOnCanvas.y - 0.5 * h, this.drawSpaceOnCanvas.w + h, this.drawSpaceOnCanvas.h + h);
             drawContext.stroke();
         }
     }   
@@ -1225,7 +1230,9 @@ function setupDrawingFunctions()
                     var staticPosition = globals.fromRotatedPositionToStaticPosition(i);
                     panner[i].hg_staticPosX = staticPosition[0];
                     panner[i].hg_staticPosZ = staticPosition[1];
-                    binauralReverb.calculateGains();
+                    if(USE_REVERB_NODES) {
+                        binauralReverb.calculateGains();
+                    }
                 }
             }(i) 
             , function(i) {
@@ -1436,7 +1443,7 @@ function setupDrawingFunctions()
         
         // draw background
         drawContext.clearRect(0, 0, vars.drawSpaceCanvas.w, vars.drawSpaceCanvas.h);
-        drawContext.fillStyle = "rgba(240, 240, 240, 0.6)";
+        drawContext.fillStyle = vars.backColor;
         drawContext.fillRect(0, 0, vars.drawSpaceCanvas.w, vars.drawSpaceCanvas.h);
 
         // get average gain for all audiofiles
@@ -1496,8 +1503,8 @@ function setupDrawingFunctions()
         else 
         {    
             // draw axis
-            drawContext.fillStyle = "rgba(180, 180, 180, 0.4)";
-            drawContext.lineWidth = 1;
+            drawContext.strokeStyle = vars.midColor;
+            drawContext.lineWidth = 2;
             drawContext.beginPath();
             drawContext.moveTo(vars.canvasXMid, 0);
             drawContext.lineTo(vars.canvasXMid, vars.drawSpaceCanvas.h);
@@ -1508,8 +1515,7 @@ function setupDrawingFunctions()
             // draw elements
             for(var i = 0; i < positionableElements.positionableElements.length; i++) {
                 if(i == 0) {
-                    drawContext.fillStyle = "rgba(120, 120, 120, 0.9)";
-                    drawContext.lineWidth = 5;
+                    drawContext.fillStyle = vars.frontColor;
                 } else if(i < 1 + NUM_FILES) {
                     drawContext.fillStyle = colorFromAmplitude(average[i-1], 0.5);
                 }
@@ -1522,10 +1528,11 @@ function setupDrawingFunctions()
                 const drawSpace = positionableElements.getDrawSpace(i+1);
                 const speakerXMid = drawSpace.x + 0.5 * drawSpace.w;
                 const speakerYMid = drawSpace.y + 0.5 * drawSpace.h;
-                drawContext.fillStyle = "rgb(0, 0, 0)";
-                drawContext.font = 'normal '+ vars.canvasRad  * 0.5 + 'px sans-serif'; 
+                drawContext.fillStyle = vars.frontColor
+                drawContext.font = 'normal '+ (10 + vars.canvasRad  * 0.5) + 'px sans-serif'; 
                 drawContext.textAlign = 'center'; 
-                drawContext.fillText( i+1, speakerXMid - 0.5*vars.canvasRad, speakerYMid - 0.5*vars.canvasRad  );
+                // drawContext.fillText( i+1, speakerXMid - 0.5*vars.canvasRad, speakerYMid - 0.5*vars.canvasRad  );
+                drawContext.fillText( i+1, drawSpace.x - 10, drawSpace.y - 10  );
             }
         }   
                 

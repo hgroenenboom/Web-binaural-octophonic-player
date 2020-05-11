@@ -16,3 +16,7 @@ button {
 .slider::-moz-range-thumb {
     background: #777;
 }
+
+label {
+    /* color: #000; */
+}
