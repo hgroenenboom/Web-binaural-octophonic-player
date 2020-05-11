@@ -1120,9 +1120,9 @@ function enableInteractions()
     trackVolumeControl.addEventListener('input', 
         function() 
         {
-            tracks.setGain( this.value );
+            tracks.setGain( Math.pow(this.value, 2) );
             log("track gain: ", tracks.gain, 1 );
-        }
+        }   
     , false);
     
     // play pause audio
@@ -1402,11 +1402,16 @@ function setupDrawingFunctions()
     
     //----------------------------------------------------------------------------//
     // ------------------------ LISTENER EVENTS FROM CANVAS BUTTOn ---------------//
-    var canvasButton = document.getElementById("drawCanvasButton");
-    canvasButton.addEventListener("mousedown", (e) => {
-        vars.drawMode = ( vars.drawMode + 1 ) % 3;
-        log("drawmode = " + vars.drawMode);
-    });
+    var canvasButton = document.getElementById("drawCanvasButtons");
+    console.log("canvasButton", canvasButton)
+    for(var i = 0; i < canvasButton.children.length; i++) {
+        canvasButton.children[i].addEventListener("mousedown", function(i) {
+            return function() {
+                vars.drawMode = (i+1) % 3;
+                log("drawmode = " + vars.drawMode);
+            }
+        }(i));
+    }
     function canvasMouseUp(e) {
         vars.isMouseDown = false;
         // getMouseDown(e);
