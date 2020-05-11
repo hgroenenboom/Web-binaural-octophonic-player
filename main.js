@@ -333,11 +333,13 @@ class PreloadedAudioNode {
         var time = this.paused ? this.pausedAt / 1000 : (Date.now() - this.startedAt) / 1000;
         return time > this.duration ? 0 : time;
     }
+    setTime() {
+    }
 
     loadingProgress = 0;  // value from 0 to 1
     fileSize = 0;
     
-    loadSound(url, callback, loadingCallback = null) {
+    loadSound(url, loadedCallback, loadingCallback = null) {
       this.fileURL = url;
       var request = new XMLHttpRequest();
       request.open('GET', url, true);
@@ -366,12 +368,13 @@ class PreloadedAudioNode {
             audioContext.decodeAudioData(audioData, function(buffer) {
                 thisclass.audioBuffer = buffer;
                 thisclass.reloadBufferSource();
+                thisclass.createWaveForm( thisclass.audioBuffer );
 
-                log("PreloadedAudioNode, calling callback", thisclass.loglevel);
-                if(typeof callback == "function") {
-                    callback();
+                log("PreloadedAudioNode, calling loadedCallback", thisclass.loglevel);
+                if(typeof loadedCallback == "function") {
+                    loadedCallback();
                 } else {
-                    console.error("callback is not a function");
+                    console.error("loadedCallback is not a function");
                 }
             }, ()=>{console.log("error")});
         }
@@ -390,6 +393,37 @@ class PreloadedAudioNode {
     }
     
 // private
+    waveform = new Path2D();
+    createWaveForm(buffer, numPoints=500) {
+        var samplesPerPoint = buffer.length / numPoints;
+        var channel0 = buffer.getChannelData(0);
+        var w = [];
+        
+        this.waveform = new Path2D();
+        this.waveform.moveTo(0, 0.5);
+        
+        for(var i = 0; i < numPoints; i++) {
+            var startI = Math.floor(i * samplesPerPoint);
+            var endI = Math.floor((i+1) * samplesPerPoint);
+            var pathPoint = i / numPoints;
+            
+            var max = 0;
+            for(var j = startI; j < endI; j++) {
+                max = Math.max(max, channel0[j]);
+            }
+            
+            w.push(max);
+            this.waveform.lineTo( pathPoint, 0.5 + 0.5 * max );
+        }
+        this.waveform.lineTo(1, 0.5);
+        for(var i = numPoints - 1; i > 0; i = i - 1) {
+            // console.log(i);
+            var pathPoint = i / numPoints;
+            this.waveform.lineTo( pathPoint, 0.5 - 0.5 * w[i] );
+        }
+        this.waveform.closePath();
+    }
+
     startedAt = 0;
     pausedAt = 0;
     paused = false;
@@ -405,19 +439,23 @@ class PreloadedAudioNode {
                 this.pausedAt = null;
                 this.play(timeToPlay);
             } else {
-                this.source.start(timeToPlay, this.pausedAt / 1000);
+                this.source.start(audioContext.currentTime + timeToPlay, this.pausedAt / 1000);
             }
         }
         else {
             log("PreloadedAudioNode: start playing", this.loglevel);
             this.startedAt = Date.now();
-            this.source.start(timeToPlay);
+            this.source.start(audioContext.currentTime + timeToPlay);
         }
     };
+    playFromTimePoint(time) {
+        this.startedAt = Date.now();
+        this.source.start(audioContext.currentTime, time);
+    }
 
     stop(timeToPlay=0) {
         log("PreloadedAudioNode: stop playing called", this.loglevel);
-        this.source.stop(timeToPlay);
+        this.source.stop(audioContext.currentTime + timeToPlay);
         this.reloadBufferSource();
         
         this.pausedAt = Date.now() - this.startedAt;
@@ -511,26 +549,50 @@ class MultiPreloadedAudioNodes {
     }
     
     playAll(timeToPlay=0) {
-        log("MultiPreloadedAudioNodes, play all", this.loglevel);
-        for(var i = 0; i < this.numfiles; i++) {
-            this.nodes[i].play(timeToPlay);
+        if(!this.isPlaying) {
+            if (audioContext.state === 'suspended') { audioContext.resume(); }
+        
+            log("MultiPreloadedAudioNodes, play all", this.loglevel);
+            for(var i = 0; i < this.numfiles; i++) {
+                this.nodes[i].play(timeToPlay);
+            }
+            this._isPlaying = true;
+        }
+    }
+    playAllFromTimePoint(time) {
+        if(!this.isPlaying) {
+            if (audioContext.state === 'suspended') { audioContext.resume(); }
+        
+            // log("MultiPreloadedAudioNodes, play all", this.loglevel);
+            for(var i = 0; i < this.numfiles; i++) {
+                this.nodes[i].playFromTimePoint(time);
+            }
+            this._isPlaying = true;
         }
     }
     
     stopAll(timeToStop=0) {
-        log("MultiPreloadedAudioNodes, stop all", this.loglevel);
-        for(var i = 0; i < this.numfiles; i++) {
-            this.nodes[i].stop(timeToStop);
+        if(this.isPlaying) {
+            if (audioContext.state === 'suspended') { audioContext.resume(); }
+
+            log("MultiPreloadedAudioNodes, stop all", this.loglevel);
+            for(var i = 0; i < this.numfiles; i++) {
+                this.nodes[i].stop(timeToStop);
+            }
+            this._isPlaying = false;
         }
     }
 
     getAudioTrack(i) { return this.nodes[i]; }
+    get duration() { return this.nodes[0].duration; }
     get gain() { return this.nodes[0].gain; }
     setGain(gainvalue) { 
         for(var i = 0; i < this.numfiles; i++) {
             this.nodes[i].setGain(gainvalue);
         }
     }
+    _isPlaying = false;
+    get isPlaying() { return this._isPlaying; }
     
 // private
     checkWhetherAllLoaded() {
@@ -1342,19 +1404,26 @@ function setupDrawingFunctions()
     // ------------------------ LISTENER EVENTS FROM CANVAS BUTTOn ---------------//
     var canvasButton = document.getElementById("drawCanvasButton");
     canvasButton.addEventListener("mousedown", (e) => {
-        vars.drawMode = ( vars.drawMode + 1 ) % 2;
+        vars.drawMode = ( vars.drawMode + 1 ) % 3;
         log("drawmode = " + vars.drawMode);
     });
-    function canvasMouseUp() {
+    function canvasMouseUp(e) {
         vars.isMouseDown = false;
+        // getMouseDown(e);
+        // setDrawingVariables();
+        // const mousePositionCanvas = [vars.windowTocanvasMultX * vars.windowMouseDownX, vars.windowTocanvasMultY * vars.windowMouseDownY];
+        
         if(vars.drawMode == 1) {
             positionableElements.mouseUp();
+        } else if(vars.drawMode == 2) {
+            const val = tracks.duration * ( mousePositionCanvas[0] / drawCanvas.width );
+            // tracks.playAllFromTimePoint(val);
         }
     }
-    drawCanvas.addEventListener("mouseup", (e) => { canvasMouseUp(); });
+    drawCanvas.addEventListener("mouseup", (e) => { canvasMouseUp(e); });
     drawCanvas.addEventListener("touchend", (e) => {
         e.preventDefault();
-        canvasMouseUp();
+        canvasMouseUp(e);
         positionableElements.touchEnd();
     }, { passive:false });
    
@@ -1380,18 +1449,20 @@ function setupDrawingFunctions()
         setDrawingVariables();
         getMouseDown(e);
         
+        const mousePositionCanvas = [vars.windowTocanvasMultX * vars.windowMouseDownX, vars.windowTocanvasMultY * vars.windowMouseDownY];
         if(vars.drawMode == 1) {
-            const mousePositionCanvas = [vars.windowTocanvasMultX * vars.windowMouseDownX, vars.windowTocanvasMultY * vars.windowMouseDownY];
             
             var elementBeingDragged = positionableElements.mouseDown(mousePositionCanvas);
             
             // listener direction
             if(!elementBeingDragged) {
                 const listenerPositionCanvas = positionableElements.getDrawSpace(0);
-                var x = vars.windowTocanvasMultX * vars.windowMouseDownX - ( listenerPositionCanvas.x + 0.5 * listenerPositionCanvas.w );
-                var z = vars.windowTocanvasMultX * vars.windowMouseDownY - ( listenerPositionCanvas.y + 0.5 * listenerPositionCanvas.h );
+                const x = vars.windowTocanvasMultX * vars.windowMouseDownX - ( listenerPositionCanvas.x + 0.5 * listenerPositionCanvas.w );
+                const z = vars.windowTocanvasMultX * vars.windowMouseDownY - ( listenerPositionCanvas.y + 0.5 * listenerPositionCanvas.h );
                 audioListener.setListenerDirection(x, 0, -z);
             }
+        } else if(vars.drawMode == 2) {
+            // tracks.stopAll();
         }
     }
 
@@ -1500,7 +1571,7 @@ function setupDrawingFunctions()
                 drawContext.fillText(currentTime+"/"+duration, x + 0.5 * widthPerElement, vars.drawSpaceCanvas.h - 0.5 * (vars.drawSpaceCanvas.h - height) );
             }
         } 
-        else 
+        else if(vars.drawMode == 1)
         {    
             // draw axis
             drawContext.strokeStyle = vars.midColor;
@@ -1534,7 +1605,32 @@ function setupDrawingFunctions()
                 // drawContext.fillText( i+1, speakerXMid - 0.5*vars.canvasRad, speakerYMid - 0.5*vars.canvasRad  );
                 drawContext.fillText( i+1, drawSpace.x - 10, drawSpace.y - 10  );
             }
-        }   
+        } 
+        else 
+        {
+            var width = drawContext.canvas.width;
+         
+            const audioEl = tracks.getAudioTrack(0);
+            const progress = audioEl.currentTime / audioEl.duration;
+            
+            drawContext.strokeStyle = vars.midColor;
+            drawContext.lineWidth = width / 100;
+            drawContext.beginPath();
+            drawContext.moveTo(progress * width, 0);
+            drawContext.lineTo(progress * width, drawContext.canvas.height);
+            drawContext.stroke();
+            
+            for(var i = 0; i < NUM_FILES; i++) {
+                drawContext.fillStyle = vars.frontColor;
+                drawContext.save();
+                drawContext.translate(0, (i / NUM_FILES) * width);
+                drawContext.scale( width, (1 / NUM_FILES) * width);
+                drawContext.fill( tracks.nodes[i].waveform );
+                drawContext.restore();
+            }
+            
+        }
+        
                 
         // autorotate
         if(false) {

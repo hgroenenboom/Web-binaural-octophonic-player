@@ -95,7 +95,7 @@
                     <label for="background_image">background image url</label>
                 </div>
                 <div class="col-lg-6">
-                    <input type="text" id="background_image" name="background_image" value="https://images.fineartamerica.com/images/artworkimages/mediumlarge/2/pastel-lake-sean-duan.jpg&opacity=0.5&colortheme=dark">
+                    <input type="text" id="background_image" name="background_image" value="img/test3.gif">
                 </div>
             </div>
             
@@ -125,12 +125,11 @@
                     <label for="colortheme">colortheme</label>
                 </div>
                 <div class="col-lg-6">
-                    <select name="colortheme">
-                        <option value="dark" selected="selected">dark</option>
-                        <option value="light">light</option>
+                    <select name="colortheme" id="colortheme">
+                        <option value="dark">dark</option>
+                        <option value="light" selected="selected">light</option>
                     </select><br><br>
                 </div>
-                <!-- <script type=""> -->
             </div>
             
             <h4>Audio files to look for</h4>
@@ -352,6 +351,7 @@
                 if(divToAddTo.childElementCount > 1) {
                     divToAddTo.removeChild(div);
                 }
+                onForm();
             }
             
             // set color input
@@ -380,6 +380,7 @@
             this.addbutton.type = "button";
             this.addbutton.onclick = function(e) {
                 var test = new ColorPicker(divToAddTo, that.colorinput.value);
+                onForm();
             }
             
             this.setInputElement();
@@ -412,6 +413,8 @@
             text += " ]";
             
             inputToSet.value = text;
+            
+            onForm();
         }
     };
     
@@ -422,6 +425,27 @@
     defaultColorGradient = new ColorPicker(colorpicker, "#ecdb64");
     defaultColorGradient = new ColorPicker(colorpicker, "#ffa020");
     defaultColorGradient = new ColorPicker(colorpicker, "#ff4444");
+
+    function colorThemeChanged() {
+        var firstColor = document.getElementById("colorpicker").getElementsByTagName("input")[0];
+        var secondColor = document.getElementById("colorpicker").getElementsByTagName("input")[1];
+        var colorThemeElement = document.getElementById("colortheme");
+        
+        window.firstColor = firstColor;
+        console.log(firstColor);
+        if(colorThemeElement.value == "dark") {
+            firstColor.value = "#e1eee2";
+            secondColor.value = "#e1eee2";
+        } else if (colorThemeElement.value == "light") {
+            firstColor.value = "#162717";
+            secondColor.value = "#162717";
+        }
+        
+        defaultColorGradient.setInputElement();
+        onForm();
+    }
+    document.getElementById("colortheme").addEventListener("input", function() { colorThemeChanged(); } );
+    colorThemeChanged();
 
     // set iframe according to default form values
     onForm(document.getElementById("inputdata"));
