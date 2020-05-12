@@ -74,9 +74,26 @@
         
         <!-- resizable iframe window -->
         <div class="row mt">
-            <div id="frameSpace" style="resize:both; overflow:auto; margin: auto; width:50%; height:400px; border: 1px solid;margin-bottom: 20px;">
+            <div id="frameSpace" style="resize:both; overflow:auto; margin: auto; width:600px; height:400px; border: 1px solid;margin-bottom: 20px;">
                 <!-- to be filled by top js script -->
                 <iframe id="frame" crossorigin="anonymous"></iframe>
+            </div>
+        </div>
+        
+        <div class="row mt">
+            <h4 class="centered">Window dimensions</h4>
+            <div class="col-lg-3"></div>
+            <div class="col-lg-1">
+                <label for="width">width</label>
+            </div>
+            <div class="col-lg-1">
+                <input type="text" id="width" name="width" value="600">
+            </div>
+            <div class="col-lg-1">
+                <label for="height">height</label>
+            </div>
+            <div class="col-lg-1">
+                <input type="text" id="height" name="height" value="400">
             </div>
         </div>
         
@@ -277,10 +294,26 @@
     }
     
     // RESIZING IFRAME WINDOW
-    document.getElementById("frameSpace").onmouseup = function() { 
+    function resizeFrameSpace() {
         frame.width = document.getElementById("frameSpace").offsetWidth - 15;
         frame.height = document.getElementById("frameSpace").offsetHeight - 15;
         onForm();
+    }
+    document.getElementById("frameSpace").onmouseup = function() { 
+        resizeFrameSpace();
+        document.getElementById("width").value = frame.width;
+        document.getElementById("height").value = frame.height;
+    }
+    document.getElementById("frameSpace").ontouchend = function() { 
+        document.getElementById("frameSpace").onmouseup(); 
+    }
+    document.getElementById("width").oninput = ()=> {
+        document.getElementById("frameSpace").style.width = "" + parseInt(document.getElementById("width").value) + "px";
+        resizeFrameSpace();
+    }
+    document.getElementById("height").oninput = ()=> {
+        document.getElementById("frameSpace").style.height = "" + document.getElementById("height").value + "px";
+        resizeFrameSpace();
     }
     
     // HEX COLOR TO RGB FUNCTION
@@ -333,9 +366,9 @@
             buttonDiv.appendChild(this.addbutton);
             
             var colorDiv = this.colorDiv;
-            this.colorinput.classList.add("col-lg-6");
+            this.colorinput.classList.add("col-lg-4");
             colorDiv.appendChild(this.colorinput);
-            this.textinput.classList.add("col-lg-3");
+            this.textinput.classList.add("col-lg-1");
             colorDiv.appendChild(this.textinput);
             
             this.div.appendChild(buttonDiv);
@@ -358,7 +391,7 @@
             var that = this;
             this.colorinput.type = "color";
             this.colorinput.value = startColor;
-            this.colorinput.style = "width:30%;margin-left:10px;";
+            this.colorinput.style = "margin-left:10px;";
             this.colorinput.onchange = function() {
                 that.textinput.value = that.colorinput.value;
                 that.setInputElement();
@@ -367,7 +400,7 @@
             // set color hex text input 
             this.textinput.type = "text";
             this.textinput.value = startColor;
-            this.textinput.style = "width:90px;margin-left:10px;";
+            this.textinput.style = "width:120px;margin-left:10px;";
             this.textinput.onchange = function() {
                 if(hexToRgb(that.textinput.value) != null) {
                     that.colorinput.value = that.textinput.value;
