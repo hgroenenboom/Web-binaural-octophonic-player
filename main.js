@@ -59,23 +59,23 @@ function log(txt, niveau=0) {
 
 // drawingvariables container
 class DrawingVariables {
-    // state switch between drawmodes
-    drawMode = 1;
+    constructor() {
+		// state switch between drawmodes    
+		this.drawMode = 1;
+				
+		this.viewDistance = SPEAKER_DIST;
+    
+		this.speakerPositionCanvas = [];
+		this.speakerPositionXOnMouseDown = [];
+		this.speakerPositionZOnMouseDown = [];
+		this.speakerIsBeingDragged = [];
+	}
     
     // drawing look constants
     get DIAM() { return 1 };
     get RAD() { return 0.5*this.DIAM };
     get EXTRA_VIEW_RAD() { return 1.4; };
     get R_EXTRA_VIEW_RADIUS() { return 1 / this.EXTRA_VIEW_RAD; };
-
-    viewDistance = SPEAKER_DIST;
-    
-    speakerPositionCanvas = [];
-    speakerPositionXOnMouseDown = [];
-    speakerPositionZOnMouseDown = [];
-    speakerIsBeingDragged = [];
-    
-    constructor() {}
     
     get frontColor() { return colortheme == "light" ? "rgba(30, 30, 30, 1)" : "rgba(222, 222, 222, 1)"; }
     get midColor() { return colortheme == "light" ? "rgba(180, 180, 180, 0.6)" : "rgba(180, 180, 180, 0.6)"; }
