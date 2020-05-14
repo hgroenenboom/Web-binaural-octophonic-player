@@ -118,7 +118,7 @@ class GlobalFunctions {
     constructor() {}
     
     getAngle(x, y) {
-        var val = Math.atan2(x, y) + 2 * Math.PI;
+        const val = Math.atan2(x, y) + 2 * Math.PI;
         return val % (2 * Math.PI);
     }
     
@@ -226,18 +226,19 @@ function bytesToAbrieviatedSize(bytes) {
 
 class AudioListener {
 // const
-    LISTENER_INITIAL_X = 0;
-    LISTENER_INITIAL_Y = 0;
-    LISTENER_INITIAL_Z = 0;
+    get LISTENER_INITIAL_X() { return 0; };
+    get LISTENER_INITIAL_Y() { return 0; };
+    get LISTENER_INITIAL_Z() { return 0; };
     
 // private
-    listener = audioContext.listener;
-    listenerPosition = [0, 0, 0];
-    listenerDirection = [0, 0, 0];
-    listenerHorizontalAngle = 0;
+    get listener() { return audioContext.listener; };
     
 // public
     constructor() {
+        this._listenerPosition = [0, 0, 0];
+        this._listenerDirection = [0, 0, 0];
+        this.listenerHorizontalAngle = 0;
+        
         this.setListenerPosition(this.LISTENER_INITIAL_X, this.LISTENER_INITIAL_Y, this.LISTENER_INITIAL_Z);
         this.setListenerDirection();
     }
@@ -251,9 +252,9 @@ class AudioListener {
             this.listener.setPosition(x, y, z);
         }
         
-        this.listenerPosition[0] = x;
-        this.listenerPosition[1] = y;
-        this.listenerPosition[2] = z;
+        this._listenerPosition[0] = x;
+        this._listenerPosition[1] = y;
+        this._listenerPosition[2] = z;
     }
     setListenerDirection(x=0, y=0, z=-1) {
         if(this.listener.forwardX) 
@@ -269,39 +270,30 @@ class AudioListener {
         } else {
             this.listener.setOrientation(x, y, z, 0, 1, 0);
         }
-        this.listenerDirection = [x, y, z];
+        this._listenerDirection = [x, y, z];
         
         this.listenerHorizontalAngle = globals.getAngle(x, z);
     }
     
-    get x() { return this.listenerPosition[0]; }
-    get y() { return this.listenerPosition[1]; }
-    get z() { return this.listenerPosition[2]; }
-    get listenerPosition() { return this.listenerPosition; }
-    get listenerDirection() { return this.listenerDirection; }
+    get x() { return this._listenerPosition[0]; }
+    get y() { return this._listenerPosition[1]; }
+    get z() { return this._listenerPosition[2]; }
+    get listenerPosition() { return this._listenerPosition; }
+    get listenerDirection() { return this._listenerDirection; }
     get horizontalAngle() { return this.listenerHorizontalAngle; }
     get horizontalAngleInDegrees() { return parseInt(360 * (this.listenerHorizontalAngle / (2 * Math.PI))); }
     get initialPosition() { return [this.LISTENER_INITIAL_X, this.LISTENER_INITIAL_Y, this.LISTENER_INITIAL_Z]; }
     
-    get info() { return "AudioListener: " + "pos(" + this.listenerPosition + "); dir(" + this.listenerDirection + "); angle(" + this.horizontalAngleInDegrees + ", " + globals.angleToArrow(this.horizontalAngle) + ");" }
+    get info() { return "AudioListener: " + "pos(" + this._listenerPosition + "); dir(" + this._listenerDirection + "); angle(" + this.horizontalAngleInDegrees + ", " + globals.angleToArrow(this.horizontalAngle) + ");" }
     log() { console.log(this.info); }
 };
 var audioListener = new AudioListener();
-audioListener.log();
+// audioListener.log();
 
 
 
 class PreloadedAudioNode {
 // private
-    source = audioContext.createBufferSource();
-    gainNode = audioContext.createGain();
-    
-    audioBuffer = null;
-    loglevel = 1;
-    connectedNodes = [];
-    fileExists = null;
-    fileURL = null;
-    
     reloadBufferSource() {
         this.source = audioContext.createBufferSource(); // creates a sound source
         this.source.buffer = this.audioBuffer;
@@ -312,6 +304,19 @@ class PreloadedAudioNode {
     }
 // public
     constructor(url, callback, loadingCallback=null) {
+        this.source = audioContext.createBufferSource();
+        this.gainNode = audioContext.createGain();
+
+        this.audioBuffer = null;
+        this.loglevel = 1;
+        this.connectedNodes = [];
+        this.fileExists = null;
+        this.fileURL = null;
+
+        this.startedAt = 0;
+        this.pausedAt = 0;
+        this.paused = false;
+        
         this.loadSound(url, callback, loadingCallback);
         this.setGain(1.0);
     }
@@ -326,21 +331,25 @@ class PreloadedAudioNode {
     }
     
     get node() { return source; }
-    setGain(gainvalue) { this.gainNode.gain.value = gainvalue; }
     get gain() { return this.gainNode.gain.value; }
     get duration() { return this.audioBuffer.duration; } 
     get currentTime() { 
         var time = this.paused ? this.pausedAt / 1000 : (Date.now() - this.startedAt) / 1000;
         return time > this.duration ? 0 : time;
     }
-    setTime() {
+    
+    setGain(gainvalue) { 
+        this.gainNode.gain.value = gainvalue; 
     }
+    // setTime() {
+    // }
 
-    loadingProgress = 0;  // value from 0 to 1
-    fileSize = 0;
     
     loadSound(url, loadedCallback, loadingCallback = null) {
       this.fileURL = url;
+      this.loadingProgress = 0;  // value from 0 to 1
+      this.fileSize = 0;
+
       var request = new XMLHttpRequest();
       request.open('GET', url, true);
       request.responseType = 'arraybuffer';
@@ -393,13 +402,12 @@ class PreloadedAudioNode {
     }
     
 // private
-    waveform = new Path2D();
     createWaveForm(buffer, numPoints=500) {
         var samplesPerPoint = buffer.length / numPoints;
         var channel0 = buffer.getChannelData(0);
         var w = [];
-        
         this.waveform = new Path2D();
+        
         this.waveform.moveTo(0, 0.5);
         
         for(var i = 0; i < numPoints; i++) {
@@ -423,10 +431,6 @@ class PreloadedAudioNode {
         }
         this.waveform.closePath();
     }
-
-    startedAt = 0;
-    pausedAt = 0;
-    paused = false;
     
 // public
     play(timeToPlay=0) {
@@ -467,18 +471,17 @@ class PreloadedAudioNode {
 
 
 class MultiPreloadedAudioNodes {
-// private
-    loglevel = 1;
-
-    numfiles = 0;
-    urls = [];
-    nodes = [];
-    
-    allLoaded = false;
-    loadedStates = [];
-
 // public
     constructor(urls, onLoadedCallback = null) {
+        this.loglevel = 1;
+        
+        this.numfiles = 0;
+        this.urls = [];
+        this.nodes = [];
+        this.loadedStates = [];
+        
+        this._isPlaying = false;
+
         this.loadAudioFiles(urls, onLoadedCallback);
     }
 
@@ -586,13 +589,13 @@ class MultiPreloadedAudioNodes {
     getAudioTrack(i) { return this.nodes[i]; }
     get duration() { return this.nodes[0].duration; }
     get gain() { return this.nodes[0].gain; }
+    get isPlaying() { return this._isPlaying; }
+    
     setGain(gainvalue) { 
         for(var i = 0; i < this.numfiles; i++) {
             this.nodes[i].setGain(gainvalue);
         }
     }
-    _isPlaying = false;
-    get isPlaying() { return this._isPlaying; }
     
 // private
     checkWhetherAllLoaded() {
@@ -613,15 +616,12 @@ class MultiPreloadedAudioNodes {
 
 
 class BinauralPanner {
-//private
-    panner = null;
-    // horizontalDirection = 0;
-    horizontalAngleFromCenter = 0;
-    position = [0, 0, 0];
-    orientation = [0, 0, 0];
-    
 //public
     constructor() {
+        this.horizontalAngleFromCenter = 0;
+        this._position = [0, 0, 0];
+        this._orientation = [0, 0, 0];
+
         this.panner = new PannerNode(audioContext, 
         {
             panningModel: 'HRTF',
@@ -645,7 +645,7 @@ class BinauralPanner {
         } else {
             this.panner.setPosition(xPos, yPos, zPos);
         }
-        this.position = [xPos, yPos, zPos];
+        this._position = [xPos, yPos, zPos];
         
         this.horizontalAngleFromCenter = globals.getAngle(xPos, zPos);
         // console.assert(xPos >= 0 ? (this.horizontalAngleFromCenter >= 0 && this.horizontalAngleFromCenter <= 3.14) : (this.horizontalAngleFromCenter >= 3.14 && this.horizontalAngleFromCenter <= 6.28), "xPos: "+xPos+" ;horizontalAngleFromCenter: "+this.horizontalAngleFromCenter);
@@ -658,20 +658,20 @@ class BinauralPanner {
         } else {
             this.panner.setOrientation(x, y, z);
         }
-        this.orientation = [x, y, z];
+        this._orientation = [x, y, z];
     }
-    
-    get orientation() { return this.orientation };
-    get position() { return this.position };
-    get positionX() { return this.position[0]; }
-    get positionY() { return this.position[1]; }
-    get positionZ() { return this.position[2]; }
-    get node() { return this.panner; }
-    get horizontalAngleFromCenterInDegrees() { return parseInt(360 * (this.horizontalAngleFromCenter / (2 * Math.PI))); }
     
     connect(node) { this.panner.connect(node); }
     
-    get info() { return "BinauralPanner: " + "pos(" + this.position + ");\t horizontalAngleFromCenter(" + this.horizontalAngleFromCenterInDegrees + ", " + globals.angleToArrow(this.horizontalAngleFromCenter) + ");\t dir(" + this.orientation + ");" }
+    get orientation() { return this._orientation };
+    get position() { return this._position };
+    get positionX() { return this._position[0]; }
+    get positionY() { return this._position[1]; }
+    get positionZ() { return this._position[2]; }
+    get node() { return this.panner; }
+    get horizontalAngleFromCenterInDegrees() { return parseInt(360 * (this.horizontalAngleFromCenter / (2 * Math.PI))); }
+    
+    get info() { return "BinauralPanner: " + "pos(" + this._position + ");\t horizontalAngleFromCenter(" + this.horizontalAngleFromCenterInDegrees + ", " + globals.angleToArrow(this.horizontalAngleFromCenter) + ");\t dir(" + this._orientation + ");" }
     log() { console.log(this.info); }
 }
 
@@ -679,29 +679,23 @@ class BinauralPanner {
 
 
 class PositionableElement {
-    svg = null;
-    
-    drawRadius = vars.canvasRad;
-    drawSize = 10;
-    drawSpaceOnCanvas = new Rectangle(0, 0, 2 * this.drawRadius, 2 * this.drawRadius);
-    hoveredOver = false;
-    isBeingDragged = false;
-    
-    elementPositionOnMouseDown = [0, 0];
-    
-    // THESE FUNCTIONS WILL HANDLE CANVAS <-> AUDIO POSITION CONVERSION
-    // function to set the position of the element from canvas coordinates
-    setPositionFromCanvasFunction = null;
-    // function to get the drawPosition of the element
-    getPositionFromElementFunction = null;
-    getAngleFunction = null;
-    
     constructor(setPositionFromCanvasFunction, getPositionFromElementFunction, getAngleFunction = null, svg = null) {
+        // THESE FUNCTIONS WILL HANDLE CANVAS <-> AUDIO POSITION CONVERSION
+        // function to set the position of the element from canvas coordinates
         this.setPositionFromCanvasFunction = setPositionFromCanvasFunction;
+        // function to get the drawPosition of the element
         this.getPositionFromElementFunction = getPositionFromElementFunction;
         this.getAngleFunction = getAngleFunction;
         this.updateDrawingVariables();
-        
+
+        this.svg = null;
+        this.drawSize = 10;
+        this.drawSpaceOnCanvas = new Rectangle(0, 0, 2 * this.drawRadius, 2 * this.drawRadius);
+
+        this.hoveredOver = false;
+        this.isBeingDragged = false;
+        this.elementPositionOnMouseDown = [0, 0];
+
         // console.log(svg);
         if(svg != null) {
             this.loadSVG(svg);
@@ -795,8 +789,7 @@ class PositionableElement {
     }
     
     updateDrawingVariables() {
-        this.drawRadius = vars.canvasRad;    
-        var posOnCanvas = this.getPositionFromElementFunction();
+            var posOnCanvas = this.getPositionFromElementFunction();
         this.drawSpaceOnCanvas = new Rectangle(
             vars.canvasXMid + vars.positionToCanvasMultY * posOnCanvas[0] - this.drawRadius, 
             vars.canvasYMid + vars.positionToCanvasMultY * posOnCanvas[1] - this.drawRadius, 
@@ -838,6 +831,8 @@ class PositionableElement {
             drawContext.stroke();
         }
     }   
+    
+    get drawRadius() { return vars.canvasRad; }
     get drawSpace() { return this.drawSpaceOnCanvas; } 
     get hovered() { return this.hoveredOver; }
 };
@@ -846,9 +841,9 @@ class PositionableElement {
 
 
 class PositionableElementsContainer {
-    positionableElements = [];
-    
-    constructor() {};
+    constructor() {
+        this.positionableElements = [];    
+    };
     
     addElement(setPositionFromCanvasFunction, getPositionFromElementFunction, getAngleFunction=null, svg=null) {
         this.positionableElements[this.positionableElements.length] = new PositionableElement(setPositionFromCanvasFunction, getPositionFromElementFunction, getAngleFunction, svg);
@@ -892,10 +887,12 @@ class PositionableElementsContainer {
         }
     }
     
-    // draw()
     getDrawSpace(i) { return this.positionableElements[i].drawSpace; }
     isHovered(i) { return this.positionableElements[i].hovered; }
+    
     setDrawSize(i, size) { this.positionableElements[i].drawSize = size; }
+    
+    // drawing
     draw() {
         for(var i = 0; i < this.positionableElements.length; i++) {
             this.positionableElements[i].draw();
@@ -911,16 +908,9 @@ class PositionableElementsContainer {
 
 class BinauralReverb {
 //private
-    init_reverb_level = 0.4;
-    
-    NUM_NODES = 5;
-    pannerNodes = [];
-    reverbNodes = [];
-    preSumNodes = [];
-    
-    gainNodes = [];
-    connectedNodes = [];
-    reverbGainNode = audioContext.createGain();
+    get init_reverb_level() { return 0.4; };
+    get NUM_NODES() { return 5; }
+    get defaultReverbs() { ["http://reverbjs.org/Library/AbernyteGrainSilo.m4a", "http://reverbjs.org/Library/EmptyApartmentBedroom.m4a",  "http://reverbjs.org/Library/DomesticLivingRoom.m4a"] };
         
     setDistributed() {
         const angle = 0;
@@ -939,12 +929,9 @@ class BinauralReverb {
             this.pannerNodes[i].setOrientation( angleX, 0, angleZ );
         }
     }
-
-    reverbURL = "";
-    defaultReverbs = ["http://reverbjs.org/Library/AbernyteGrainSilo.m4a", "http://reverbjs.org/Library/EmptyApartmentBedroom.m4a",  "http://reverbjs.org/Library/DomesticLivingRoom.m4a"];
     
-    reverbsLoaded = [];
     loadReverb(onLoadedCallback) {
+        this.reverbsLoaded = [];
         for(var i = 0; i < this.NUM_NODES; i++) {
             this.reverbsLoaded[i] = false;
             var that = this;
@@ -964,6 +951,15 @@ class BinauralReverb {
     }
 //public
     constructor(onLoadedCallback = null, reverbURL = "http://reverbjs.org/Library/AbernyteGrainSilo.m4a") {
+        // gainNodes[n][n] -> presumnodes[n] -> reverbnodes[n] -> pannernodes[n] -> reverbGainNode
+        this.pannerNodes = [];
+        this.reverbNodes = [];
+        this.preSumNodes = [];
+        this.gainNodes = [];
+        this.reverbGainNode = audioContext.createGain();
+        
+        this.connectedNodes = [];
+
         this.reverbURL = reverbURL;
         this.loadReverb(onLoadedCallback);
 
@@ -1403,7 +1399,7 @@ function setupDrawingFunctions()
     //----------------------------------------------------------------------------//
     // ------------------------ LISTENER EVENTS FROM CANVAS BUTTOn ---------------//
     var canvasButton = document.getElementById("drawCanvasButtons");
-    console.log("canvasButton", canvasButton)
+    // console.log("canvasButton", canvasButton)
     for(var i = 0; i < canvasButton.children.length; i++) {
         canvasButton.children[i].addEventListener("mousedown", function(i) {
             return function() {
