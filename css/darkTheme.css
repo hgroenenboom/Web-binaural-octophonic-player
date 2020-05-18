@@ -1,0 +1,27 @@
+body {
+    color: #ddd;
+}
+
+button {
+    color: #000;
+}
+
+.slider {
+    background: #ddd;
+}
+
+.slider::-webkit-slider-thumb {
+    background: #777;
+}
+.slider::-moz-range-thumb {
+    background: #777;
+}
+
+label {
+    /* color: #000; */
+}
+
+svg {
+    stroke: rgb(255,255,255);
+    fill: rgb(255,255,255);
+}
