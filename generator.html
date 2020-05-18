@@ -55,6 +55,8 @@
         // set iframe and copyable text
         var frame = document.getElementById("frame");
         frame.src = homepage + "/webaudio-binpanner.php"+text;
+        frame.width = document.getElementById("width").value;
+        frame.height = document.getElementById("height").value;
         document.getElementById("copyable").innerHTML = "" + frame.outerHTML;
     }
     
@@ -300,9 +302,10 @@
         onForm();
     }
     document.getElementById("frameSpace").onmouseup = function() { 
+        document.getElementById("width").value = document.getElementById("frameSpace").offsetWidth - 15;
+        document.getElementById("height").value = document.getElementById("frameSpace").offsetHeight - 15;
         resizeFrameSpace();
-        document.getElementById("width").value = frame.width;
-        document.getElementById("height").value = frame.height;
+        // console.log(frame.width, frame.height);
     }
     document.getElementById("frameSpace").ontouchend = function() { 
         document.getElementById("frameSpace").onmouseup(); 
@@ -334,35 +337,37 @@
     
     // COLOR PICKER
     class ColorPicker {
-        div = document.createElement("div");
-        
-        buttonDiv = document.createElement("div");
-        removebutton = document.createElement("button");
-        addbutton = document.createElement("button");
-        
-        colorDiv = document.createElement("div");
-        colorinput = document.createElement("input");
-        textinput = document.createElement("input");
-        
-        divToAddTo = null;
-        
         constructor(divToAddTo, startColor="#000000") {
+            this.div = document.createElement("div");
+            
+            this.buttonDiv = document.createElement("div");
+            this.removebutton = document.createElement("button");
+            this.addbutton = document.createElement("button");
+            
+            this.colorDiv = document.createElement("div");
+            this.colorinput = document.createElement("input");
+            this.textinput = document.createElement("input");
+            
             this.divToAddTo = divToAddTo;
             
             this.div.classList.add("row");
             this.div.classList.add("small-margin");
             this.div.classList.add("centered");
-            this.div.style = "padding: 0 50px; margin: 5px 0";
+            this.div.style.padding = "0 50px";
+            this.div.style.margin = "5px 0";
             
             this.buttonDiv.classList.add("col-lg-5");
             this.buttonDiv.classList.add("centered");
             
             var buttonDiv = this.buttonDiv;
             this.removebutton.classList.add("col-lg-5");
-            this.removebutton.style = "margin: 0 4%;left: 10%;";
+            this.removebutton.style.margin = "0 4%";
+            this.removebutton.style.left = "10%";
             buttonDiv.appendChild(this.removebutton);
+            
             this.addbutton.classList.add("col-lg-3");
-            this.addbutton.style = "margin: 0 6%;left: 10%;";
+            this.addbutton.style.margin = "0 6%";
+            this.addbutton.style.left = "10%;";
             buttonDiv.appendChild(this.addbutton);
             
             var colorDiv = this.colorDiv;
@@ -391,7 +396,7 @@
             var that = this;
             this.colorinput.type = "color";
             this.colorinput.value = startColor;
-            this.colorinput.style = "margin-left:10px;";
+            //this.colorinput.style.margin-left = "10px";
             this.colorinput.onchange = function() {
                 that.textinput.value = that.colorinput.value;
                 that.setInputElement();
@@ -400,7 +405,8 @@
             // set color hex text input 
             this.textinput.type = "text";
             this.textinput.value = startColor;
-            this.textinput.style = "width:120px;margin-left:10px;";
+            this.textinput.width = "120px";
+            // this.textinput.margin-left = "10px;";
             this.textinput.onchange = function() {
                 if(hexToRgb(that.textinput.value) != null) {
                     that.colorinput.value = that.textinput.value;

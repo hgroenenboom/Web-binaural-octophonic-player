@@ -70,11 +70,11 @@
             # set logging level flag
             echo 'var SHOULD_LOG=' . ( isset($array["debuglevel"]) ? 'parseFloat(' . $array["debuglevel"] . ');' : '-1;' );
             # set default or submitted colorgradient
-            if(isset($array["colorgradient"])) {
-                echo 'var colorPoints = ' . $array["colorgradient"] . ';';
-                } else {
+            # if(isset($array["colorgradient"])) {
+            #    echo 'var colorPoints = ' . $array["colorgradient"] . ';';
+            #} else {
                 echo 'var colorPoints = [[0, [198, 207, 199, 0.7]],[0.1, [32, 209, 33, 1.0]], [0.33, [36, 66, 36, 1.0]], [0.666, [242, 128, 13, 1.0]], [1, [255, 0, 0, 1.0]]];';
-            }
+            #}
             # set use reverb flag
             echo 'var USE_REVERB_NODES = ' . (isset( $array["reverbon"] ) ? "true" : "false") . ';';
             echo 'var SPEAKER_DIST = ' . (isset( $array["speakerdist"] ) ? $array["speakerdist"] : '10') . ';';
@@ -110,7 +110,7 @@
             <!-- canvas space -->
             <div class="frameSpace drawFrameSpace">
                 <canvas class="canvas" id="canvas" width="1000" height="1000">canvas</canvas>
-                <div style="height:100%;display:inline-block;width:3%;float:right;" id="drawCanvasButtons">
+                <div style="height:100%;display:inline-block;width:0%;float:right;" id="drawCanvasButtons">
                     <!--https://upload.wikimedia.org/wikipedia/commons/5/59/2D_Cartesian_Coordinates.svg -->
                     <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.0" id="svg1415" class="canvas-menu-item" viewbox="0 0 300 300">
                         <line x1="150" y1="0" x2="150" y2="300" style="stroke-width:30" />
@@ -145,7 +145,7 @@
                 </div> -->
                 
                 <!-- master volume fader -->
-                <div class="sliders" <?php if($array["debug_level"] != "-1" || !isset($array["debug_level"])) { echo 'style="display:none;"'; } ?> >
+                <div class="sliders" <?php if(!isset($array["debug_level"])) { echo 'style="display:none;"'; } ?> >
                     <label for="volume">master</label>
                     <input type="range" id="volume" class="control-volume slider" min="0" max="1.5" value="0.9" list="gain-vals" step="0.01" data-action="volume" />
                     <datalist id="gain-vals">

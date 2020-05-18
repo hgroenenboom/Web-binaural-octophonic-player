@@ -622,17 +622,17 @@ class BinauralPanner {
         this._position = [0, 0, 0];
         this._orientation = [0, 0, 0];
 
-        this.panner = new PannerNode(audioContext, 
-        {
-            panningModel: 'HRTF',
-            distanceModel: 'inverse',
-            refDistance: 1,                     // 0 - INF  def: 1
-            maxDistance: 10000,                 // 0 - INF  def: 10000
-            rolloffFactor: 0.5,                   // 0 - 1    def: 1
-            coneInnerAngle: 50,
-            coneOuterAngle: 150,
-            coneOuterGain: 0.3
-        });
+        this.panner = audioContext.createPanner(); 
+        
+        this.panner.panningModel = 'HRTF';
+        this.panner.distanceModel = 'inverse';
+        this.panner.refDistance = 1;                     // 0 - INF  def: 1
+        this.panner.maxDistance = 10000;                 // 0 - INF  def: 10000
+        this.panner.rolloffFactor = 0.5;                   // 0 - 1    def: 1
+        this.panner.coneInnerAngle = 50;
+        this.panner.coneOuterAngle = 150;
+        this.panner.coneOuterGain = 0.3;
+        
         this.setPosition(audioListener.LISTENER_INITIAL_X, audioListener.LISTENER_INITIAL_Y, audioListener.LISTENER_INITIAL_Z - 5); // set in front of listener
         this.setOrientation(0, 0, 1); // aim to front;
     }
@@ -1673,9 +1673,9 @@ function initIfAllLoaded() {
         
         // enable view
         var loaddiv = document.getElementById("loading screen");
-        loaddiv.style = "display:none";
+        loaddiv.style.display = "none";
         var playerdiv = document.getElementById("octophonic player");
-        playerdiv.style = "";
+        playerdiv.style.display = "flex";
     }
 }
 
