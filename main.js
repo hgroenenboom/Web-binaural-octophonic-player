@@ -1105,14 +1105,6 @@ function enableInteractions()
     
     //-----------------------------------------------------------------------------------------------//
     // -----------------------          SETUP HTML ELEMENTS         -------------------------------- /
-    /*audioElements[0].addEventListener('ended', 
-        () => 
-        {
-            playButton.dataset.playing = 'false';
-            playButton.setAttribute( "aria-checked", "false" );
-        }
-    , false);*/
-
     trackVolumeControl.addEventListener('input', 
         function() 
         {
@@ -1123,6 +1115,8 @@ function enableInteractions()
     
     // play pause audio
     const playButton = document.getElementById('playbutton');
+    var playSVG = document.getElementById('playButtonSVG');
+    var pauseSVG = document.getElementById('pauseButtonSVG');
     window.binauralplayer.playPause = function() 
     {
         // check if context is in suspended state (autoplay policy)
@@ -1135,6 +1129,8 @@ function enableInteractions()
         {
             tracks.playAll();
             playButton.dataset.playing = 'true';
+            playButtonSVG.style="display:none;";
+            pauseButtonSVG.style="display:block;";
         } 
         else if (playButton.dataset.playing === 'true') 
         {
@@ -1142,12 +1138,17 @@ function enableInteractions()
             // audioContext.suspend();
             log("supsended audio context");
             playButton.dataset.playing = 'false';
+            playButtonSVG.style="display:block;";
+            pauseButtonSVG.style="display:none;";
         }
 
         let state = playButton.getAttribute('aria-checked') === "true" ? true : false;
         playButton.setAttribute( 'aria-checked', state ? "false" : "true" );
     };
     playButton.addEventListener('click', window.binauralplayer.playPause, false);
+    playButtonSVG.addEventListener('click', window.binauralplayer.playPause, false);
+    pauseButtonSVG.addEventListener('click', window.binauralplayer.playPause, false);
+    window.x = playButtonSVG;
     
     if(USE_REVERB_NODES) {
         binauralReverb.calculateGains();

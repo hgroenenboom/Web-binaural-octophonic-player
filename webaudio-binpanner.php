@@ -4,32 +4,31 @@
 
 <!-- 
     audiofiles will be looked for like this:
-    <file>{0-channels}<ext>
+    <filename><channel>.<ext>
     
-    --- ARGUMENTS ---
+    --------------- ARGUMENTS ------------------
     manditory
-    - file=<url>, url of file to load. Without the extension and without the numbering (for instance audiofile01.mp3 -> audiofile0)
-    Files are supposed to be split into mono files and numbered from 1. 
-    Example for the files needed for the input audiofile0:
-    audiofile01<ext>, audiofile02<ext>, audiofile03<ext>, audiofile04<ext>, audiofile05<ext>, audiofile06<ext>, audiofile07<ext>, audiofile08<ext>
-    - ext=<audioextension>, audio extension to be used. (i.e. .wav/.mp3/.m4a)
-    - channels=<0-16>, the number of audiofiles to look for. (default = 8)
-    or instead of <file><ext><numchannels>
-    - filelist=<[<url>]>
+    - file=<url>    , url of file to load. Without the files extension and 
+                    without the numbering (for instance audiofile01.mp3 -> audiofile0)
+        -> Files are supposed to be split into mono files and numbered from 1. 
+            Example for input filename 'audiofile0':
+            audiofile01<ext>, audiofile02<ext>, audiofile03<ext>, audiofile04<ext>, audiofile05<ext>, audiofile06<ext>, audiofile07<ext>, audiofile08<ext>
+    - ext=<audioextension>      , audio extension to be used. (i.e. .wav/.mp3/.m4a)
+    - channels=<0-16>       , the number of audiofiles to look for. (default = 8)
+    
+    ...or instead of <file><ext><numchannels> use 
+    - filelist=< n*[ <url> ] >
     
     style
-    - background_image=<url>, the background image to use. Default is art designed by me
-    - opacity=<0-1>, opacity for the background image
-    - colortheme=<dark/light>, default=light, the color theme for all visible html elements
-    - colorgradient=< [ n*[amplitude, [r,g,b,a]] ] >
+    - background_image=<url>        , the background image to use. Default is art designed by Harold Groenenboom
+    - opacity=<0-1>     , opacity for the background image
+    - colortheme=<dark/light>       , default=light, the color theme for all visible html elements
+    - colorgradient=< [ n * [ amplitude, [r,g,b,a] ] ] >
     
     powerusers / alpha features
-    - debuglevel=<0-10>, the debuglevel to run on. Higher level creates more console output. only to use when debugging.
+    - verbosity=<0-10>, the verbosity to run on. Higher level creates more console output. only to use when debugging.
     - reverbon, enables reverb
     - rotatespeakers
-    
-    unused / disabled
-    - height=<200-1000>, the height of the iFrame
 -->
 
 
@@ -57,24 +56,21 @@
         <?php
             parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
             
-            # SET DEFAULT PARAMETERS
-            
             # set number of audiofiles 
             $NUM_AUDIO_FILES = 8;
             if(isset($array["channels"])) {
                 $NUM_AUDIO_FILES = (int)$array["channels"];
             }
             
+            # generate javascript
             echo '<script type="text/javascript">';
             
-            # set logging level flag
-            echo 'var SHOULD_LOG=' . ( isset($array["debuglevel"]) ? 'parseFloat(' . $array["debuglevel"] . ');' : '-1;' );
-            # set default or submitted colorgradient
-            # if(isset($array["colorgradient"])) {
-            #    echo 'var colorPoints = ' . $array["colorgradient"] . ';';
-            #} else {
+            echo 'var SHOULD_LOG=' . ( isset($array["verbosity"]) ? 'parseFloat(' . $array["verbosity"] . ');' : '-1;' );
+            if(isset($array["colorgradient"])) {
+                echo 'var colorPoints = ' . $array["colorgradient"] . ';';
+            } else {
                 echo 'var colorPoints = [[0, [198, 207, 199, 0.7]],[0.1, [32, 209, 33, 1.0]], [0.33, [36, 66, 36, 1.0]], [0.666, [242, 128, 13, 1.0]], [1, [255, 0, 0, 1.0]]];';
-            #}
+            }
             # set use reverb flag
             echo 'var USE_REVERB_NODES = ' . (isset( $array["reverbon"] ) ? "true" : "false") . ';';
             echo 'var SPEAKER_DIST = ' . (isset( $array["speakerdist"] ) ? $array["speakerdist"] : '10') . ';';
@@ -93,21 +89,19 @@
         ?>
     </head>
     
-    <body>
-        <div id="loading screen" style="position:relative; z-index:1;">
+    <body class="wrapper">
+        <div id="loading screen">
             <p style="margin-top:10vw;font-size:4vw;text-align:center">loading resources</p>
             <p id="loading-text" style="margin-top: 7vw;font-size:2.2vw;text-align:center;padding:7wh;overflow:auto;height:50vh;">waiting for server...</p>
         </div>
-        
         <?php
-            # DISPLAY FILE LOADED (DEBUG)
-            if($array["debuglevel"] != "-1" && isset($array["debuglevel"])) {
+            # DISPLAY FILES LOADED
+            if($array["verbosity"] != "-1" && isset($array["verbosity"])) {
                 echo '<div style="position:absolute;top:0px;margin:0px;"><p style="top:0px;font-size:8px;">' . $array["file"]."1".$array["ext"] . '</p></div>';
             }
         ?>
         
-        <div id="octophonic player" class="customContainer" style="display:none;">
-            <!-- canvas space -->
+        <div id="octophonic player" class="content customContainer" style="display:none;">
             <div class="frameSpace drawFrameSpace">
                 <canvas class="canvas" id="canvas" width="1000" height="1000">canvas</canvas>
                 <div style="height:100%;display:inline-block;width:0%;float:right;" id="drawCanvasButtons">
@@ -121,19 +115,8 @@
                 </div>
             </div> <!-- /canvas space -->
             
-            
-            <!-- control panel -->
-            <div class="frameSpace" style="margin:auto;">
-                <!-- track volume fader -->
-                <div class="sliders">
-                    <label for="trackVolume">track volume</label>
-                    <input type="range" id="trackVolume" class="control-trackVolume slider" min="0" max="1.7" value="0.8" list="trackVolume-vals" step="0.01" data-action="trackVolume" />
-                    <datalist id="trackVolume-vals">
-                        <option value="0" label="min"></option>
-                        <option value="1.5" label="max"></option>
-                    </datalist>
-                </div>
-                
+            <div id="controlpanel" class="frameSpace">
+               
                 <!-- reverb volume fader
                     <div class="sliders" <?php /*if(!isset($array["debug_level"])) { echo 'style="display:none;"'; }*/ ?> >
                     <label for="reverb">reverb volume</label>
@@ -164,16 +147,42 @@
                     </datalist>
                 </div>
                 
-                <!-- playbutton -->
-                <div class="sliders">
-                    <button data-playing="false" id="playbutton" role="switch" aria-checked="false">
+                    <button data-playing="false" id="playbutton" style="display:none;" role="switch" aria-checked="false">
                         <span>Play/Pause</span>
                     </button>
                 </div>
             </div> <!-- control panel -->            
         </div> <!-- octophonic player -->
         
-        <!--- background image -->
+        <footer>
+            <div style="position:relative;height:100%;">
+                <div id="playButtonSVG" class="footerContainer"> 
+                    <svg class="footerDrawable" viewBox="0 0 24 24" width="30" height="30" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M23 12l-22 12v-24l22 12zm-21 10.315l18.912-10.315-18.912-10.315v20.63z"/>
+                    </svg>
+                </div>
+                <div style="display:none;" id="pauseButtonSVG" class="footerContainer"> 
+                    <svg class="footerDrawable" viewBox="0 0 24 24" width="30" height="30" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd">
+                        <path d="M10 24h-6v-24h6v24zm10 0h-6v-24h6v24zm-11-23h-4v22h4v-22zm10 0h-4v22h4v-22z"/>
+                    </svg>
+                </div>
+                <div class="footerContainer">
+                    <svg class="footerDrawable" xmlns="http://www.w3.org/2000/svg" version="1.0" width="30" height="30" viewBox="0 0 75 75">
+                    <path d="M39.389,13.769 L22.235,28.606 L6,28.606 L6,47.699 L21.989,47.699 L39.389,62.75 L39.389,13.769z" style="stroke:#111;stroke-width:5;stroke-linejoin:round;fill:#111;"/>
+                    <path d="M48,27.6a19.5,19.5 0 0 1 0,21.4M55.1,20.5a30,30 0 0 1 0,35.6M61.6,14a38.8,38.8 0 0 1 0,48.6" style="fill:none;stroke:#111;stroke-width:5;stroke-linecap:round"/>
+                    </svg>
+                </div>
+                
+                <input type="range" id="trackVolume" class="footerContainer" style="width:100px" min="0" max="1.7" value="0.8" list="trackVolume-vals" step="0.01" data-action="trackVolume"></input>
+                <datalist id="trackVolume-vals">
+                    <option value="0" label="min"></option>
+                    <option value="1.5" label="max"></option>
+                </datalist>
+            </div>
+            <div style="position:absolute;opacity:0.3; background-color:#000000; height:100%; width:100%; top:0px; x-index=-1; z-index=-1; pointer-events:none;">
+            </div>
+        </footer>
+        
         <div class="background" style="background-image: url('<?php
             parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
             if(isset($array["background_image"])) {
@@ -227,7 +236,6 @@
         <!-- audio sources -->
         <?php
             #GENERATE AUDIO FILE JS ARRAY
-            
             if(isset($array["filelist"]) && $array["filelist"] != "") 
             {
                 echo '<script type="text/javascript">var urls=' . $array["filelist"] . ';</script>';
@@ -244,34 +252,10 @@
                         if($i < $NUM_AUDIO_FILES) { echo ", "; }
                     }
                     echo '];</script>';
-                    
-                    # the old way: creating html audioelements. sadly creates synchronicity issues, since buffering is only design for a maximum of 6 mediafiles.
-                    // for($i = 1; $i < $NUM_AUDIO_FILES+1; $i++) {
-                    // echo '<audio ';
-                    // echo 'src="'.$array["file"].$i.$array["ext"].'" preload="none" crossorigin="anonymous">';
-                    // echo '</audio>';
-                    // }
                 } 
-                # WIP
-                # file, num_channels
-                /*else if(isset($array["file"])) 
-                    {
-                    # IF ONLY FILE IS DEFINED (BUGGY!!!!)
-                    for($i = 1; $i < $NUM_AUDIO_FILES+1; $i++) {
-                    echo '<audio>';
-                    echo '<source="' . str_replace(array('/'), array('%2F'),$array["file"]) . $i . '.mp3" type="audio/mpeg">';
-                    // echo '<source="'.$array["file"].$i.'.ogg" type="audio/ogg">';
-                    // echo '<source="'.$array["file"].i.'.m4a">'
-                    // echo '<source="'.$array["file"].i.'.wav">'
-                    echo '</audio>';
-                    }
-                    }
-                    else if(isset($array["filelist"])) {
-                    
-                }*/
                 else 
                 {
-                    echo '<h>no valid audiofile selected! please enter a valid audiofile like this: www.haroldgroenenboom.nl/other/webaudio-binpanner/webaudio-binpanner.php?file<enter your file url here!></h>';
+                    echo '<h>no valid audiofile selected! please enter a valid audiofile...';
                 }
             }
         ?> <!-- /audio sources-->

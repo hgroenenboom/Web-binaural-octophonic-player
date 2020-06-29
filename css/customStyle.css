@@ -68,14 +68,13 @@ div.drawingSpace {
 
 .customContainer {
     width: 100%;
-    height: 100%;
     position:absolute;
     display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
     display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
     display: -ms-flexbox;      /* TWEENER - IE 10 */
     display: -webkit-flex;     /* NEW - Chrome */
     display: flex;             /* NEW, Spec - Opera 12.1, Firefox 20+ */
-    padding: 4vh;
+    padding: 0vh;
     z-index: 1;
 }
 
@@ -147,4 +146,51 @@ button {
 svg {
     stroke:rgb(0,0,0);
     fill:rgb(0,0,0);
+}
+
+#loading-screen {
+    position:relative; 
+    z-index:1;
+}
+
+#controlpanel {
+    margin:auto;
+}
+
+.wrapper {
+  display: flex;
+  /* min-height: 100vh; */
+  flex-direction: column;
+  position: relative
+}
+
+
+.content {
+  min-height: 100%;
+  flex: 1;
+  position: relative;
+}
+
+footer {
+    height:31px;
+    margin-bottom:-31px;
+    width:100%;
+    position: relative;
+}
+
+.footerContainer {
+    float: left;
+    position:relative;
+    height:30px;
+    width:30px;
+    margin: 0 3px;
+}
+
+.footerDrawable {
+    padding:7px;
+    position:absolute;
+    height:100%;
+    top:0px;
+    pointer-events: none;
+    x-index=-1;
 }
