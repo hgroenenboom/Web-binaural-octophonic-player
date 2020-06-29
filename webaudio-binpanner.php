@@ -198,8 +198,8 @@
                 </datalist>
                 -->
                 
-                <p class="footerContainer" style="width:auto;padding:2px;color:#ddd;margin:0 8px;" <?php if(!isset($array["reverbon"])) { echo 'style="display:none;"'; } ?>>rotate speakers</p>
-                <input type="range" id="pan" class="footerContainer control-panning slider circular-slider" style="width:100px;margin:10px;" min="0" max="6.28" value="3.745" list="pan-vals" step="0.01" data-action="pan" <?php if(!isset($array["reverbon"])) { echo 'style="display:none;"'; } ?>/>
+                <p class="footerContainer" style="width:auto;padding:2px;color:#ddd;margin:0 8px;<?php if(!isset($array["rotatespeakers"])) { echo 'display:none;'; } ?>">rotate speakers</p>
+                <input type="range" id="pan" class="footerContainer control-panning slider circular-slider" style="width:100px;margin:10px;<?php if(!isset($array["rotatespeakers"])) { echo 'display:none;'; } ?>" min="0" max="6.28" value="3.745" list="pan-vals" step="0.01" data-action="pan"/>
                 <datalist id="pan-vals">
                     <option value="0" label="min"></option>
                     <option value="6.28" label="max"></option>
