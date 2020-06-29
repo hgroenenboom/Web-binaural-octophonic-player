@@ -178,14 +178,14 @@ svg {
 }
 
 .wrapper {
-  overflow: hidden;
+  /* overflow: hidden; */
   position: relative
 }
 
 #drawCanvasButtons {
     height:100%;
     display:inline-block;
-    width: 4vw;
+    width: 20px;
     float: left;
 }
 

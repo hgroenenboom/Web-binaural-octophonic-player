@@ -93,7 +93,6 @@ function drawSVG(svgData, rotation, positionX, positionY, scale=1, offsetX = 0, 
             
     for(var i = 0; i < svgData.length; i++) {
         var path = new Path2D(svgData[i]);
-        // console.log(path);
         drawContext.fill(path);
     }
     
@@ -800,10 +799,15 @@ class PositionableElement {
         }
     }
     
+    setDrawSize(size) {
+        this.drawSize = size;
+    }
+    
     updateDrawingVariables() {
-            var posOnCanvas = this.getPositionFromElementFunction();
+        var posOnCanvas = this.getPositionFromElementFunction();
+        
         this.drawSpaceOnCanvas = new Rectangle(
-            vars.canvasXMid + vars.positionToCanvasMultY * posOnCanvas[0] - this.drawRadius, 
+            vars.canvasXMid + vars.positionToCanvasMultX * posOnCanvas[0] - this.drawRadius, 
             vars.canvasYMid + vars.positionToCanvasMultY * posOnCanvas[1] - this.drawRadius, 
             2 * this.drawRadius, 
             2 * this.drawRadius
@@ -835,7 +839,12 @@ class PositionableElement {
     
     draw() {
         if(this.svg != null) {
-            drawPath( this.svg, this.getAngleFunction(), this.drawSpaceOnCanvas.x + 0.5 * this.drawSpaceOnCanvas.w, this.drawSpaceOnCanvas.y + 0.5 * this.drawSpaceOnCanvas.h, 26 + (this.hoveredOver ? 10 : 0) + this.drawSize * vars.DIAM * vars.windowTocanvasMultX * ( 5.0 / SPEAKER_DIST ) );
+            drawPath( 
+                this.svg, 
+                this.getAngleFunction(), 
+                this.drawSpaceOnCanvas.x + 0.5 * this.drawSpaceOnCanvas.w, 
+                this.drawSpaceOnCanvas.y + 0.5 * this.drawSpaceOnCanvas.h, 
+                (this.hoveredOver ? 10 : 0) + this.drawSize * vars.DIAM * ( 5.0 / SPEAKER_DIST ) );
         } else {
             drawContext.beginPath();
             const h = (this.hoveredOver ? 10 : 0);
@@ -902,7 +911,7 @@ class PositionableElementsContainer {
     getDrawSpace(i) { return this.positionableElements[i].drawSpace; }
     isHovered(i) { return this.positionableElements[i].hovered; }
     
-    setDrawSize(i, size) { this.positionableElements[i].drawSize = size; }
+    setDrawSize(i, size) { this.positionableElements[i].setDrawSize(size); }
     
     // drawing
     draw() {
@@ -1189,11 +1198,14 @@ function enableInteractions()
         binauralReverb.calculateGains();
     }
     
-    var all = document.getElementsByClassName('canvas');
+    var canvi = document.getElementsByClassName('canvas');
     const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
-    for (var i = 0; i < all.length; i++) {
-      all[i].style.height = (vh-30)+"px";
-    }
+    const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+    canvi[0].style.height = (vh-30)+"px";
+    canvi[0].style.width = (vw-30)+"px";
+    
+    drawCanvas.width  = canvi[0].style.width.replace(/\D/g,'');
+    drawCanvas.height = canvi[0].style.height.replace(/\D/g,'');
 }
 
 function setupPanningNodes() 
@@ -1347,7 +1359,9 @@ function setupDrawingFunctions()
             , "M 55.1 20.5 a 30 30 0 0 1 0 35.6"
             , "M 61.6 14 a 38.8 38.8 0 0 1 0 48.6"]
         );
-        positionableElements.setDrawSize(i+1, 8);
+    }
+    for(var i = 0; i < NUM_FILES+1; i++) {
+        positionableElements.setDrawSize(i, 37);
     }
     if(USE_REVERB_NODES) {
         for(var i = 0; i < binauralReverb.NUM_NODES; i++) {
@@ -1399,18 +1413,20 @@ function setupDrawingFunctions()
 
         vars.canvasXMid = 0.5 * vars.drawSpaceCanvas.w;
         vars.canvasYMid = 0.5 * vars.drawSpaceCanvas.h;
-        
-        // canvas internalWidth to screenWidth multiplier
-        vars.windowTocanvasMultX = vars.drawSpaceCanvas.w / drawCanvas.offsetWidth;
-        vars.canvasToWindowMultX = 1 / vars.windowTocanvasMultX;
-        vars.windowTocanvasMultY = vars.drawSpaceCanvas.h / drawCanvas.offsetHeight;
-        vars.canvasToWindowMultY = 1 / vars.windowTocanvasMultY;
 
         // const isInsideScreen = vars.drawSpaceCanvas.isInside(vars.windowDragX, vars.windowDragY);
         vars.viewDistance = /*isInsideScreen ? SPEAKER_DIST * 1.1 * vars.viewDistance :*/ vars.viewDistance;
         
-        vars.positionToCanvasMultY = vars.drawSpaceCanvas.h / vars.viewDistance; // for converting the actual positions to pixel coordinates
-        vars.positionToCanvasMultX = vars.drawSpaceCanvas.w / vars.viewDistance; // for converting the actual positions to pixel coordinates
+        const wLargerH = drawCanvas.width > drawCanvas.height;
+        
+        // for converting the actual positions to pixel coordinates
+        vars.positionToCanvasMultY = vars.drawSpaceCanvas.h / vars.viewDistance; 
+        vars.positionToCanvasMultX = vars.drawSpaceCanvas.w / vars.viewDistance;
+        if(wLargerH) {
+            vars.positionToCanvasMultX = vars.positionToCanvasMultY;
+        } else {
+            vars.positionToCanvasMultY = vars.positionToCanvasMultX;
+        }
         
         vars.canvasRad = vars.RAD * vars.positionToCanvasMultY;
         vars.canvasDiam = vars.DIAM * vars.positionToCanvasMultY; 
@@ -1425,10 +1441,6 @@ function setupDrawingFunctions()
             log("vars.drawSpaceCanvas: "+ vars.drawSpaceCanvas, debuglevel);
             log("vars.canvasXMid: "+ vars.canvasXMid, debuglevel);
             log("vars.canvasYMid: "+ vars.canvasYMid, debuglevel);
-            log("vars.windowTocanvasMultX: "+ vars.windowTocanvasMultX, debuglevel);
-            log("vars.canvasToWindowMultX: "+ vars.canvasToWindowMultX, debuglevel);
-            log("vars.windowTocanvasMultY: "+ vars.windowTocanvasMultY, debuglevel);
-            log("vars.canvasToWindowMultY: "+ vars.canvasToWindowMultY, debuglevel);        
             log("vars.viewDistance: "+ vars.viewDistance, debuglevel);
             log("vars.positionToCanvasMultY: "+ vars.positionToCanvasMultY, debuglevel);
             log("vars.positionToCanvasMultX: "+ vars.positionToCanvasMultX, debuglevel);
@@ -1458,7 +1470,7 @@ function setupDrawingFunctions()
         } else if(vars.drawMode == 2) {
             getMouseDown(e);
             setDrawingVariables();
-            const mousePositionCanvas = [vars.windowTocanvasMultX * vars.windowMouseDownX, vars.windowTocanvasMultY * vars.windowMouseDownY];
+            const mousePositionCanvas = [vars.windowMouseDownX, vars.windowMouseDownY];
             
             const val = tracks.duration * ( mousePositionCanvas[0] / drawCanvas.width );
             tracks.playAllFromTimePoint(val);
@@ -1494,7 +1506,7 @@ function setupDrawingFunctions()
         setDrawingVariables();
         getMouseDown(e);
         
-        const mousePositionCanvas = [vars.windowTocanvasMultX * vars.windowMouseDownX, vars.windowTocanvasMultY * vars.windowMouseDownY];
+        const mousePositionCanvas = [vars.windowMouseDownX, vars.windowMouseDownY];
         if(vars.drawMode == 1) {
             
             var elementBeingDragged = positionableElements.mouseDown(mousePositionCanvas);
@@ -1502,12 +1514,10 @@ function setupDrawingFunctions()
             // listener direction
             if(!elementBeingDragged) {
                 const listenerPositionCanvas = positionableElements.getDrawSpace(0);
-                const x = vars.windowTocanvasMultX * vars.windowMouseDownX - ( listenerPositionCanvas.x + 0.5 * listenerPositionCanvas.w );
-                const z = vars.windowTocanvasMultX * vars.windowMouseDownY - ( listenerPositionCanvas.y + 0.5 * listenerPositionCanvas.h );
+                const x = vars.windowMouseDownX - ( listenerPositionCanvas.x + 0.5 * listenerPositionCanvas.w );
+                const z = vars.windowMouseDownY - ( listenerPositionCanvas.y + 0.5 * listenerPositionCanvas.h );
                 audioListener.setListenerDirection(x, 0, -z);
             }
-        } else if(vars.drawMode == 2) {
-            // tracks.stopAll();
         }
     }
 
@@ -1525,22 +1535,23 @@ function setupDrawingFunctions()
             vars.windowDragX = getEventX(e) - drawCanvas.offsetLeft;
             vars.windowDragY = getEventY(e) - drawCanvas.offsetTop;
             
-            const mousePosOnCanvas = [vars.windowTocanvasMultX * vars.windowDragX, vars.windowTocanvasMultY * vars.windowDragY];
+            const mousePosOnCanvas = [vars.windowDragX, vars.windowDragY];
             positionableElements.mouseMove(mousePosOnCanvas);
             
             // mouse drag
             if(vars.isMouseDown) {
-                const canvasXDistanceFromDragStart = (vars.windowDragX - vars.windowMouseDownX) * vars.windowTocanvasMultX;
-                const canvasYDistanceFromDragStart = (vars.windowDragY - vars.windowMouseDownY) * vars.windowTocanvasMultX;
-                const dragDistanceOnCanvas = [canvasXDistanceFromDragStart / vars.positionToCanvasMultX, canvasYDistanceFromDragStart / vars.positionToCanvasMultY];
+                const canvasXDistanceFromDragStart = vars.windowDragX - vars.windowMouseDownX;
+                const canvasYDistanceFromDragStart = vars.windowDragY - vars.windowMouseDownY;
+               
+                const dragDistancePosition = [canvasXDistanceFromDragStart / vars.positionToCanvasMultX, canvasYDistanceFromDragStart / vars.positionToCanvasMultY];
                 
-                var elementIsBeingDragged = positionableElements.mouseDrag( dragDistanceOnCanvas );
+                var elementIsBeingDragged = positionableElements.mouseDrag( dragDistancePosition );
                 
                 // listener direction
                 if(!elementIsBeingDragged) {
                     const listenerPositionCanvas = positionableElements.getDrawSpace(0);
-                    var x = vars.windowTocanvasMultX * vars.windowDragX - ( listenerPositionCanvas.x + 0.5 * listenerPositionCanvas.w );
-                    var z = vars.windowTocanvasMultX * vars.windowDragY - ( listenerPositionCanvas.y + 0.5 * listenerPositionCanvas.h );
+                    var x = vars.windowDragX - ( listenerPositionCanvas.x + 0.5 * listenerPositionCanvas.w );
+                    var z = vars.windowDragY - ( listenerPositionCanvas.y + 0.5 * listenerPositionCanvas.h );
                     audioListener.setListenerDirection(x, 0, -z);
                 }
                 globals.setPanning();
