@@ -1,3 +1,30 @@
+@media (max-height: 300px) {
+    label {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 500px) {
+    label {
+        font-size: 10px;
+    }
+}
+
+body {
+    background: transparent;
+    height: 100%;
+}
+
+button {
+    display: block;
+    margin: 4.5% auto;
+    height: 7vh;
+    min-height: 25px;
+    font-size: 5hw;
+    width: 18vw;
+    min-width: 150px;
+}
+
 div.background {
     background-origin: content-box;
     background-repeat: repeat-y;
@@ -15,86 +42,14 @@ div.drawingSpace {
     display: block;
 }
 
-.sliders {
-  width: 100%;
-  height: auto;
-  margin: 10vh 0;
-}
-
-.slider {
-    -webkit-appearance: none;
-    background: #d0d0d0;
-    outline: none;
-    border-radius: 10px;
-    height: 2vh;
-}
-.slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 3.2vh;
-    height: 3.2vh;
-    cursor: pointer;
-    background: #4CAF50;
-    border-radius: 50%;
-}
-.slider::-moz-range-thumb {
-    width: 3.2vh;
-    height: 3.2vh;
-    cursor: pointer;
-    background: #4CAF50;
-    border-radius: 50%;
-}
-
-.playbutton {
-    width: 40%;
-    margin: 10px 31%;
-    height: 28px;
-}
-
-.canvas {
-    height: 100%;
-    width: 90vh;
-    margin: auto;
-    float: left;
-}
-
-.frameSpace {
-    /* padding: 2%; */
-    /* height: 98vh; */
-    width: auto;
-    display:inline-block;
-    
-}
-
-.customContainer {
-    width: 100%;
-    position:absolute;
-    display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
-    display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
-    display: -ms-flexbox;      /* TWEENER - IE 10 */
-    display: -webkit-flex;     /* NEW - Chrome */
-    display: flex;             /* NEW, Spec - Opera 12.1, Firefox 20+ */
-    padding: 0vh;
-    z-index: 1;
-}
-
-.drawFrameSpace {
-    width: 98vh;
-}
-
-.centered {
-    margin: auto;
-    /* margin: auto */
-}
-
-body {
-  /* opacity=0.1; */
-  background: transparent;
-    height: 100%;
+footer {
+    height:31px;
+    margin-bottom:-31px;
+    width:100%;
+    position: relative;
 }
 
 input[type=range] {
-    /* width: 52%; */
     width: 97%;
     margin: 0.2%; 0%;
     height: 2wh;
@@ -108,26 +63,17 @@ label {
     margin: 1px 2%;
     vertical-align: middle;
 }
-button {
-    display: block;
-    margin: 4.5% auto;
-    height: 7vh;
-    min-height: 25px;
-    font-size: 5hw;
-    width: 18vw;
-    min-width: 150px;
-    <!-- vertical-align: center; -->
+
+svg {
+    stroke:rgb(0,0,0);
+    fill:rgb(0,0,0);
 }
 
-@media (max-width: 500px) {
-    label {
-        font-size: 10px;
-    }
-}
-@media (max-height: 300px) {
-    label {
-        font-size: 10px;
-    }
+.canvas {
+    height: 100%;
+    width: 90vh;
+    margin: auto;
+    float: left;
 }
 
 .canvas-menu-item {
@@ -136,25 +82,96 @@ button {
     background-color: rgba(200, 200, 200, 0.5);
     padding: 4px;
     margin: 1px 5px;
-    /* opacity:0.4 */
     min-width: 20px;
     min-height: 20px;
     max-width: 40px;
     max-height: 40px;
 }
 
-svg {
-    stroke:rgb(0,0,0);
-    fill:rgb(0,0,0);
+.centered {
+    margin: auto;
 }
 
-#loading-screen {
-    position:relative; 
-    z-index:1;
+.content {
+  min-height: 100%;
+  flex: 1;
+  position: relative;
 }
 
-#controlpanel {
-    margin:auto;
+.customContainer {
+    width: 100%;
+    display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
+    display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
+    display: -ms-flexbox;      /* TWEENER - IE 10 */
+    display: -webkit-flex;     /* NEW - Chrome */
+    display: flex;             /* NEW, Spec - Opera 12.1, Firefox 20+ */
+    padding: 0vh;
+    z-index: 1;
+}
+
+.drawFrameSpace {
+    width: 98vh;
+}
+
+.footerContainer {
+    float: left;
+    position: relative;
+    height: 30px;
+    width: 30px;
+    margin: 0 3px;
+}
+
+.footerDrawable {
+    padding:7px;
+    position:absolute;
+    height:100%;
+    top:0px;
+    pointer-events: none;
+    x-index: -1;
+}
+
+.frameSpace {
+    width: auto;
+    display: inline-block;
+    
+}
+
+.playbutton {
+    width: 40%;
+    margin: 10px 31%;
+    height: 28px;
+}
+
+.slider {
+    -webkit-appearance: none;
+    background: #d0d0d0;
+    outline: none;
+    border-radius: 10px;
+    height: 2vh;
+}
+
+.slider::-moz-range-thumb {
+    width: 3.2vh;
+    height: 3.2vh;
+    cursor: pointer;
+    background: #4CAF50;
+    border-radius: 50%;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 3.2vh;
+    height: 3.2vh;
+    cursor: pointer;
+    background: #4CAF50;
+    border-radius: 50%;
+}
+
+.sliders {
+  width: 100%;
+  height: auto;
+  margin: 10vh 0;
 }
 
 .wrapper {
@@ -165,32 +182,12 @@ svg {
 }
 
 
-.content {
-  min-height: 100%;
-  flex: 1;
-  position: relative;
+#controlpanel {
+    margin:auto;
 }
 
-footer {
-    height:31px;
-    margin-bottom:-31px;
-    width:100%;
-    position: relative;
+#loading-screen {
+    position:relative; 
+    z-index:1;
 }
 
-.footerContainer {
-    float: left;
-    position:relative;
-    height:30px;
-    width:30px;
-    margin: 0 3px;
-}
-
-.footerDrawable {
-    padding:7px;
-    position:absolute;
-    height:100%;
-    top:0px;
-    pointer-events: none;
-    x-index=-1;
-}

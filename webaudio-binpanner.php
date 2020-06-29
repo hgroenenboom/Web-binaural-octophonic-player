@@ -115,6 +115,7 @@
                 </div>
             </div> <!-- /canvas space -->
             
+            
             <div id="controlpanel" class="frameSpace">
                
                 <!-- reverb volume fader
@@ -147,10 +148,9 @@
                     </datalist>
                 </div>
                 
-                    <button data-playing="false" id="playbutton" style="display:none;" role="switch" aria-checked="false">
-                        <span>Play/Pause</span>
-                    </button>
-                </div>
+                <button data-playing="false" id="playbutton" style="display:none;" role="switch" aria-checked="false">
+                    <span>Play/Pause</span>
+                </button>
             </div> <!-- control panel -->            
         </div> <!-- octophonic player -->
         
