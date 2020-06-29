@@ -50,6 +50,7 @@
         <link href="css/style.css" rel="stylesheet">
         <link href="css/customStyle.css" rel="stylesheet">
         <link href="circularslider/circularslider.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
         
         <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script>
         
@@ -77,6 +78,14 @@
             $colortheme = 'var colortheme = "';
             $colortheme = $colortheme. ( ( isset($array["colortheme"]) && $array["colortheme"] == "dark" ) ? "dark" : "light") . '";';
             echo $colortheme;
+            
+            echo "function toggleHelp() { 
+                if(document.getElementById('helpmenu').style.display == 'none') {
+                    document.getElementById('helpmenu').style.display='block'; document.getElementById('octophonic player').style.display='none';
+                } else {
+                    document.getElementById('helpmenu').style.display='none'; document.getElementById('octophonic player').style.display='block';
+                }
+            }";
             
             echo "</script>";
             
@@ -154,8 +163,25 @@
             </div> <!-- control panel -->            
         </div> <!-- octophonic player -->
         
+        <div id="helpmenu" class="content customContainer" style="display:none;">
+            <h4 style="text-align:center;">Help & About</h4>
+            <h5>How to use this software</h5>
+            In the main view, you are able to move around the <i>listener</i> (the virtual position of your earbuds) and the <i>soundsources</i> (the speakers) by draging the icons. It's also possible to change the direction of the listener by clicking anywhere on the 2d field. This interaction enables new interesting virtual     3D listening experiences.
+            
+            <h5>Used techniques</h5>
+            This software uses an audio technique called 'binaural audio'. This technique allows us to almost exactly simulate the location of any sound source. To experience this effect it is <u>required</u> to wear earbuds. <a href="https://hookeaudio.com/what-is-binaural-audio/" target="_blank">More info.</a>
+            
+            
+            <h5>Credits, contact & copyrights</h5>
+            This software and all of it's attachements are created and owned by Harold Groenenboom. <br>Contact: info@haroldgroenenboom.nl<br>
+            <br>
+            Copyright © 2019 Groenenboom Music Composition & Software Design
+            
+            <br><br><h4 style="text-align:center;"><a onclick="toggleHelp()">close</a></h4><br><br>
+        </div>
+        
         <footer>
-            <div style="position:relative;height:100%;">
+            <div style="position:relative;height:100%;z-index:1">
                 <div id="playButtonSVG" class="footerContainer"> 
                     <svg class="footerDrawable" viewBox="0 0 24 24" width="30" height="30" xmlns="http://www.w3.org/2000/svg">
                         <path style="stroke:#111;stroke-width:2;stroke-linejoin:round;fill:#111;" d="M23 12l-22 12v-24l22 12zm-21 10.315l18.912-10.315-18.912-10.315v20.63z"/>
@@ -178,8 +204,15 @@
                     <option value="0" label="min"></option>
                     <option value="1.5" label="max"></option>
                 </datalist>
+                
+                <div class="footerContainer help-button-container">
+                    <button class="help-button" onclick="toggleHelp()">
+                        <i class="fa fa-question-circle"></i>
+                    </button>
+                </div>
             </div>
-            <div style="position:absolute;background-color:#777777; height:100%; width:100%; top:0px; x-index:-1; z-index:-1; pointer-events:none;">
+            
+            <div style="position:absolute;background-color:#777777; height:100%; width:100%; top:0px; x-index:-1; z-index:0; pointer-events:none;">
             </div>
         </footer>
         

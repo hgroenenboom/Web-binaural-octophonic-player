@@ -47,7 +47,7 @@ footer {
     height:31px;
     margin-bottom:-31px;
     width:100%;
-    position: relative;
+    position: absolute;
 }
 
 input[type=range] {
@@ -82,7 +82,7 @@ svg {
 }
 
 .canvas-menu-item {
-    width:3vw;
+    width:20px;
     height: 3vw;
     background-color: rgba(200, 200, 200, 0.5);
     padding: 4px;
@@ -198,3 +198,23 @@ svg {
     z-index:1;
 }
 
+#helpmenu {
+    overflow: scroll;
+    z-index: 0;
+}
+
+.help-button-container {
+    float:right;
+    width:30px;
+    height:30px;
+}
+
+.help-button {
+    font-size:16px;
+    min-width:0px;
+    min-height:0px;
+    width:20px;
+    height:23px;
+    margin: 5px 5px;
+    padding:0px;
+}
