@@ -201,6 +201,7 @@ svg {
 #helpmenu {
     overflow: scroll;
     z-index: 0;
+    height: 100vh;
 }
 
 .help-button-container {

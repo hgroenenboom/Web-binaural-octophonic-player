@@ -1211,7 +1211,7 @@ function enableInteractions()
     drawCanvas.height = canvi[0].style.height.replace(/\D/g,'');
     var footer = document.getElementsByTagName('footer')[0];
     footer.style.top = drawCanvas.height+"px";
-    document.getElementById("helpmenu").style.height = vh+"px";
+    // document.getElementById("helpmenu").style.height = vh+"px";
 }
 
 function setupPanningNodes() 

@@ -126,16 +126,6 @@
             
             
             <div id="controlpanel" class="frameSpace">
-               
-                <!-- reverb volume fader
-                    <div class="sliders" <?php /*if(!isset($array["debug_level"])) { echo 'style="display:none;"'; }*/ ?> >
-                    <label for="reverb">reverb volume</label>
-                    <input type="range" id="reverb" class="control-reverb slider" min="0" max="0.5" value="0.36" list="reverb-vals" step="0.01" data-action="reverb" />
-                    <datalist id="reverb-vals">
-                    <option value="0" label="min"></option>
-                    <option value="0.5" label="max"></option>
-                    </datalist>
-                </div> -->
                 
                 <!-- master volume fader -->
                 <div class="sliders" <?php if(!isset($array["debug_level"])) { echo 'style="display:none;"'; } ?> >
@@ -147,16 +137,6 @@
                     </datalist>
                 </div>
                 
-                <!-- speaker rotation fader -->
-                <div class="sliders" <?php if(!isset($array["rotatespeakers"])) { echo " style='display:none;'"; } ?> >
-                    <label for="pan">rotate speakers</label>
-                    <input type="range" id="pan" class="control-panning slider circular-slider" min="0" max="6.28" value="3.745" list="pan-vals" step="0.01" data-action="pan" />
-                    <datalist id="pan-vals">
-                        <option value="0" label="min"></option>
-                        <option value="6.28" label="max"></option>
-                    </datalist>
-                </div>
-                
                 <button data-playing="false" id="playbutton" style="display:none;" role="switch" aria-checked="false">
                     <span>Play/Pause</span>
                 </button>
@@ -164,20 +144,24 @@
         </div> <!-- octophonic player -->
         
         <div id="helpmenu" class="content customContainer" style="display:none;">
-            <h4 style="text-align:center;">Help & About</h4>
-            <h5>How to use this software</h5>
-            In the main view, you are able to move around the <i>listener</i> (the virtual position of your earbuds) and the <i>soundsources</i> (the speakers) by draging the icons. It's also possible to change the direction of the listener by clicking anywhere on the 2d field. This interaction enables new interesting virtual     3D listening experiences.
-            
-            <h5>Used techniques</h5>
-            This software uses an audio technique called 'binaural audio'. This technique allows us to almost exactly simulate the location of any sound source. To experience this effect it is <u>required</u> to wear earbuds. <a href="https://hookeaudio.com/what-is-binaural-audio/" target="_blank">More info.</a>
-            
-            
-            <h5>Credits, contact & copyrights</h5>
-            This software and all of it's attachements are created and owned by Harold Groenenboom. <br>Contact: info@haroldgroenenboom.nl<br>
-            <br>
-            Copyright © 2019 Groenenboom Music Composition & Software Design
-            
-            <br><br><h4 style="text-align:center;"><a onclick="toggleHelp()">close</a></h4><br><br>
+            <div style="position:relative;height:auto;">
+                <h4 style="text-align:center;">Help & About</h4>
+                <h5>How to use this software</h5>
+                In the main view, you are able to move around the <i>listener</i> (the virtual position of your earbuds) and the <i>soundsources</i> (the speakers) by draging the icons. It's also possible to change the direction of the listener by clicking anywhere on the 2d field. This interaction enables new interesting virtual     3D listening experiences.
+                
+                <h5>Used techniques</h5>
+                This software uses an audio technique called 'binaural audio'. This technique allows us to almost exactly simulate the location of any sound source. To experience this effect it is <u>required</u> to wear earbuds. <a href="https://hookeaudio.com/what-is-binaural-audio/" target="_blank">More info.</a>
+                
+                
+                <h5>Credits, contact & copyrights</h5>
+                This software and all of it's attachements are created and owned by Harold Groenenboom. <br>Contact: info@haroldgroenenboom.nl<br>
+                <br>
+                Copyright © 2019 Groenenboom Music Composition & Software Design
+                
+                <br><br><h4 style="text-align:center;"><a onclick="toggleHelp()">close</a></h4><br><br>
+                <div style="top:0px;position:absolute;height:100%;width:100%;background-color:#ffe;opacity:0.25;z-index:-1;">
+                </div>
+            </div>
         </div>
         
         <footer>
@@ -203,6 +187,22 @@
                 <datalist id="trackVolume-vals">
                     <option value="0" label="min"></option>
                     <option value="1.5" label="max"></option>
+                </datalist>
+                
+                <!--
+                <p class="footerContainer" style="width:auto;padding:2px;color:#ddd;margin:0 8px;" <?php if(!isset($array["reverbon"])) { echo 'style="display:none;"'; } ?>>reverb volume</p>
+                <input type="range" id="reverb" class="footerContainer control-reverb" style="width:100px" min="0" max="0.5" value="0.36" list="reverb-vals" step="0.01" data-action="reverb" <?php if(!isset($array["reverbon"])) { echo 'style="display:none;"'; } ?>/>
+                <datalist id="reverb-vals">
+                <option value="0" label="min"></option>
+                <option value="0.5" label="max"></option>
+                </datalist>
+                -->
+                
+                <p class="footerContainer" style="width:auto;padding:2px;color:#ddd;margin:0 8px;" <?php if(!isset($array["reverbon"])) { echo 'style="display:none;"'; } ?>>rotate speakers</p>
+                <input type="range" id="pan" class="footerContainer control-panning slider circular-slider" style="width:100px;margin:10px;" min="0" max="6.28" value="3.745" list="pan-vals" step="0.01" data-action="pan" <?php if(!isset($array["reverbon"])) { echo 'style="display:none;"'; } ?>/>
+                <datalist id="pan-vals">
+                    <option value="0" label="min"></option>
+                    <option value="6.28" label="max"></option>
                 </datalist>
                 
                 <div class="footerContainer help-button-container">
