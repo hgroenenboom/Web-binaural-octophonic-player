@@ -1188,6 +1188,9 @@ function enableInteractions()
         let state = playButton.getAttribute('aria-checked') === "true" ? true : false;
         playButton.setAttribute( 'aria-checked', state ? "false" : "true" );
     };
+    window.binauralplayer.setSpeakerDistance = function(newDistance) {
+        vars.SPEAKER_DIST = newDistance;
+    }
     
     playButton.addEventListener('click', window.binauralplayer.playPause, false);
     playButtonSVG.addEventListener('click', window.binauralplayer.playPause, false);
@@ -1585,7 +1588,7 @@ function setupDrawingFunctions()
         if(vars.drawMode == 0) {    // draw track gain meters
             const bottombar = Math.max(vars.drawSpaceCanvas.h / 12, 20);
             const height = vars.drawSpaceCanvas.h - bottombar;
-            const widthPerElement = vars.drawSpaceCanvas.w / NUM_FILES;
+            const widthPerElement = Math.min(100, vars.drawSpaceCanvas.w / NUM_FILES);
 
             for(var i = 0; i < NUM_FILES; i++) 
             {
@@ -1679,8 +1682,8 @@ function setupDrawingFunctions()
             for(var i = 0; i < NUM_FILES; i++) {
                 drawContext.fillStyle = vars.frontColor;
                 drawContext.save();
-                drawContext.translate(0, (i / NUM_FILES) * width);
-                drawContext.scale( width, (1 / NUM_FILES) * width);
+                drawContext.translate(0, (i / NUM_FILES) * drawCanvas.height);
+                drawContext.scale( width, (1 / NUM_FILES) * drawCanvas.height);
                 drawContext.fill( tracks.nodes[i].waveform );
                 drawContext.restore();
             }
