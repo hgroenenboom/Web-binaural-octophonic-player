@@ -104,7 +104,7 @@
         <div id="octophonic player" class="content customContainer" style="display:none;">
             <div class="frameSpace drawFrameSpace">
                 <canvas class="canvas" id="canvas" width="1000" height="1000">canvas</canvas>
-                <div style="height:100%;display:inline-block;width:0%;float:right;" id="drawCanvasButtons">
+                <div id="drawCanvasButtons">
                     <!--https://upload.wikimedia.org/wikipedia/commons/5/59/2D_Cartesian_Coordinates.svg -->
                     <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.0" id="svg1415" class="canvas-menu-item" viewbox="0 0 300 300">
                         <line x1="150" y1="0" x2="150" y2="300" style="stroke-width:30" />
@@ -158,28 +158,28 @@
             <div style="position:relative;height:100%;">
                 <div id="playButtonSVG" class="footerContainer"> 
                     <svg class="footerDrawable" viewBox="0 0 24 24" width="30" height="30" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M23 12l-22 12v-24l22 12zm-21 10.315l18.912-10.315-18.912-10.315v20.63z"/>
+                        <path style="stroke:#111;stroke-width:2;stroke-linejoin:round;fill:#111;" d="M23 12l-22 12v-24l22 12zm-21 10.315l18.912-10.315-18.912-10.315v20.63z"/>
                     </svg>
                 </div>
                 <div style="display:none;" id="pauseButtonSVG" class="footerContainer"> 
-                    <svg class="footerDrawable" viewBox="0 0 24 24" width="30" height="30" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd">
-                        <path d="M10 24h-6v-24h6v24zm10 0h-6v-24h6v24zm-11-23h-4v22h4v-22zm10 0h-4v22h4v-22z"/>
+                    <svg class="footerDrawable" viewBox="0 0 24 24" width="30" height="30" xmlns="http://www.w3.org/2000/svg">
+                        <path style="stroke:#111;stroke-width:2;stroke-linejoin:round;fill:#111;" d="M10 24h-6v-24h6v24zm10 0h-6v-24h6v24zm-11-23h-4v22h4v-22zm10 0h-4v22h4v-22z"/>
                     </svg>
                 </div>
                 <div class="footerContainer">
                     <svg class="footerDrawable" xmlns="http://www.w3.org/2000/svg" version="1.0" width="30" height="30" viewBox="0 0 75 75">
-                    <path d="M39.389,13.769 L22.235,28.606 L6,28.606 L6,47.699 L21.989,47.699 L39.389,62.75 L39.389,13.769z" style="stroke:#111;stroke-width:5;stroke-linejoin:round;fill:#111;"/>
-                    <path d="M48,27.6a19.5,19.5 0 0 1 0,21.4M55.1,20.5a30,30 0 0 1 0,35.6M61.6,14a38.8,38.8 0 0 1 0,48.6" style="fill:none;stroke:#111;stroke-width:5;stroke-linecap:round"/>
+                        <path d="M39.389,13.769 L22.235,28.606 L6,28.606 L6,47.699 L21.989,47.699 L39.389,62.75 L39.389,13.769z" style="stroke:#111;stroke-width:5;stroke-linejoin:round;fill:#111;"/>
+                        <path d="M48,27.6a19.5,19.5 0 0 1 0,21.4M55.1,20.5a30,30 0 0 1 0,35.6M61.6,14a38.8,38.8 0 0 1 0,48.6" style="stroke:#111;stroke-width:5;stroke-linecap:round;fill:#111;"/>
                     </svg>
                 </div>
                 
-                <input type="range" id="trackVolume" class="footerContainer" style="width:100px" min="0" max="1.7" value="0.8" list="trackVolume-vals" step="0.01" data-action="trackVolume"></input>
+                <input type="range" id="trackVolume" class="footerContainer" style="width:100px" min="0" max="1.7" value="0.8" list="trackVolume-vals" step="0.001" data-action="trackVolume"></input>
                 <datalist id="trackVolume-vals">
                     <option value="0" label="min"></option>
                     <option value="1.5" label="max"></option>
                 </datalist>
             </div>
-            <div style="position:absolute;opacity:0.3; background-color:#000000; height:100%; width:100%; top:0px; x-index=-1; z-index=-1; pointer-events:none;">
+            <div style="position:absolute;background-color:#777777; height:100%; width:100%; top:0px; x-index:-1; z-index:-1; pointer-events:none;">
             </div>
         </footer>
         
@@ -200,7 +200,7 @@
         </div> <!--- background image -->
         
         <!--- background color -->
-        <div class="background" style="position:absolute;z-index: -1;background-color: <?php
+        <div class="background" style="position:absolute;z-index: -2;background-color: <?php
             parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
             if(isset($array["colortheme"])) {
                 if($array["colortheme"] == "dark") {

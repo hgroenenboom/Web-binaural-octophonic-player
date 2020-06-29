@@ -420,8 +420,8 @@ class PreloadedAudioNode {
                 max = Math.max(max, channel0[j]);
             }
             
-            w.push(max);
-            this.waveform.lineTo( pathPoint, 0.5 + 0.5 * max );
+            w.push(Math.sqrt(max));
+            this.waveform.lineTo( pathPoint, 0.5 + 0.5 * Math.sqrt(max) );
         }
         this.waveform.lineTo(1, 0.5);
         for(var i = numPoints - 1; i > 0; i = i - 1) {
@@ -1152,6 +1152,12 @@ function enableInteractions()
     
     if(USE_REVERB_NODES) {
         binauralReverb.calculateGains();
+    }
+    
+    var all = document.getElementsByClassName('canvas');
+    const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+    for (var i = 0; i < all.length; i++) {
+      all[i].style.height = (vh-30)+"px";
     }
 }
 

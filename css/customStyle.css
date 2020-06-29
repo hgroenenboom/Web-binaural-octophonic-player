@@ -34,6 +34,7 @@ div.background {
     width:100%;
     height:100%;
     top:0px;
+    z-index:-1;
 }
 
 div.drawingSpace {
@@ -64,14 +65,18 @@ label {
     vertical-align: middle;
 }
 
+path {
+    style="stroke:#111;stroke-width:5;stroke-linejoin:round;fill:#111;
+}
+
 svg {
     stroke:rgb(0,0,0);
     fill:rgb(0,0,0);
 }
 
 .canvas {
-    height: 100%;
-    width: 90vh;
+    height: 0px; /* set via javascript */
+    width: 94vw;
     margin: auto;
     float: left;
 }
@@ -94,7 +99,6 @@ svg {
 
 .content {
   min-height: 100%;
-  flex: 1;
   position: relative;
 }
 
@@ -133,7 +137,6 @@ svg {
 .frameSpace {
     width: auto;
     display: inline-block;
-    
 }
 
 .playbutton {
@@ -175,12 +178,16 @@ svg {
 }
 
 .wrapper {
-  display: flex;
-  /* min-height: 100vh; */
-  flex-direction: column;
+  overflow: hidden;
   position: relative
 }
 
+#drawCanvasButtons {
+    height:100%;
+    display:inline-block;
+    width: 4vw;
+    float: left;
+}
 
 #controlpanel {
     margin:auto;
