@@ -14,7 +14,7 @@
         <link href="css/bootstrap.min.css" rel="stylesheet">
         <link href="css/style.css" rel="stylesheet">
         <link href="css/customStyle.css" rel="stylesheet">
-        <link href="circularslider/circularslider.css" rel="stylesheet">
+        <link href="source/circularslider/circularslider.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
         
         <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script>
@@ -70,7 +70,7 @@
         </div>
         <?php
             # DISPLAY FILES LOADED
-            if($array["verbosity"] != "-1" && isset($array["verbosity"])) {
+            if(array_key_exists("verbosity", $array) && isset($array["verbosity"])) {
                 echo '<div style="position:absolute;top:0px;margin:0px;"><p style="top:0px;font-size:8px;">' . $array["file"]."1".$array["ext"] . '</p></div>';
             }
         ?>
@@ -186,7 +186,7 @@
             if(isset($array["background_image"])) {
                 echo $array["background_image"];
                 } else {
-                echo "/img/test3.gif";
+                echo "resources/img/test3.gif";
             }
             echo "'); opacity:";
             if(isset($array["opacity"])) {
@@ -214,7 +214,7 @@
         <div id="debugelements" style="top:100%;position:absolute;"> 
             <?php
                 # GENERATE DEBUG INTERFACE
-                if($array["debuglevel"] != "-1" && isset($array["debuglevel"])) {
+                if(array_key_exists("debuglevel", $array) && isset($array["debuglevel"])) {
                     # developer faders
                     echo '<div style="overflow-y: auto; height:400px;background-color:rgb(255,255,255);display:block;width:100%;">';
                     echo '<div class="sliders"><input type="range" id="rollof" class="slider" min="0" max="1" step="0.01" /><label for="rollof">roloff</label></div>';
@@ -226,7 +226,7 @@
                     echo '<div style="overflow-y: auto; height:400px;background-color:rgb(255,255,255);"><p id="console"></p></div>';
                     
                     # script to register debug interface
-                    echo '<script src="debug.js" type="text/javascript"></script>';
+                    echo '<script src="source/debug.js" type="text/javascript"></script>';
                 }
             ?>
         </div> <!-- /debugelements -->
@@ -262,7 +262,7 @@
         <script src="http://reverbjs.org/reverb.js"></script> 
         
         <!-- main scripts -->
-        <script src="main.js" type="text/javascript"></script>
-        <script src="circularslider/circularslider.js"></script>
+        <script src="source/main.js" type="text/javascript"></script>
+        <script src="source/circularslider/circularslider.js"></script>
     </body>
 </html>
