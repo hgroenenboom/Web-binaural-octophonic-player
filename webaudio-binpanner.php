@@ -1,55 +1,20 @@
-<!--- MODIFIED MULTICHANNEL AUDIO TO BINAURAL AUDIO PLAYER --->
+<!--- BINAURAL MULTICHANNEL AUDIO PLAYER --->
 <!--- by Harold Groenenboom                       --->
 <!--- Base code: https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Web_audio_spatialization_basics --->
-
-<!-- 
-    audiofiles will be looked for like this:
-    <filename><channel>.<ext>
-    
-    --------------- ARGUMENTS ------------------
-    manditory
-    - file=<url>    , url of file to load. Without the files extension and 
-                    without the numbering (for instance audiofile01.mp3 -> audiofile0)
-        -> Files are supposed to be split into mono files and numbered from 1. 
-            Example for input filename 'audiofile0':
-            audiofile01<ext>, audiofile02<ext>, audiofile03<ext>, audiofile04<ext>, audiofile05<ext>, audiofile06<ext>, audiofile07<ext>, audiofile08<ext>
-    - ext=<audioextension>      , audio extension to be used. (i.e. .wav/.mp3/.m4a)
-    - channels=<0-16>       , the number of audiofiles to look for. (default = 8)
-    
-    ...or instead of <file><ext><numchannels> use 
-    - filelist=< n*[ <url> ] >
-    
-    style
-    - background_image=<url>        , the background image to use. Default is art designed by Harold Groenenboom
-    - opacity=<0-1>     , opacity for the background image
-    - colortheme=<dark/light>       , default=light, the color theme for all visible html elements
-    - colorgradient=< [ n * [ amplitude, [r,g,b,a] ] ] >
-    
-    powerusers / alpha features
-    - verbosity=<0-10>, the verbosity to run on. Higher level creates more console output. only to use when debugging.
-    - reverbon, enables reverb
-    - rotatespeakers
--->
-
-
 <!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8">
         <meta http-equiv="x-ua-compatible" content="ie=edge">
         <title>Web Audio Spacialisation</title>
-        <meta name="description" content="Panner node demo for Web Audio API">
+        <meta name="description" content="Binaural multi-channel audiofile player">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        
-        <!-- https://www.warpdesign.fr/webaudio-from-scriptprocessornode-to-the-new-audioworklet-api/ -->
-        <!-- https://github.com/GoogleChromeLabs/audioworklet-polyfill -->
-        <!--<script src="https://unpkg.com/audioworklet-polyfill/dist/audioworklet-polyfill.js"></script> <!-- since ScriptProcessorNode is used in most browser, but deprectated! And the new AudioWorklet is favored by WebAudio, but only support by Chrome. -->
         
         <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500,700" rel="stylesheet">
         <link href="css/bootstrap.min.css" rel="stylesheet">
         <link href="css/style.css" rel="stylesheet">
         <link href="css/customStyle.css" rel="stylesheet">
-        <link href="circularslider/circularslider.css" rel="stylesheet">
+        <link href="source/circularslider/circularslider.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
         
         <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script>
@@ -105,7 +70,7 @@
         </div>
         <?php
             # DISPLAY FILES LOADED
-            if($array["verbosity"] != "-1" && isset($array["verbosity"])) {
+            if(array_key_exists("verbosity", $array) && isset($array["verbosity"])) {
                 echo '<div style="position:absolute;top:0px;margin:0px;"><p style="top:0px;font-size:8px;">' . $array["file"]."1".$array["ext"] . '</p></div>';
             }
         ?>
@@ -221,7 +186,7 @@
             if(isset($array["background_image"])) {
                 echo $array["background_image"];
                 } else {
-                echo "/img/test3.gif";
+                echo "resources/img/test3.gif";
             }
             echo "'); opacity:";
             if(isset($array["opacity"])) {
@@ -249,7 +214,7 @@
         <div id="debugelements" style="top:100%;position:absolute;"> 
             <?php
                 # GENERATE DEBUG INTERFACE
-                if($array["debuglevel"] != "-1" && isset($array["debuglevel"])) {
+                if(array_key_exists("debuglevel", $array) && isset($array["debuglevel"])) {
                     # developer faders
                     echo '<div style="overflow-y: auto; height:400px;background-color:rgb(255,255,255);display:block;width:100%;">';
                     echo '<div class="sliders"><input type="range" id="rollof" class="slider" min="0" max="1" step="0.01" /><label for="rollof">roloff</label></div>';
@@ -261,7 +226,7 @@
                     echo '<div style="overflow-y: auto; height:400px;background-color:rgb(255,255,255);"><p id="console"></p></div>';
                     
                     # script to register debug interface
-                    echo '<script src="debug.js" type="text/javascript"></script>';
+                    echo '<script src="source/debug.js" type="text/javascript"></script>';
                 }
             ?>
         </div> <!-- /debugelements -->
@@ -297,7 +262,7 @@
         <script src="http://reverbjs.org/reverb.js"></script> 
         
         <!-- main scripts -->
-        <script src="main.js" type="text/javascript"></script>
-        <script src="circularslider/circularslider.js"></script>
+        <script src="source/main.js" type="text/javascript"></script>
+        <script src="source/circularslider/circularslider.js"></script>
     </body>
 </html>
