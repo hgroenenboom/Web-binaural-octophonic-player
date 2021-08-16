@@ -1,6 +1,4 @@
-// Use the defined slidercallback
-
-// sets all available circular-sliders on this page.
+// Sets all available circular-sliders on the current webpage/iframe.
 const sliders = document.getElementsByClassName("circular-slider");
 
 for(var i = 0; i < sliders.length; i++) {

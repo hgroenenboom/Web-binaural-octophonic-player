@@ -1,49 +1,14 @@
-<!--- MODIFIED MULTICHANNEL AUDIO TO BINAURAL AUDIO PLAYER --->
+<!--- BINAURAL MULTICHANNEL AUDIO PLAYER --->
 <!--- by Harold Groenenboom                       --->
 <!--- Base code: https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Web_audio_spatialization_basics --->
-
-<!-- 
-    audiofiles will be looked for like this:
-    <filename><channel>.<ext>
-    
-    --------------- ARGUMENTS ------------------
-    manditory
-    - file=<url>    , url of file to load. Without the files extension and 
-                    without the numbering (for instance audiofile01.mp3 -> audiofile0)
-        -> Files are supposed to be split into mono files and numbered from 1. 
-            Example for input filename 'audiofile0':
-            audiofile01<ext>, audiofile02<ext>, audiofile03<ext>, audiofile04<ext>, audiofile05<ext>, audiofile06<ext>, audiofile07<ext>, audiofile08<ext>
-    - ext=<audioextension>      , audio extension to be used. (i.e. .wav/.mp3/.m4a)
-    - channels=<0-16>       , the number of audiofiles to look for. (default = 8)
-    
-    ...or instead of <file><ext><numchannels> use 
-    - filelist=< n*[ <url> ] >
-    
-    style
-    - background_image=<url>        , the background image to use. Default is art designed by Harold Groenenboom
-    - opacity=<0-1>     , opacity for the background image
-    - colortheme=<dark/light>       , default=light, the color theme for all visible html elements
-    - colorgradient=< [ n * [ amplitude, [r,g,b,a] ] ] >
-    
-    powerusers / alpha features
-    - verbosity=<0-10>, the verbosity to run on. Higher level creates more console output. only to use when debugging.
-    - reverbon, enables reverb
-    - rotatespeakers
--->
-
-
 <!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8">
         <meta http-equiv="x-ua-compatible" content="ie=edge">
         <title>Web Audio Spacialisation</title>
-        <meta name="description" content="Panner node demo for Web Audio API">
+        <meta name="description" content="Binaural multi-channel audiofile player">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        
-        <!-- https://www.warpdesign.fr/webaudio-from-scriptprocessornode-to-the-new-audioworklet-api/ -->
-        <!-- https://github.com/GoogleChromeLabs/audioworklet-polyfill -->
-        <!--<script src="https://unpkg.com/audioworklet-polyfill/dist/audioworklet-polyfill.js"></script> <!-- since ScriptProcessorNode is used in most browser, but deprectated! And the new AudioWorklet is favored by WebAudio, but only support by Chrome. -->
         
         <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500,700" rel="stylesheet">
         <link href="css/bootstrap.min.css" rel="stylesheet">
