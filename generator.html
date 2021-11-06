@@ -3,19 +3,12 @@
 <head>
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/style.css">
+
     <!-- inline custom style -->
     <style>
     .small-margin {
-        margin: 1px;
-        padding: 1px;
-    }
-    
-    input {
-        width: 95%;
-    }
-    
-    select {
-        width: 95%;
+        margin: 4px;
+        padding: 4px;
     }
     
     button {
@@ -23,257 +16,238 @@
     }
     
     .submit {
-        height: 60px;
+        height: 48px;
         margin: 20px;
+    }
+
+    h2 {
+        padding: 16px 13px;
+    }
+
+    h4 {
+        padding: 12px 0;
+    }
+
+    input, select {
+        width: 100%;
     }
     </style>
     
-    <!-- <script src="jquery-3.4.1.min.js"></script> -->
-    <!-- onload script -->
     <script>    
-    // get homepage directory
-    const homepage = window.location.href.split("/").slice(0,-1).join("/");
+        // get homepage directory
+        const homepage = window.location.href.split("/").slice(0,-1).join("/");
 
-    function onForm(form = document.getElementById("inputdata")) {
-        var text = '';
-        var i;
-        <!-- get data from all form elements -->
-        for (i = 0; i < form.length ;i++) { 
-            var e = form.elements[i];
-            if(e.type != "button")
-                text += (i == 0 ? "?" : "&");
-            if(e.type == "checkbox") {
-                if(form.elements[i].checked)
-                    text += e.name+"=" + form.elements[i].value;
+        function onForm(form = document.getElementById("inputdata")) {
+            var text = '';
+            var i;
+            // get data from all form elements
+            for (i = 0; i < form.length ;i++) { 
+                var e = form.elements[i];
+                if(e.type != "button")
+                    text += (i == 0 ? "?" : "&");
+                if(e.type == "checkbox") {
+                    if(form.elements[i].checked)
+                        text += e.name+"=" + form.elements[i].value;
+                }
+                else if(e.type != "button") {
+                    if(form.elements[i].value != "")
+                        text += e.name+"=" + form.elements[i].value;
+                }
             }
-            else if(e.type != "button") {
-                if(form.elements[i].value != "")
-                    text += e.name+"=" + form.elements[i].value;
-            }
+            
+            // set iframe and copyable text
+            var frame = document.getElementById("frame");
+            frame.src = homepage + "/webaudio-binpanner.php"+text;
+            frame.width = document.getElementById("width").value;
+            frame.height = document.getElementById("height").value;
+            document.getElementById("copyable").innerHTML = "" + frame.outerHTML;
         }
         
-        // set iframe and copyable text
-        var frame = document.getElementById("frame");
-        frame.src = homepage + "/webaudio-binpanner.php"+text;
-        frame.width = document.getElementById("width").value;
-        frame.height = document.getElementById("height").value;
-        document.getElementById("copyable").innerHTML = "" + frame.outerHTML;
-    }
-    
-    function copyToClipboard() {
-      document.getElementById("copyable").select();
-      document.getElementById("copyable").setSelectionRange(0, 99999); /*For mobile devices*/
+        function copyToClipboard() {
+        document.getElementById("copyable").select();
+        document.getElementById("copyable").setSelectionRange(0, 99999); /*For mobile devices*/
 
-      document.execCommand("copy");
+        document.execCommand("copy");
 
-      alert("Copied to clipboard:\n" + document.getElementById("copyable").value);
-    }
+        alert("Copied to clipboard:\n" + document.getElementById("copyable").value);
+        }
     </script>
 </head>
 <body>
-    <div class="container pt">
-        <h2 class="centered">Embedded binaural player generator</h2>
+    <div class="container">
+        <h2>Embedded binaural player generator</h2>
         
         <!-- resizable iframe window -->
-        <div class="row mt">
-            <div id="frameSpace" style="resize:both; overflow:auto; margin: auto; width:600px; height:400px; border: 1px solid;margin-bottom: 20px;">
+        <div class="row small-margin">
+            <div id="frameSpace" style="resize:both; overflow:auto; width:600px; height:400px; border: 1px solid; margin-bottom: 20px;">
                 <!-- to be filled by top js script -->
                 <iframe id="frame" crossorigin="anonymous"></iframe>
             </div>
         </div>
         
-        <div class="row mt">
-            <h4 class="centered">Window dimensions</h4>
-            <div class="col-lg-3"></div>
-            <div class="col-lg-1">
-                <label for="width">width</label>
+        <h4>Window dimensions</h4>
+        <div class="row small-margin">
+            <div class="col-lg-5">
+                <label>Width</label>
             </div>
-            <div class="col-lg-1">
+            <div class="col-lg-5">
                 <input type="text" id="width" name="width" value="600">
             </div>
-            <div class="col-lg-1">
-                <label for="height">height</label>
+        </div>
+        <div class="row small-margin">
+            <div class="col-lg-5">
+                <label>Height</label>
             </div>
-            <div class="col-lg-1">
+            <div class="col-lg-5">
                 <input type="text" id="height" name="height" value="400">
             </div>
         </div>
-        
-        <div class="row mt">
+        <!-- <div class="row">
             <h4 class="centered">Responsive colorgradient</h4>
-            <div class="col-lg-10 centered" id="colorpicker" style="width=50%;">
-            <!-- to be filled by bottom js script -->
+            <div class="row" id="colorpicker">
             </div>
-        </div>
+        </div> -->
         
-        <form id="inputdata" class="centered" ACTION="" METHOD="GET" autocomplete="on"> <!-- action="console.log('test')"> -->
-            <h4 class="centered">Other visual settings</h4>
-            
+        <form id="inputdata" action="" method="GET" autocomplete="on">
+
+            <h4>Visual customization</h4>
             <div class="row small-margin">
-                <div class="col-lg-4">
-                    <label for="background_image">background image url</label>
+                <div class="col-lg-5">
+                    <label for="background_image">Background image URL</label>
                 </div>
-                <div class="col-lg-6">
+                <div class="col-lg-5">
                     <input type="text" id="background_image" name="background_image" value="resources/img/test3.gif">
                 </div>
             </div>
-            
-            <!-- <div class="row small-margin"> -->
-                <!-- <div class="col-lg-4"> -->
-                    <!-- <label for="opacity">background image opacity</label> -->
-                <!-- </div> -->
-                <!-- <div class="col-lg-6"> -->
-                    <!-- <input type="text" id="opacity" name="opacity" value="0.7"><br> -->
-                <!-- </div> -->
-            <!-- </div> -->
             <div class="row small-margin">
-                <div class="col-lg-4">
-                    <label for="opacity">background image opacity</label>
-                </div>
                 <div class="col-lg-5">
-                    <input type="range" min="0" step="0.01" max="1" id="opacity" name="opacity" value="0.7"><br>
+                    <label for="opacity">Background image opacity</label>
+                </div>
+                <div class="col-lg-4">
+                    <input type="range" min="0" step="0.01" max="1" id="opacity" name="opacity" value="0.7">
                 </div>
                 <div class="col-lg-1">
                     <span id="opacityval">0.7</span>
                 </div>
+                <!-- TODO remove inline script -->
                 <script type="text/javascript">document.getElementById("opacity").oninput = function() { document.getElementById("opacityval").innerHTML = this.value; } </script>
             </div>
-            
             <div class="row small-margin">
-                <div class="col-lg-4">
-                    <label for="colortheme">colortheme</label>
+                <div class="col-lg-5">
+                    <label for="colortheme">Colortheme</label>
                 </div>
-                <div class="col-lg-6">
+                <div class="col-lg-5">
                     <select name="colortheme" id="colortheme">
                         <option value="dark">dark</option>
                         <option value="light" selected="selected">light</option>
-                    </select><br><br>
+                    </select>
                 </div>
             </div>
             
-            <h4>Audio files to look for</h4>
-            
-            <p class="small-margin" style="font-style:italic;">numbered audiofiles</p>
+            <h4>Audio files</h4>
+            <p class="small-margin" style="padding-top: 5px;">Numbered audiofiles</p>
             <div class="row small-margin">
-                <div class="col-lg-4">
-                    <label for="file">audiofiles base url</label>
+                <div class="col-lg-5">
+                    <label for="file">Audiofiles URL without number and extension</label>
                 </div>
-                <div class="col-lg-6">
-                    <input type="text" id="audiofiles" name="file"><br>
+                <div class="col-lg-5">
+                    <input type="text" id="audiofiles" name="file">
                 </div>
             </div>
-            
             <div class="row small-margin">
-                <div class="col-lg-4">
-                    <label for="ext">extension</label>
+                <div class="col-lg-5">
+                    <label for="ext">File extension</label>
                 </div>
-                <div class="col-lg-6">
-                    <input type="text" id="extension" name="ext" value=".mp3"><br>
+                <div class="col-lg-5">
+                    <input type="text" id="extension" name="ext" value=".mp3">
                 </div>
             </div>
-            
             <div class="row small-margin">
-                <div class="col-lg-4">
-                    <label for="channels">numchannels</label>
+                <div class="col-lg-5">
+                    <label for="channels">Number of channels</label>
                 </div>
-                <div class="col-lg-6">
-                    <input type="text" id="numchannels" name="channels" value="3"><br>
+                <div class="col-lg-5">
+                    <input type="text" id="numchannels" name="channels" value="3">
                 </div>
             </div>
-            
-            <p class="small-margin" style="font-style:italic;">or...</p>
-            
+            <p class="small-margin" style="padding-top: 5px;">or</p>
             <div class="row small-margin">
-                <div class="col-lg-4">
-                    <label for="filelist">js array of audiofile urls</label>
+                <div class="col-lg-5">
+                    <label for="filelist">Array of audiofile urls</label>
                 </div>
-                <div class="col-lg-6">
-                    <input type="text" id="filelist" name="filelist" value='["resources/audio/samples/twigs-snapping.wav", "resources/audio/samples/footsstepsonice.mp3"]'><br><br>
+                <div class="col-lg-5">
+                    <input type="text" id="filelist" name="filelist" value='["resources/audio/samples/twigs-snapping.wav", "resources/audio/samples/footsstepsonice.mp3"]'>
                 </div>
             </div>
             
             <h4>Audio settings</h4>
-            
             <div class="row small-margin">
-                <div class="col-lg-4">
+                <div class="col-lg-5">
                     <label for="speakerdist">Speaker distance</label>
                 </div>
-                <div class="col-lg-5">
-                    <input type="range" min="5" max="50" id="speakerdist" name="speakerdist" value="10"><br>
+                <div class="col-lg-4">
+                    <input type="range" min="5" max="50" id="speakerdist" name="speakerdist" value="10">
                 </div>
                 <div class="col-lg-1">
                     <span id="speakerdistval">10</span>
                 </div>
                 <script type="text/javascript">document.getElementById("speakerdist").oninput = function() { document.getElementById("speakerdistval").innerHTML = this.value; } </script>
             </div>
-            
-            <p class="small-margin" style="font-style:italic;">or...</p>
-            
-             <div class="row small-margin">
-                <div class="col-lg-4">
+            <!-- <p class="small-margin" style="font-style:italic;">or...</p>
+            <div class="row small-margin">
+                <div class="col-lg-5">
                     <label for="speakerpositions">js array of speaker positions (Not yet implemented)</label>
                 </div>
-                <div class="col-lg-6">
-                    <!-- <input type="text" id="speakerpositions" name="speakerpositions" value=""><br><br> -->
+                <div class="col-lg-5">
+                    <input type="text" id="speakerpositions" name="speakerpositions" value="">
                 </div>
-            </div>
+            </div> -->
             
-            <h4>Experimental features</h4>
-            
+            <h4>Beta features</h4>
             <div class="row small-margin">
-                <div class="col-lg-4">
-                    <label for="debuglevel">debuglevel</label>
+                <div class="col-lg-5">
+                    <label for="debuglevel">Debuglevel</label>
                 </div>
-                <div class="col-lg-6">
+                <div class="col-lg-5">
                     <select name="debuglevel">
-                        <option value="-1" selected="selected">disabled (default)</option>
-                        <option value="0">printing execution details</option>
-                        <option value="1">printing state variables (heavy!)</option>
-                        <option value="2">even more state variables (heaviest!)</option>
+                        <option value="-1" selected="selected">Disabled (default)</option>
+                        <option value="0">Info</option>
+                        <option value="1">Debug</option>
+                        <option value="2">Trace</option>
                     </select>
                 </div>
             </div>
-            
             <div class="row small-margin">
-                <div class="col-lg-4">
-                    <label for="reverbon">enable reverb</label>
+                <div class="col-lg-5">
+                    <label for="reverbon">Enable reverb</label>
                 </div>
-                <div class="col-lg-6">
+                <div class="col-lg-5">
                     <input type="checkbox" id="reverbon" name="reverbon" value="1">
                 </div>
             </div>
-            
             <div class="row small-margin">
-                <div class="col-lg-4">
-                    <label for="rotatespeakers">rotate speakers</label>
+                <div class="col-lg-5">
+                    <label for="rotatespeakers">Rotatable speakers</label>
                 </div>
-                <div class="col-lg-6">
+                <div class="col-lg-5">
                     <input type="checkbox" id="rotatespeakers" name="rotatespeakers" value="1">
                 </div>
             </div>
-            
-            <!-- <div class="row small-margin"> -->
-                <!-- <div class="col-lg-4"> -->
-                <!-- </div> -->
-                <!-- <div class="col-lg-6"> -->
-                <!-- </div> -->
-            <!-- </div> -->
 
-
-            
-            
             <!-- hidden colorgradient input element (filled in by bottom js) -->
             <input type="hidden" id="colorgradient" name="colorgradient">
             
-            <input class="submit" style="width:50%;" type="button" value="Submit" onClick="onForm(this.form);">
+            <div class="row small-margin">
+                <input class="submit col-lg-5" type="button" value="Submit" onClick="onForm(this.form);">
+            </div>
         </form>
         
-        <div class="containter mt">
-            <div class="row centered mt">
+        <div style="margin:27px;">
+            <div style="padding: 10px 9px;" class="row">
                 <button onclick="copyToClipboard()">Copy to clipboard</button>
             </div>
-            <div class="row centered">
-                <textarea id="copyable" class="autoresizing"></textarea>
+            <div class="row">
+                <textarea id="copyable" style="height: 200px; " class="autoresizing"></textarea>
             </div>
         </div>
     </div>
