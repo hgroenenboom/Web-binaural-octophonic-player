@@ -1,7 +1,25 @@
 const NUM_FILES = urls.length;
-console.log("LOGGING LEVEL:",SHOULD_LOG);
-console.log("USE_REVERB_NODES:", USE_REVERB_NODES);
-console.log("NUM_FILES:", NUM_FILES);
+
+if(SHOULD_LOG >= 0)
+{
+    console.log("LOGGING LEVEL:",SHOULD_LOG);
+}
+
+function log(txt, niveau=0) {
+    if(niveau <= SHOULD_LOG) {
+        console.log(txt);
+        if(SHOULD_LOG >= 0) {
+            var consoleElement = document.getElementById("console");
+            if(consoleElement) {
+                consoleElement.innerHTML += "<br>"+txt;
+            }
+        }
+    }
+}
+
+log("USE_REVERB_NODES:" + USE_REVERB_NODES, 1);
+log("NUM_FILES:" + NUM_FILES, 1);
+
 
 window.binauralplayer = new class{}; // empty functionpointer container
 // available functions:
@@ -42,20 +60,6 @@ const masterGainNode = audioContext.createGain();
 var positionableElements = null;
 const drawContext = document.getElementById("canvas").getContext("2d");
 const drawCanvas = document.getElementById("canvas");
-
-
-
-function log(txt, niveau=0) {
-    if(niveau <= SHOULD_LOG) {
-        console.log(txt);
-        if(SHOULD_LOG >= 0) {
-            var consoleElement = document.getElementById("console");
-            if(consoleElement) {
-                consoleElement.innerHTML += "<br>"+txt;
-            }
-        }
-    }
-}
 
 // drawingvariables container
 class DrawingVariables {
@@ -961,7 +965,7 @@ class BinauralReverb {
                 return function() {
                     that.reverbsLoaded[_i] = true;
                     if( !that.reverbsLoaded.includes(false) ) {
-                        console.log("allLoaded!");
+                        log("All reverbs loaded!");
                         if(typeof onLoadedCallback == "function") {
                             onLoadedCallback();
                         }
@@ -1757,12 +1761,3 @@ jQuery('document').ready(() => {
     // initialize all nodes
     initNodes();
 });
-
-
-
-
-
-
-
-
-
