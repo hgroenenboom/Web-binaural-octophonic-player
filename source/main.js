@@ -1,5 +1,6 @@
 // Constant/innitial settings
 const init_master_gain = 0.85;
+const init_track_volume = 1.0;
 
 // Audio nodes
 let tracks = [];
@@ -22,6 +23,7 @@ const canvasButtonsDiv = document.getElementById("drawCanvasButtons");
 // Controllers
 const panSlider = document.querySelector('[data-action="pan"]');
 const gainSlider = document.querySelector('[data-action="volume"]');
+const trackVolumeControl = document.querySelector('[data-action="trackVolume"]');
 const playButton = document.getElementById('playbutton');
 
 class DrawingEnvironment
@@ -57,27 +59,16 @@ vars = new DrawingVariables();
 /*--------------------------------------------- Audio pipeline ----------------------------------------------------*/
 /*-----------------------------------------------------------------------------------------------------------------*/
 
-log("Start audiopipeline code");
-
 function connectAllNodes() 
 {
-    log("Start initializing");
+    log("Connecting all audionodes");
     console.assert(audioContext);
     
-    masterGainNode.gain.value = init_master_gain;
-
     setupAnalyzingNodes(NUM_FILES);
-    
-    setupPanningNodes();
-    
-    if(USE_REVERB_NODES)
-    {
-        for(let i = 0; i < NUM_FILES; i++) {
-            binauralReverb.connectToReverb(panner[i]);
-        }
-    }
 
     tracks.connectToNodes(analyserNodes);
+    
+    setupPanningNodes();
 
     for(let i = 0; i < NUM_FILES; i++) 
     {
@@ -86,128 +77,36 @@ function connectAllNodes()
     }
 
     masterGainNode.connect(audioContext.destination);
-    
-    // TODO: should be done elsewhere
-    // ---- Setup drawing
-    setupDrawingFunctions();
-    
-    log("Finished initializing");
-}
 
-function enableInteractions() 
-{
-    const trackVolumeControl = document.querySelector('[data-action="trackVolume"]');
-    
-    const track_init_volume = 1.0;
-    trackVolumeControl.value = track_init_volume;
-    tracks.setGain( track_init_volume );
-    
-    trackVolumeControl.addEventListener('input', function() {
-            tracks.setGain( Math.pow(this.value, 2) );
-            log("track gain: ", tracks.gain, 1 );
-    }   
-    , false);
-
-    gainSlider.value = init_master_gain;
-    gainSlider.addEventListener('input', function() 
+    // Also connect the speakers/panners to the reverb if reverb is enabled
+    if(USE_REVERB_NODES)
     {
-        masterGainNode.gain.value = this.value;
-        log("master gain: "+ masterGainNode.gain.value, 1 );
-    }, false);
-
-    panSlider.circularSliderCallback = function() {
-        setPanning();
-    };
-    panSlider.value = 0.0;
-    
-    window.binauralplayer.updatePlayButton = function() 
-    {
-        if(tracks.isPlaying) 
-        {
-            playButtonSVG.style="display:none;";
-            pauseButtonSVG.style="display:block;";
-            playButton.dataset.playing = 'true';
-        } 
-        else 
-        {
-            playButtonSVG.style="display:block;";
-            pauseButtonSVG.style="display:none;";
-            playButton.dataset.playing = 'false';
-        }
-    }
-    
-    window.binauralplayer.startFromTime = function(timeToStartFromInSeconds = 0) 
-    {
-        tracks.playAllFromTimePoint(timeToStartFromInSeconds);
-        playButton.dataset.playing = 'true';
-        window.binauralplayer.updatePlayButton();
-    }
-
-    window.binauralplayer.resume = function() 
-    {
-        tracks.playAll();
-        playButton.dataset.playing = 'true';
-        window.binauralplayer.updatePlayButton();
-    }
-
-    window.binauralplayer.pause = function() 
-    {
-        tracks.stopAll();
-        log("supsended audio context");
-        playButton.dataset.playing = 'false';
-        window.binauralplayer.updatePlayButton();
-    }
-
-    window.binauralplayer.playPause = function() 
-    {
-        // check if context is in suspended state (autoplay policy)
-        if (audioContext.state === 'suspended') 
-        {
-            audioContext.resume();
-            log("resuming audio context");
+        for(let i = 0; i < NUM_FILES; i++) {
+            binauralReverb.connectToReverb(panner[i]);
         }
 
-        if (playButton.dataset.playing === 'false') 
-        {
-            window.binauralplayer.resume();
-        } 
-        else if (playButton.dataset.playing === 'true') 
-        {
-            window.binauralplayer.pause();
-        }
-
-        const state = playButton.getAttribute('aria-checked') === "true" ? true : false;
-        playButton.setAttribute( 'aria-checked', state ? "false" : "true" );
-    };
-
-    window.binauralplayer.setSpeakerDistance = function(newDistance) 
-    {
-        environment.viewDistance = newDistance;
-    }
-    
-    playButton.addEventListener('click', window.binauralplayer.playPause, false);
-    playButtonSVG.addEventListener('click', window.binauralplayer.playPause, false);
-    pauseButtonSVG.addEventListener('click', window.binauralplayer.playPause, false);
-    window.x = playButtonSVG;
-    
-    // TODO: this seems like a strange location for this piece of code
-    if(USE_REVERB_NODES) 
-    {
         binauralReverb.calculateGains();
     }
-    
-    // TODO: is this below here supposed to be here?
-    const viewHeight = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
-    const viewWidth  = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
-    canvas.style.height = (viewHeight - 30) + "px";
-    canvas.style.width  = (viewWidth - 30) + "px";
-    
-    drawCanvas.width  = canvas.style.width.replace(/\D/g, '');
-    drawCanvas.height = canvas.style.height.replace(/\D/g, '');
-
-    footer.style.top = drawCanvas.height + "px";
+        
+    log("Audionodes succesfully connected");
 }
 
+function setupAnalyzingNodes(numNodes) 
+{
+    console.assert(numNodes > 0, "Num nodes shouldn't be zero!");
+    console.assert(numNodes == NUM_FILES, "Num nodes should equal to num audio elements!");
+    
+    for(let i = 0; i < numNodes; i++) 
+    {
+        analyserNodes[i] = audioContext.createAnalyser();
+        analyserNodes[i].smoothingTimeConstant = 0.85;
+        analyserNodes[i].fftSize = 1024;
+    }
+    
+    log("Analyzing nodes initialized");
+}
+
+// TODO: might wanna move this function
 /** Update panning of all panners from the panSlider */ 
 function setPanning() 
 {
@@ -221,6 +120,8 @@ function setPanning()
         const speakerX = speakerRadius * ( Math.cos ( angle + speakerAngle ) );
         const speakerZ = speakerRadius * ( Math.sin ( angle + speakerAngle ) );
         
+        // TODO: a lot of this should probably be a function inside the BinauralPanner instead
+
         panner[i].setPosition( speakerX, panner[i].positionY, speakerZ);
 
         // set to point speakers in direction of center
@@ -289,37 +190,7 @@ function setupPanningNodes()
     setPanning();
 }
 
-function setupAnalyzingNodes(numNodes) 
-{
-    console.assert(numNodes > 0, "Num nodes shouldn't be zero!");
-    console.assert(numNodes == NUM_FILES, "Num nodes should equal to num audio elements!");
-    
-    for(let i = 0; i < numNodes; i++) 
-    {
-        analyserNodes[i] = audioContext.createAnalyser();
-        analyserNodes[i].smoothingTimeConstant = 0.85;
-        analyserNodes[i].fftSize = 1024;
-    }
-    
-    log("Analyzing nodes initialized");
-}
-
-function connectAnalyzingNodes(startNodes) 
-{
-    console.assert(startNodes != null);
-    console.assert(numNodes != 0);
-    console.assert(numNodes == NUM_FILES, "analyzing nodes has a different amount of inputs then the number of audiofiles presented (given:"+numNodes+")");
-    console.assert(numNodes == NUM_FILES, "numNodes ("+numNodes+") should be NUM_FILES!");
-    console.assert(startNodes.length == numNodes, "startNodes ("+startNodes.length+") is not of same length as numNodes ("+numNodes+")!");
-    
-    const numNodes = startNodes.length;
-    for(let i = 0; i < numNodes; i++) 
-    {
-        startNodes[i].connect(analyserNodes[i]);
-    }
-    
-    log("Analyzing nodes connected");
-}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 function setupDrawingFunctions() 
 {
@@ -685,44 +556,153 @@ function setupDrawingFunctions()
 }
 
 
-
-
 /*-----------------------------------------------------------------------------------------------------------------*/
-/*--------------------------------------------- loading resources  ------------------------------------------------*/
+/*--------------------------------------------- Program start -----------------------------------------------------*/
 /*-----------------------------------------------------------------------------------------------------------------*/
+
+function enableInteractions() 
+{    
+    trackVolumeControl.value = init_track_volume;
+    tracks.setGain( init_track_volume );
+    trackVolumeControl.addEventListener('input', function() {
+            tracks.setGain( Math.pow(this.value, 2) );
+            log("track gain: ", tracks.gain, 1 );
+    }   
+    , false);
+
+    gainSlider.value = init_master_gain;
+    masterGainNode.gain.value = init_master_gain;
+    gainSlider.addEventListener('input', function() 
+    {
+        masterGainNode.gain.value = this.value;
+        log("master gain: "+ masterGainNode.gain.value, 1 );
+    }, false);
+
+    panSlider.circularSliderCallback = function() {
+        setPanning();
+    };
+    panSlider.value = 0.0;
+    
+    window.binauralplayer.updatePlayButton = function() 
+    {
+        if(tracks.isPlaying) 
+        {
+            playButtonSVG.style="display:none;";
+            pauseButtonSVG.style="display:block;";
+            playButton.dataset.playing = 'true';
+        } 
+        else 
+        {
+            playButtonSVG.style="display:block;";
+            pauseButtonSVG.style="display:none;";
+            playButton.dataset.playing = 'false';
+        }
+    }
+    
+    window.binauralplayer.startFromTime = function(timeToStartFromInSeconds = 0) 
+    {
+        tracks.playAllFromTimePoint(timeToStartFromInSeconds);
+        playButton.dataset.playing = 'true';
+        window.binauralplayer.updatePlayButton();
+    }
+
+    window.binauralplayer.resume = function() 
+    {
+        tracks.playAll();
+        playButton.dataset.playing = 'true';
+        window.binauralplayer.updatePlayButton();
+    }
+
+    window.binauralplayer.pause = function() 
+    {
+        tracks.stopAll();
+        log("supsended audio context");
+        playButton.dataset.playing = 'false';
+        window.binauralplayer.updatePlayButton();
+    }
+
+    window.binauralplayer.playPause = function() 
+    {
+        // check if context is in suspended state (autoplay policy)
+        if (audioContext.state === 'suspended') 
+        {
+            audioContext.resume();
+            log("resuming audio context");
+        }
+
+        if (playButton.dataset.playing === 'false') 
+        {
+            window.binauralplayer.resume();
+        } 
+        else if (playButton.dataset.playing === 'true') 
+        {
+            window.binauralplayer.pause();
+        }
+
+        const state = playButton.getAttribute('aria-checked') === "true" ? true : false;
+        playButton.setAttribute( 'aria-checked', state ? "false" : "true" );
+    };
+
+    window.binauralplayer.setSpeakerDistance = function(newDistance) 
+    {
+        environment.viewDistance = newDistance;
+        // TODO: I don't think this is complete
+    }
+    
+    playButton.addEventListener('click', window.binauralplayer.playPause, false);
+    playButtonSVG.addEventListener('click', window.binauralplayer.playPause, false);
+    pauseButtonSVG.addEventListener('click', window.binauralplayer.playPause, false);
+    window.x = playButtonSVG;
+    
+    // TODO: is this below here supposed to be here?
+    const viewHeight = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+    const viewWidth  = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+    canvas.style.height = (viewHeight - 30) + "px";
+    canvas.style.width  = (viewWidth - 30) + "px";
+    
+    drawCanvas.width  = canvas.style.width.replace(/\D/g, '');
+    drawCanvas.height = canvas.style.height.replace(/\D/g, '');
+
+    footer.style.top = drawCanvas.height + "px";
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 let audioFilesLoaded = false;
 let reverbImpulseResponseLoaded = USE_REVERB_NODES ? false : true;
 
 /** Checks whether all audiofiles are loaded and enables the main view if so */
-function initIfAllLoaded() {
+function initializeIfAllLoaded() {
     if(!audioFilesLoaded || !reverbImpulseResponseLoaded) {
         return;
     }
     
-    log("init called");
+    log("All audiofiles loaded, initializing all members");
+    
     connectAllNodes();
+    setupDrawingFunctions();
     enableInteractions();
-    log("init finished");
     
     const loaddiv = document.getElementById("loading screen");
     loaddiv.style.display = "none";
     const playerdiv = document.getElementById("octophonic player");
     playerdiv.style.display = "flex";
+
+    log("Succesfully initialized!");
 }
 
 jQuery('document').ready(() => {
     tracks = new MultiPreloadedAudioNodes(urls, ()=> { 
         audioFilesLoaded = true; 
         
-        initIfAllLoaded(); } 
+        initializeIfAllLoaded(); } 
     );
     
     if(USE_REVERB_NODES) {
         binauralReverb = new BinauralReverb( ()=> { 
             reverbImpulseResponseLoaded = true;
 
-            initIfAllLoaded(); 
+            initializeIfAllLoaded(); 
         } );
     }
 });
