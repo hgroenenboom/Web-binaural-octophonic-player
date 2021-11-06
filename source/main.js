@@ -1,24 +1,31 @@
-// AUDIO NODES
+// Constant/innitial settings
+const init_master_gain = 0.85;
+
+// Audio nodes
 var tracks = [];
 var panner = [];
 var analyserNodes = [];
 var binauralReverb = null;
 let audioListener = new AudioListener();
-
-// TODO: remove this
-let globals = {};
-
 const masterGainNode = audioContext.createGain();
 
-// drawing
+// Drawing variables
 var positionableElements = null;
+
+// HTML components
 const drawContext = document.getElementById("canvas").getContext("2d");
 const drawCanvas = document.getElementById("canvas");
+const canvas = document.getElementsByClassName('canvas')[0];
+const footer = document.getElementsByTagName('footer')[0];
+const canvasButtonsDiv = document.getElementById("drawCanvasButtons");
 
 // Controllers
 const panSlider = document.querySelector('[data-action="pan"]');
+const gainSlider = document.querySelector('[data-action="volume"]');
+const playButton = document.getElementById('playbutton');
 
 // drawingvariables container
+// TODO: this should probably be a global class. Something like DrawingEnvironment
 class DrawingVariables {
     constructor() {
 		// state switch between drawmodes    
@@ -45,48 +52,6 @@ class DrawingVariables {
 // TODO: remove this
 vars = new DrawingVariables();
 
-const abrevs = [ [0, "b"], [1000, "Kb"], [1000000, "Kb"], [1000000000, "Mb"], [1000000000000, "Gb"], [1000000000000000, "Tb"] ];
-function bytesToAbrieviatedSize(bytes) {
-    for(let i = 0; i < abrevs.length-1; i++) {
-        if(bytes < abrevs[i+1][0]) {
-            return "" + Math.round(bytes / abrevs[i][0]) + abrevs[i+1][1];
-        }
-    }
-}
-
-/*-----------------------------------------------------------------------------------------------------------------*/
-/*---------------------------------------------  Testing       ----------------------------------------------------*/
-/*-----------------------------------------------------------------------------------------------------------------*/
-
-
-
-
-
-
-// test audiofile
-// var audiofile = new PreloadedAudioNode("audio/aesthetics/aesthetics1.wav", ()=>{ 
-    // audiofile.connect(audioContext.destination); 
-    // audiofile.play(audioContext.currentTime); 
-    // audiofile.stop(audioContext.currentTime+1); 
-    // }
-// );
-
-// test multiaudiofile
-/*urls = [];
-for(var i = 0; i < NUM_FILES; i++) {
-    urls[i] = "audio/test/Harold_Insert "+(i+1)+".wav";
-}*/
-// console.log(urls);
-// var multiAudioNodes = new MultiPreloadedAudioNodes(urls, ()=> { multiAudioNodes.connectToAudioContext(); multiAudioNodes.playAll(); });
-
-
-
-
-
-
-
-
-
 /*-----------------------------------------------------------------------------------------------------------------*/
 /*--------------------------------------------- Audio pipeline ----------------------------------------------------*/
 /*-----------------------------------------------------------------------------------------------------------------*/
@@ -98,29 +63,24 @@ function initNodes()
     log("Start initializing");
     console.assert(audioContext);
     
-    // ---- CREATE MASTER GAIN NODE
-    const volumeControl = document.querySelector('[data-action="volume"]');
-    const init_master_gain = 0.85;
-    volumeControl.value = init_master_gain;
     masterGainNode.gain.value = init_master_gain;
-    volumeControl.addEventListener('input', function() {
-        masterGainNode.gain.value = this.value;
-        log("master gain: "+ masterGainNode.gain.value, 1 );
-    }, false);
-    
+
     setupAnalyzingNodes(NUM_FILES);
+    
     setupPanningNodes();
     
-    // ---- CONNECT ALL NODES
+    // ---- Connect all nodes
     tracks.connectToNodes(analyserNodes);
-    for(var i = 0; i < NUM_FILES; i++) {
+
+    for(var i = 0; i < NUM_FILES; i++) 
+    {
         analyserNodes[i].connect(panner[i].panner);
         panner[i].connect(masterGainNode);
     }
 
     masterGainNode.connect(audioContext.destination);
     
-    // ---- SETUP DRAWING
+    // ---- Setup drawing
     setupDrawingFunctions();
     
     log("Finished initializing");
@@ -128,63 +88,73 @@ function initNodes()
 
 function enableInteractions() 
 {
-    
     const trackVolumeControl = document.querySelector('[data-action="trackVolume"]');
     
-    //-----------------------------------------------------------------------------------------------//
-    // -----------------------          SETUP AUDIONODES            -------------------------------- /
     const track_init_volume = 1.0;
     trackVolumeControl.value = track_init_volume;
     tracks.setGain( track_init_volume );
     
-    //-----------------------------------------------------------------------------------------------//
-    // -----------------------          SETUP HTML ELEMENTS         -------------------------------- /
-    trackVolumeControl.addEventListener('input', 
-        function() 
-        {
+    trackVolumeControl.addEventListener('input', function() {
             tracks.setGain( Math.pow(this.value, 2) );
             log("track gain: ", tracks.gain, 1 );
-        }   
+    }   
     , false);
+
+    gainSlider.value = init_master_gain;
+    gainSlider.addEventListener('input', function() 
+    {
+        masterGainNode.gain.value = this.value;
+        log("master gain: "+ masterGainNode.gain.value, 1 );
+    }, false);
+
+    panSlider.circularSliderCallback = function() {
+        setPanning();
+    };
+    panSlider.value = 0.0;
     
-    window.binauralplayer.updatePlayButton = function() {
-        if(tracks.isPlaying) {
+    window.binauralplayer.updatePlayButton = function() 
+    {
+        if(tracks.isPlaying) 
+        {
             playButtonSVG.style="display:none;";
             pauseButtonSVG.style="display:block;";
             playButton.dataset.playing = 'true';
         } 
-        else {
+        else 
+        {
             playButtonSVG.style="display:block;";
             pauseButtonSVG.style="display:none;";
             playButton.dataset.playing = 'false';
         }
     }
     
-    // play pause audio
-    const playButton = document.getElementById('playbutton');
-    var playSVG = document.getElementById('playButtonSVG');
-    var pauseSVG = document.getElementById('pauseButtonSVG');
-    window.binauralplayer.startFromTime = function(timeToStartFrom=0) {
-        tracks.playAllFromTimePoint(timeToStartFrom);
+    window.binauralplayer.startFromTime = function(timeToStartFromInSeconds = 0) 
+    {
+        tracks.playAllFromTimePoint(timeToStartFromInSeconds);
         playButton.dataset.playing = 'true';
         window.binauralplayer.updatePlayButton();
     }
-    window.binauralplayer.resume = function() {
+
+    window.binauralplayer.resume = function() 
+    {
         tracks.playAll();
         playButton.dataset.playing = 'true';
         window.binauralplayer.updatePlayButton();
     }
-    window.binauralplayer.pause = function() {
+
+    window.binauralplayer.pause = function() 
+    {
         tracks.stopAll();
-        // audioContext.suspend();
         log("supsended audio context");
         playButton.dataset.playing = 'false';
         window.binauralplayer.updatePlayButton();
     }
+
     window.binauralplayer.playPause = function() 
     {
         // check if context is in suspended state (autoplay policy)
-        if (audioContext.state === 'suspended') {
+        if (audioContext.state === 'suspended') 
+        {
             audioContext.resume();
             log("resuming audio context");
         }
@@ -198,10 +168,12 @@ function enableInteractions()
             window.binauralplayer.pause();
         }
 
-        let state = playButton.getAttribute('aria-checked') === "true" ? true : false;
+        const state = playButton.getAttribute('aria-checked') === "true" ? true : false;
         playButton.setAttribute( 'aria-checked', state ? "false" : "true" );
     };
-    window.binauralplayer.setSpeakerDistance = function(newDistance) {
+
+    window.binauralplayer.setSpeakerDistance = function(newDistance) 
+    {
         vars.SPEAKER_DIST = newDistance;
     }
     
@@ -210,64 +182,70 @@ function enableInteractions()
     pauseButtonSVG.addEventListener('click', window.binauralplayer.playPause, false);
     window.x = playButtonSVG;
     
-    if(USE_REVERB_NODES) {
+    // TODO: this seems like a strange location for this piece of code
+    if(USE_REVERB_NODES) 
+    {
         binauralReverb.calculateGains();
     }
     
-    var canvi = document.getElementsByClassName('canvas');
-    const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
-    const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
-    canvi[0].style.height = (vh-30)+"px";
-    canvi[0].style.width = (vw-30)+"px";
+    // TODO: is this below here supposed to be here?
+    const viewHeight = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+    const viewWidth  = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+    canvas.style.height = (viewHeight - 30) + "px";
+    canvas.style.width  = (viewWidth - 30) + "px";
     
-    drawCanvas.width  = canvi[0].style.width.replace(/\D/g,'');
-    drawCanvas.height = canvi[0].style.height.replace(/\D/g,'');
-    var footer = document.getElementsByTagName('footer')[0];
-    footer.style.top = drawCanvas.height+"px";
-    // document.getElementById("helpmenu").style.height = vh+"px";
+    drawCanvas.width  = canvas.style.width.replace(/\D/g, '');
+    drawCanvas.height = canvas.style.height.replace(/\D/g, '');
+
+    footer.style.top = drawCanvas.height + "px";
+}
+
+/** Update panning of all panners from the panSlider */ 
+function setPanning() 
+{
+    const angle = parseFloat(panSlider.value);
+    
+    for (let i = 0; i < NUM_FILES; i++) 
+    {
+        const speakerRadius = Math.sqrt( Math.pow(panner[i].hg_staticPosX, 2) + Math.pow(panner[i].hg_staticPosZ, 2));
+        const speakerAngle = getAngle( panner[i].hg_staticPosX, panner[i].hg_staticPosZ );
+    
+        const speakerX = speakerRadius * ( Math.cos ( angle + speakerAngle ) );
+        const speakerZ = speakerRadius * ( Math.sin ( angle + speakerAngle ) );
+        
+        panner[i].setPosition( speakerX, panner[i].positionY, speakerZ);
+
+        // set to point speakers in direction of center
+        const angleX = - speakerX / speakerRadius;
+        const angleZ = - speakerZ / speakerRadius;
+        panner[i].setOrientation(angleX, 0, angleZ);
+
+        if (USE_REVERB_NODES) 
+        {
+            panner[NUM_FILES + i].setOrientation( angleX, 0, angleZ);
+        }
+
+        panner[i].hg_angle = (angle + speakerAngle) % (2 * Math.PI);
+        panner[i].hg_radius = speakerRadius;
+        
+        log("panner:\tx: " + panner[i].positionX + " \t z: " + panner[i].positionZ, 2); 
+    }
 }
 
 function setupPanningNodes() 
 {
-    // CREATE PANNER NODES (for the reverbs and for the audiofiles)
-    for(var i = 0; i < 2 * NUM_FILES; i++) 
+    // ---- Create panner nodes (for the reverbs and for the audiofiles)
+    for(let i = 0; i < 2 * NUM_FILES; i++) 
     {
         panner[i] = new BinauralPanner();
     }
 
-    // ---- set panning of all panners
-    function setPanning() {
-        const angle = parseFloat(panSlider.value);
-        for(var i = 0; i < NUM_FILES; i++) {
-            const speakerR = Math.sqrt( Math.pow(panner[i].hg_staticPosX, 2) + Math.pow(panner[i].hg_staticPosZ, 2));
-            const speakerAngle = getAngle( panner[i].hg_staticPosX, panner[i].hg_staticPosZ );
-            // console.log(speakerR, speakerAngle);
-        
-            const speakerX = speakerR * ( Math.cos ( angle + speakerAngle ) );
-            const speakerZ = speakerR * ( Math.sin ( angle + speakerAngle ) );
-            // console.log(speakerX, speakerZ);
-            
-            // set positions
-            panner[i].setPosition(          speakerX, panner[i].positionY, speakerZ);
-
-            // set to point speakers in direction of center
-            const angleX = - speakerX / speakerR;
-            const angleZ = - speakerZ / speakerR;
-            panner[i].setOrientation(angleX, 0, angleZ);
-            if(USE_REVERB_NODES) {
-                panner[NUM_FILES+i].setOrientation( angleX, 0, angleZ);
-            }
-
-            panner[i].hg_angle = (angle + speakerAngle) % (2 * Math.PI);
-            panner[i].hg_radius = speakerR;
-            
-            log("panner:\tx: "+panner[i].positionX +" \t z: "+panner[i].positionZ , 2); 
-        }
-    }
-    globals.setPanning = setPanning;
-    function setDistributed(angle) {
+    /** Distributes all panners in a circle */
+    function setDistributed(angle) 
+    {
         const toAdd = 2 * Math.PI / NUM_FILES;
-        for(var i = 0; i < NUM_FILES; i++) {
+        for(var i = 0; i < NUM_FILES; i++) 
+        {
             const speakerX = vars.R_EXTRA_VIEW_RADIUS * SPEAKER_DIST * 0.5 * ( Math.cos ( angle + i * toAdd ) );
             const speakerZ = vars.R_EXTRA_VIEW_RADIUS * SPEAKER_DIST * 0.5 * ( Math.sin ( angle + i * toAdd ) );
             
@@ -275,28 +253,25 @@ function setupPanningNodes()
             panner[i].hg_staticPosX = speakerX;
             panner[i].hg_staticPosZ = speakerZ;
             
-            if(USE_REVERB_NODES) {
+            if(USE_REVERB_NODES) 
+            {
                 panner[NUM_FILES + i].setPosition(  speakerX, panner[i].positionY, speakerZ);
             }
             
             panner[i].hg_angle = (angle + i * toAdd) % (2 * Math.PI);
             panner[i].hg_radius = 0.5 * SPEAKER_DIST;
-            log("panner:\tx: "+panner[i].positionX +" \t z: "+panner[i].positionZ , 2); 
+            log("panner:\tx: " + panner[i].positionX + " \t z: " + panner[i].positionZ, 2); 
             
-            if(USE_REVERB_NODES) {
+            if(USE_REVERB_NODES) 
+            {
                 const reverbX = vars.R_EXTRA_VIEW_RADIUS * 2.5 * SPEAKER_DIST * 0.5 * ( Math.cos ( angle + i * toAdd ) );
                 const reverbZ = vars.R_EXTRA_VIEW_RADIUS * 2.5 * SPEAKER_DIST * 0.5 * ( Math.sin ( angle + i * toAdd ) );
-                panner[NUM_FILES+i].setPosition(reverbX, panner[i].positionY, reverbZ);
+                panner[NUM_FILES + i].setPosition(reverbX, panner[i].positionY, reverbZ);
             }
         }
     }
-    
-    // panning slider callback
-    panSlider.circularSliderCallback = function() {
-        setPanning();
-    };
-    panSlider.value = 0.0;
     setDistributed(0.0);
+    
     setPanning();
 }
 
@@ -316,6 +291,7 @@ function setupAnalyzingNodes(numNodes)
     
     log("Analyzing nodes initialized");
 }
+
 function connectAnalyzingNodes(startNodes) 
 {
     console.assert(startNodes != null);
@@ -336,15 +312,22 @@ function connectAnalyzingNodes(startNodes)
 function setupDrawingFunctions() 
 {
     positionableElements = new PositionableElementsContainer();
+
+    // Add AudioListener positionable component
     positionableElements.addElement(
-        (newPosition)=>{ audioListener.setListenerPosition(newPosition[0], audioListener.listenerPosition[1], newPosition[1]); }
-        , ()=>{ return [audioListener.x, audioListener.z]; }
-        , ()=>{ return audioListener.horizontalAngle; } 
-        , ["M 2454 3791 c -21 -34 -48 -64 -59 -66 -11 -3 -48 -9 -83 -15 -284 -49 -563 -237 -737 -499 -59 -89 -154 -285 -155 -318 0 -7 -11 -13 -24 -13 -18 0 -27 -8 -35 -30 -6 -20 -17 -30 -30 -30 -49 0 -81 -110 -81 -279 1 -145 26 -248 67 -266 15 -6 23 -21 28 -54 10 -65 61 -214 102 -296 157 -313 425 -536 755 -627 76 -21 104 -23 318 -23 214 0 242 2 318 23 330 91 598 314 755 627 41 82 92 231 102 296 5 33 13 48 28 54 78 35 93 409 21 523 -8 12 -24 22 -35 22 -13 0 -24 10 -30 30 -9 23 -17 30 -37 30 -25 0 -30 9 -65 99 -147 386 -494 672 -892 736 -85 14 -92 17 -120 52 -16 20 -39 48 -51 61 l -20 25 -40 -62 z m 178 -146 c 308 -41 584 -210 751 -462 94 -141 177 -353 193 -488 l 6 -53 -48 -10 c -27 -6 -112 -20 -189 -33 l -141 -22 -314 130 -315 130 -3 -749 -2 -748 -50 0 -50 0 -2 748 -3 749 -314 -130 -315 -130 -110 17 c -61 10 -149 25 -195 33 l -83 16 6 52 c 16 135 100 347 193 488 165 248 443 421 742 462 125 17 119 17 243 0"
-        , "M 2084 3309 c -41 -45 -15 -159 36 -159 31 0 55 39 55 90 0 51 -24 90 -55 90 -9 0 -25 -9 -36 -21"
-        , "M 2844 3309 c -41 -45 -15 -159 36 -159 31 0 55 39 55 90 0 51 -24 90 -55 90 -9 0 -25 -9 -36 -21 z"]
+        (newPosition)=>{ audioListener.setListenerPosition(newPosition[0], audioListener.listenerPosition[1], newPosition[1]); },
+        ()=>{ return [audioListener.x, audioListener.z]; },
+        ()=>{ return audioListener.horizontalAngle; }, 
+        ["M 2454 3791 c -21 -34 -48 -64 -59 -66 -11 -3 -48 -9 -83 -15 -284 -49 -563 -237 -737 -499 -59 -89 -154 -285 -155 -318 0 -7 -11 -13 -24 -13 -18 0 -27 -8 -35 -30 -6 -20 -17 -30 -30 -30 -49 0 -81 -110 -81 -279 1 -145 26 -248 67 -266 15 -6 23 -21 28 -54 10 -65 61 -214 102 -296 157 -313 425 -536 755 -627 76 -21 104 -23 318 -23 214 0 242 2 318 23 330 91 598 314 755 627 41 82 92 231 102 296 5 33 13 48 28 54 78 35 93 409 21 523 -8 12 -24 22 -35 22 -13 0 -24 10 -30 30 -9 23 -17 30 -37 30 -25 0 -30 9 -65 99 -147 386 -494 672 -892 736 -85 14 -92 17 -120 52 -16 20 -39 48 -51 61 l -20 25 -40 -62 z m 178 -146 c 308 -41 584 -210 751 -462 94 -141 177 -353 193 -488 l 6 -53 -48 -10 c -27 -6 -112 -20 -189 -33 l -141 -22 -314 130 -315 130 -3 -749 -2 -748 -50 0 -50 0 -2 748 -3 749 -314 -130 -315 -130 -110 17 c -61 10 -149 25 -195 33 l -83 16 6 52 c 16 135 100 347 193 488 165 248 443 421 742 462 125 17 119 17 243 0",
+            "M 2084 3309 c -41 -45 -15 -159 36 -159 31 0 55 39 55 90 0 51 -24 90 -55 90 -9 0 -25 -9 -36 -21",
+            "M 2844 3309 c -41 -45 -15 -159 36 -159 31 0 55 39 55 90 0 51 -24 90 -55 90 -9 0 -25 -9 -36 -21 z"
+        ]
     );
-    for(var i = 0; i < NUM_FILES; i++) {
+
+    // Add Speakers positionable components
+    // wikimedia svg: https://upload.wikimedia.org/wikipedia/commons/2/21/Speaker_Icon.svg
+    for(var i = 0; i < NUM_FILES; i++) 
+    {
         positionableElements.addElement(
             function(i) {
                 return (newPosition)=>{ 
@@ -363,18 +346,24 @@ function setupDrawingFunctions()
             , function(i) {
                 return ()=>{ return panner[i].hg_angle; }
             }(i)
-            // wikimedia svg: https://upload.wikimedia.org/wikipedia/commons/2/21/Speaker_Icon.svg
-            , ["M 39.389 13.769 L 22.235 28.606 L 6 28.606 L 6 47.699 L 21.989 47.699 L 39.389 62.75 L 39.389 13.769 z"
-            , "M 48 27.6 a 19.5 19.5 0 0 1 0 21.4"
-            , "M 55.1 20.5 a 30 30 0 0 1 0 35.6"
-            , "M 61.6 14 a 38.8 38.8 0 0 1 0 48.6"]
+            , ["M 39.389 13.769 L 22.235 28.606 L 6 28.606 L 6 47.699 L 21.989 47.699 L 39.389 62.75 L 39.389 13.769 z",
+                "M 48 27.6 a 19.5 19.5 0 0 1 0 21.4",
+                "M 55.1 20.5 a 30 30 0 0 1 0 35.6",
+                "M 61.6 14 a 38.8 38.8 0 0 1 0 48.6"
+            ]
         );
     }
-    for(var i = 0; i < NUM_FILES+1; i++) {
+
+    for(var i = 0; i < NUM_FILES+1; i++) 
+    {
         positionableElements.setDrawSize(i, 37);
     }
-    if(USE_REVERB_NODES) {
-        for(var i = 0; i < binauralReverb.NUM_NODES; i++) {
+    
+    // Add reverb walls positionable components
+    if(USE_REVERB_NODES) 
+    {
+        for(var i = 0; i < binauralReverb.NUM_NODES; i++) 
+        {
             positionableElements.addElement(
                 function(i) {
                     return (newPosition)=>{
@@ -388,32 +377,6 @@ function setupDrawingFunctions()
             );
             positionableElements.setDrawSize(i+1+NUM_FILES, 4);
         }
-    }
-    
-    //----------------------------------------------------------------------------//
-    // -------------------- ASSERT, PRIVATE FUNCTIONS & MAIN VARIABLES -----------//
-    
-    // convert time to string
-    function convertElapsedTime(inputSeconds) 
-    {
-        var seconds = Math.floor(inputSeconds % 60)
-        if (seconds < 10) 
-        {
-            seconds = "0" + seconds
-        }
-        var minutes = Math.floor(inputSeconds / 60)
-        return minutes + ":" + seconds
-    }
-    
-    function getAverageVolume(array) 
-    {
-        const length = array.length;
-        
-        var values = 0;
-        for (var i = 0; i < length; i++) 
-            values += array[i];
-        
-        return values / length;
     }
     
     //----------------------------------------------------------------------------//
@@ -445,8 +408,11 @@ function setupDrawingFunctions()
         
         debugDrawingVariables(2);
     }
-    function debugDrawingVariables(debugamount) {
-        if(debugamount >= -2 && debugamount <= 10) {
+
+    function debugDrawingVariables(debugamount) 
+    {
+        if(debugamount >= -2 && debugamount <= 10) 
+        {
             const debuglevel = debugamount;
             log("vars.drawSpaceCanvas: "+ vars.drawSpaceCanvas, debuglevel);
             log("vars.canvasXMid: "+ vars.canvasXMid, debuglevel);
@@ -458,20 +424,22 @@ function setupDrawingFunctions()
             log("vars.canvasDiam: "+ vars.canvasDiam, debuglevel);
         }
     }
+    
     setDrawingVariables();
     
     //----------------------------------------------------------------------------//
     // ------------------------ LISTENER EVENTS FROM CANVAS BUTTOn ---------------//
-    var canvasButton = document.getElementById("drawCanvasButtons");
-    // console.log("canvasButton", canvasButton)
-    for(var i = 0; i < canvasButton.children.length; i++) {
-        canvasButton.children[i].addEventListener("mousedown", function(i) {
+    for(var i = 0; i < canvasButtonsDiv.children.length; i++) 
+    {
+        canvasButtonsDiv.children[i].addEventListener("mousedown", function(i) 
+        {
             return function() {
-                vars.drawMode = (i+1) % 3;
+                vars.drawMode = (i + 1) % 3;
                 log("drawmode = " + vars.drawMode);
             }
         }(i));
     }
+
     function canvasMouseUp(e) {
         vars.isMouseDown = false;
         
@@ -564,7 +532,7 @@ function setupDrawingFunctions()
                     var z = vars.windowDragY - ( listenerPositionCanvas.y + 0.5 * listenerPositionCanvas.h );
                     audioListener.setListenerDirection(x, 0, -z);
                 }
-                globals.setPanning();
+                setPanning();
             }
         }
     }
@@ -588,7 +556,7 @@ function setupDrawingFunctions()
         for(var i = 0; i < NUM_FILES; i++) 
         {
             analyserNodes[i].getByteFrequencyData(drawArray);
-            average[i] = getAverageVolume(drawArray) / 130;
+            average[i] = arrayMean(drawArray) / 130;
         }
         
         // draw all elements
@@ -601,7 +569,7 @@ function setupDrawingFunctions()
             {
                 log(average[i], 1);
                 const audioEl = tracks.getAudioTrack(i);
-                const currentTime = convertElapsedTime(audioEl.currentTime);
+                const currentTime = timeToString(audioEl.currentTime);
                 const x = i * widthPerElement;
                 
                 // draw meters
@@ -623,14 +591,14 @@ function setupDrawingFunctions()
                     {
                         var toPrint = "";
                         for(var j = 0; j < NUM_FILES; j++) {
-                            toPrint += convertElapsedTime(document.getElementsByTagName("audio")[j].currentTime)+", ";
+                            toPrint += timeToString(document.getElementsByTagName("audio")[j].currentTime)+", ";
                         }
                         log("["+toPrint+"]", 2);
                     }
                 }
 
                 // draw duration
-                const duration = convertElapsedTime(audioEl.duration);
+                const duration = timeToString(audioEl.duration);
                 drawContext.fillStyle = "rgba(0, 0, 0, 1)";
                 drawContext.font = 'normal bold '+bottombar/3+'px sans-serif'; 
                 drawContext.textAlign = 'center'; 
@@ -701,7 +669,7 @@ function setupDrawingFunctions()
         if(false) {
             var panSlider = document.querySelector('[data-action="pan"]');
             panSlider.value = (parseFloat(panSlider.value) + 0.01) % (2 * Math.PI);
-            globals.setPanning();
+            setPanning();
         }
         
         log("canvas updated", 1);

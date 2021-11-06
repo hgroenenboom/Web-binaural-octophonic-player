@@ -265,6 +265,7 @@
         
         <script src="source/preload.js" type="text/javascript"></script>
         <script src="source/coordinates/coordinates.js" type="text/javascript"></script>
+        <script src="source/utility.js" type="text/javascript"></script>
         
         <script src="source/audio/audioFilePlayer.js" type="text/javascript"></script>
         <script src="source/audio/audioListener.js" type="text/javascript"></script>

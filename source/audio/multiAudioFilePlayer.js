@@ -159,7 +159,7 @@ class MultiPreloadedAudioNodes
             }
         }
         
-        const loadingProgress = allFilesValid ? "" + parseInt(100 * (total / nodes.length))+"% of " + bytesToAbrieviatedSize(size) : "";
+        const loadingProgress = allFilesValid ? "" + parseInt(100 * (total / nodes.length))+"% of " + bytesToReadableString(size) : "";
         elementToReportTo.innerHTML = loadingProgress;
         
         if(!allFilesValid) 
