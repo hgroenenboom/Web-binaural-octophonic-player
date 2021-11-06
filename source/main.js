@@ -1,49 +1,11 @@
-const NUM_FILES = urls.length;
-
-if(SHOULD_LOG >= 0)
-{
-    console.log("LOGGING LEVEL:",SHOULD_LOG);
-}
-
-function log(txt, niveau=0) {
-    if(niveau <= SHOULD_LOG) {
-        console.log(txt);
-
-        if(SHOULD_LOG >= 0) {
-            let consoleElement = document.getElementById("console");
-            consoleElement.innerHTML += "<br>" + txt;
-        }
-    }
-}
-
-log("USE_REVERB_NODES:" + USE_REVERB_NODES, 1);
-log("NUM_FILES:" + NUM_FILES, 1);
-
-window.binauralplayer = new class{}; // empty functionpointer container
-// available functions:
-// - window.binauralplayer.playPause()
-
-// cross browser audio context
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-let audioContext = new AudioContext();
-audioContext.suspend();
-
-reverbjs.extend(audioContext);
-
-const REVERB_DIST = 1.3 * SPEAKER_DIST;
-
-
-
-
-/*------------------------------------------ VARIABLES AND OBJECTS ------------------------------------------------*/
-/*-----------------------------------------------------------------------------------------------------------------*/
-/*-----------------------------------------------------------------------------------------------------------------*/
-
 // AUDIO NODES
 var tracks = [];
 var panner = [];
 var analyserNodes = [];
 var binauralReverb = null;
+
+// TODO: remove this
+let globals = {};
 
 const masterGainNode = audioContext.createGain();
 
@@ -51,6 +13,9 @@ const masterGainNode = audioContext.createGain();
 var positionableElements = null;
 const drawContext = document.getElementById("canvas").getContext("2d");
 const drawCanvas = document.getElementById("canvas");
+
+// Controllers
+const panSlider = document.querySelector('[data-action="pan"]');
 
 // drawingvariables container
 class DrawingVariables {
@@ -76,136 +41,7 @@ class DrawingVariables {
     get midColor() { return colortheme == "light" ? "rgba(180, 180, 180, 0.6)" : "rgba(180, 180, 180, 0.6)"; }
     get backColor() { return colortheme == "light" ? "rgba(222, 222, 222, 0.6)" : "rgba(120, 120, 120, 0.6)"; }
 };
-// !!! extra variables will be dynamicly added to this object
 vars = new DrawingVariables();
-
-function drawSVG(svgData, rotation, positionX, positionY, scale=1, offsetX = 0, offsetY = 0) {
-    drawContext.save();
-
-    drawContext.translate(positionX, positionY);
-    drawContext.rotate( Math.PI + rotation );
-    drawContext.translate(offsetX, offsetY);
-    drawContext.scale(scale, scale);
-            
-    for(var i = 0; i < svgData.length; i++) {
-        var path = new Path2D(svgData[i]);
-        drawContext.fill(path);
-    }
-    
-    drawContext.restore();
-}
-function drawPath(path, rotation, positionX, positionY, scale=1, offsetX = 0, offsetY = 0) {
-    drawContext.save();
-    drawContext.translate(positionX, positionY);
-    drawContext.rotate( Math.PI + rotation );
-    drawContext.translate(offsetX, offsetY);
-    drawContext.scale(scale, scale);
-            
-    for(var i = 0; i < path.length; i++) {
-        drawContext.fill(path[i]);
-    }
-    
-    drawContext.restore();
-}
-
-// empty container for functions that should be globally available
-class GlobalFunctions {
-    constructor() {}
-    
-    /** Returns the angle in radians */
-    getAngle(x, y) {
-        const val = Math.atan2(x, y) + 2 * Math.PI;
-        return val % (2 * Math.PI);
-    }
-    
-    angleToArrow(angle) {
-        const D_PI = 2 * Math.PI;
-        const arrows = ["\u2191", "\u2197", "\u2192", "\u2198", "\u2193", "\u2199", "\u2190", "\u2196"];
-        angle = (angle + 10 * D_PI) % (D_PI);
-        
-        for(var i = 0; i < 8; i++) {
-            if(angle < ( (0.125 + 0.25 * i) * Math.PI ) ) {
-                return arrows[i];
-            }
-        }
-        return arrows[0];
-    }
-}
-globals = new GlobalFunctions();
-
-
-
-
-
-// simple rectangle class to reduce duplicate code and to simplify rectangle interactions
-class Rectangle {
-    constructor(x, y, w, h) {
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
-    }
-    
-    isInside(xpos, ypos) {
-        log("isInside: xpos="+xpos+" ; ypos="+ypos, 1);
-        if(xpos >= this.x && xpos < this.x+this.w && ypos >= this.y && ypos <= this.y+this.h) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-    
-    getRelativePosition(xpos, ypos) {
-        const _xpos = (xpos-this.x) / (this.w-this.x);
-        const _ypos = (ypos-this.y) / (this.h-this.y);
-        return [_xpos, _ypos];
-    }
-}
-
-
-
-// get the color from a corresponding amplitude point
-// @pre val{0-1}, exponent{>0 - <inf}
-// @post fillStyle{"rgb(<r>,<g>,<b>,<a>)"}
-function colorFromAmplitude(val, exponent = 1.0) {
-    // return "hsl("+(80-80*(Math.pow(val, 0.7))) + ", " + (68+val*15) + "%, " + (40+val*30)+"%)";
-    console.assert(colorPoints != null, "colorFromAmplitude, colorpoints array is never created!");
-    // console.assert(val >= 0 && val <= 1.0, "colorFromAmplitude, value is not inside range: "+val);
-    
-    const shiftedVal = Math.pow(val, exponent);
-    
-    // find colors to interpolate with
-    var colorFound = false;
-    var baseColorIndex = colorPoints.length - 2;
-    for(var i = 1; i < colorPoints.length; i++) {
-        if(colorPoints[i][0] >= shiftedVal && !colorFound) {
-            baseColorIndex = i-1;
-            colorFound = true;
-        }
-    }
-    console.assert(baseColorIndex < colorPoints.length-1 && baseColorIndex >= 0, "colorFromAmplitude: baseColorIndex should larger then zero and smaller then the colorPoints array size: "+baseColorIndex);
-    
-    // get linear interpolation amount
-    const rangeBetweenColors = colorPoints[baseColorIndex+1][0] - colorPoints[baseColorIndex][0];
-    const rangeToValue = shiftedVal - colorPoints[baseColorIndex][0];
-    const amount = rangeToValue / rangeBetweenColors;
-    console.assert(rangeToValue >= 0.0, "colorFromAmplitude: index should be larger then 0");
-    
-    // get interpolated color (for r,g,b and a)
-    var fillStyle = "rgba(";
-    for(var i = 0; i < 4; i++) {
-        const val = (amount) * colorPoints[baseColorIndex+1][1][i] + (1.0-amount) * colorPoints[baseColorIndex][1][i];
-        if(i < 3) {
-            fillStyle += parseInt( val );
-            fillStyle += ", ";
-        } else {
-            fillStyle += parseFloat( val );
-        }
-    }
-    fillStyle += ")";
-    
-    return fillStyle;
-}
 
 const abrevs = [ [0, "b"], [1000, "Kb"], [1000000, "Kb"], [1000000000, "Mb"], [1000000000000, "Gb"], [1000000000000000, "Tb"] ];
 function bytesToAbrieviatedSize(bytes) {
@@ -266,7 +102,7 @@ class AudioListener {
         }
         this._listenerDirection = [x, y, z];
         
-        this.listenerHorizontalAngle = globals.getAngle(x, z);
+        this.listenerHorizontalAngle = getAngle(x, z);
     }
     
     get x() { return this._listenerPosition[0]; }
@@ -278,7 +114,7 @@ class AudioListener {
     get horizontalAngleInDegrees() { return parseInt(360 * (this.listenerHorizontalAngle / (2 * Math.PI))); }
     get initialPosition() { return [this.LISTENER_INITIAL_X, this.LISTENER_INITIAL_Y, this.LISTENER_INITIAL_Z]; }
     
-    get info() { return "AudioListener: " + "pos(" + this._listenerPosition + "); dir(" + this._listenerDirection + "); angle(" + this.horizontalAngleInDegrees + ", " + globals.angleToArrow(this.horizontalAngle) + ");" }
+    get info() { return "AudioListener: " + "pos(" + this._listenerPosition + "); dir(" + this._listenerDirection + "); angle(" + this.horizontalAngleInDegrees + ", " + angleToUtf8Arrow(this.horizontalAngle) + ");" }
     log() { console.log(this.info); }
 };
 var audioListener = new AudioListener();
@@ -652,7 +488,7 @@ class BinauralPanner {
         }
         this._position = [xPos, yPos, zPos];
         
-        this.horizontalAngleFromCenter = globals.getAngle(xPos, zPos);
+        this.horizontalAngleFromCenter = getAngle(xPos, zPos);
         // console.assert(xPos >= 0 ? (this.horizontalAngleFromCenter >= 0 && this.horizontalAngleFromCenter <= 3.14) : (this.horizontalAngleFromCenter >= 3.14 && this.horizontalAngleFromCenter <= 6.28), "xPos: "+xPos+" ;horizontalAngleFromCenter: "+this.horizontalAngleFromCenter);
     }
     setOrientation(x, y, z) {
@@ -676,7 +512,7 @@ class BinauralPanner {
     get node() { return this.panner; }
     get horizontalAngleFromCenterInDegrees() { return parseInt(360 * (this.horizontalAngleFromCenter / (2 * Math.PI))); }
     
-    get info() { return "BinauralPanner: " + "pos(" + this._position + ");\t horizontalAngleFromCenter(" + this.horizontalAngleFromCenterInDegrees + ", " + globals.angleToArrow(this.horizontalAngleFromCenter) + ");\t dir(" + this._orientation + ");" }
+    get info() { return "BinauralPanner: " + "pos(" + this._position + ");\t horizontalAngleFromCenter(" + this.horizontalAngleFromCenterInDegrees + ", " + angleToUtf8Arrow(this.horizontalAngleFromCenter) + ");\t dir(" + this._orientation + ");" }
     log() { console.log(this.info); }
 }
 
@@ -1217,19 +1053,11 @@ function setupPanningNodes()
     }
 
     // ---- set panning of all panners
-    globals.fromRotatedPositionToStaticPosition = function(i) {
-        // const angle = parseFloat(panControl.value);
-        const staticAngle = globals.getAngle( panner[i].positionX, panner[i].positionZ ) - parseFloat(panControl.value);
-        // console.log(i, globals.angleToArrow(staticAngle));
-        const staticRadius = Math.sqrt( Math.pow( panner[i].positionZ, 2 ) + Math.pow( panner[i].positionX, 2 ) );
-        
-        return [staticRadius * ( Math.cos ( staticAngle ) ), staticRadius * ( Math.sin ( staticAngle ) )]; // new [X,Z];
-    }
     function setPanning() {
-        const angle = parseFloat(panControl.value);
+        const angle = parseFloat(panSlider.value);
         for(var i = 0; i < NUM_FILES; i++) {
             const speakerR = Math.sqrt( Math.pow(panner[i].hg_staticPosX, 2) + Math.pow(panner[i].hg_staticPosZ, 2));
-            const speakerAngle = globals.getAngle( panner[i].hg_staticPosX, panner[i].hg_staticPosZ );
+            const speakerAngle = getAngle( panner[i].hg_staticPosX, panner[i].hg_staticPosZ );
             // console.log(speakerR, speakerAngle);
         
             const speakerX = speakerR * ( Math.cos ( angle + speakerAngle ) );
@@ -1281,11 +1109,10 @@ function setupPanningNodes()
     }
     
     // panning slider callback
-    const panControl = document.querySelector('[data-action="pan"]');
-    panControl.circularSliderCallback = function() {
+    panSlider.circularSliderCallback = function() {
         setPanning();
     };
-    panControl.value = 0.0;
+    panSlider.value = 0.0;
     setDistributed(0.0);
     setPanning();
 }
@@ -1339,9 +1166,9 @@ function setupDrawingFunctions()
             function(i) {
                 return (newPosition)=>{ 
                     panner[i].setPosition( newPosition[0], this.panner[i].positionY, newPosition[1] );
-                    var staticPosition = globals.fromRotatedPositionToStaticPosition(i);
-                    panner[i].hg_staticPosX = staticPosition[0];
-                    panner[i].hg_staticPosZ = staticPosition[1];
+                    const normalizedPosition = fromRotatedPositionToNormalizedPosition(this.panner[i].positionX, this.panner[i].positionZ, parseFloat(panSlider.value));
+                    panner[i].hg_staticPosX = normalizedPosition[0];
+                    panner[i].hg_staticPosZ = normalizedPosition[1];
                     if(USE_REVERB_NODES) {
                         binauralReverb.calculateGains();
                     }
@@ -1689,10 +1516,9 @@ function setupDrawingFunctions()
                 
         // autorotate
         if(false) {
-            var panControl = document.querySelector('[data-action="pan"]');
-            panControl.value = (parseFloat(panControl.value) + 0.01) % (2 * Math.PI);
+            var panSlider = document.querySelector('[data-action="pan"]');
+            panSlider.value = (parseFloat(panSlider.value) + 0.01) % (2 * Math.PI);
             globals.setPanning();
-            // document.getElementById("debug-dist").innerHTML = panControl.value;
         }
         
         log("canvas updated", 1);

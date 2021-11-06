@@ -263,7 +263,13 @@
         
         <script src="http://reverbjs.org/reverb.js"></script> 
         
+        <script src="source/preload.js" type="text/javascript"></script>
+        <script src="source/coordinates/coordinates.js" type="text/javascript"></script>
+        <script src="source/painting/color.js" type="text/javascript"></script>
+        <script src="source/painting/rectangle.js" type="text/javascript"></script>
+        <script src="source/painting/svg.js" type="text/javascript"></script>
         <script src="source/main.js" type="text/javascript"></script>
+
         <script src="source/circularslider/circularslider.js"></script>
     </body>
 </html>
