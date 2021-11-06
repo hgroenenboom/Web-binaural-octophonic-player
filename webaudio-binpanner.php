@@ -269,10 +269,12 @@
         <script src="source/audio/audioFilePlayer.js" type="text/javascript"></script>
         <script src="source/audio/audioListener.js" type="text/javascript"></script>
         <script src="source/audio/binauralPanner.js" type="text/javascript"></script>
+        <script src="source/audio/binauralReverb.js" type="text/javascript"></script>
         <script src="source/audio/multiAudioFilePlayer.js" type="text/javascript"></script>
         
         <script src="source/painting/color.js" type="text/javascript"></script>
         <script src="source/painting/positionableComponent.js" type="text/javascript"></script>
+        <script src="source/painting/positionableComponentRegistry.js" type="text/javascript"></script>
         <script src="source/painting/rectangle.js" type="text/javascript"></script>
         <script src="source/painting/svg.js" type="text/javascript"></script>
         
