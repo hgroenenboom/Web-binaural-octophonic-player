@@ -37,29 +37,33 @@
         // get homepage directory
         const homepage = window.location.href.split("/").slice(0,-1).join("/");
 
-        function onForm(form = document.getElementById("inputdata")) {
-            var text = '';
-            var i;
-            // get data from all form elements
-            for (i = 0; i < form.length ;i++) { 
-                var e = form.elements[i];
-                if(e.type != "button")
-                    text += (i == 0 ? "?" : "&");
-                if(e.type == "checkbox") {
-                    if(form.elements[i].checked)
-                        text += e.name+"=" + form.elements[i].value;
+        function onForm() {
+            const form = document.getElementById("inputdata");
+
+            let iFrameSettings = '';
+            for (let i = 0; i < form.length; i++) { 
+                const element = form.elements[i];
+
+                if (element.type !== "button") {
+                    iFrameSettings += (i == 0 ? "?" : "&");
                 }
-                else if(e.type != "button") {
-                    if(form.elements[i].value != "")
-                        text += e.name+"=" + form.elements[i].value;
+                
+                if (element.type === "checkbox") {
+                    if(form.elements[i].checked === true) {
+                        iFrameSettings += element.name + "=" + element.value;
+                    }
+                }
+                else if (element.type !== "button" && element.value !== "") {
+                    iFrameSettings += element.name + "=" + element.value;
                 }
             }
             
-            // set iframe and copyable text
-            var frame = document.getElementById("frame");
-            frame.src = homepage + "/webaudio-binpanner.php"+text;
+            // set iframe source
+            let frame = document.getElementById("frame");
+            frame.src = homepage + "/webaudio-binpanner.php" + iFrameSettings;
             frame.width = document.getElementById("width").value;
             frame.height = document.getElementById("height").value;
+
             document.getElementById("copyable").innerHTML = "" + frame.outerHTML;
         }
         
@@ -102,11 +106,12 @@
                 <input type="text" id="height" name="height" value="400">
             </div>
         </div>
-        <!-- <div class="row">
-            <h4 class="centered">Responsive colorgradient</h4>
+
+        <h4>Responsive colorgradient</h4>
+        <div class="row">
             <div class="row" id="colorpicker">
             </div>
-        </div> -->
+        </div>
         
         <form id="inputdata" action="" method="GET" autocomplete="on">
 
@@ -254,274 +259,256 @@
     <!-- /container -->
     
     <script>
-    document.getElementById("audiofiles").value = homepage + "/audio/aesthetics/aesthetics";
-    
-    // COPYABLE ELEMENT AUTO RESIZE
-    var resizables = document.getElementsByClassName("autoresizing");
-    for(var i = 0; i < resizables.length; i++) {
-        const e = resizables[i];
-        e.setAttribute('style', 'width:80%;height:' + e.scrollHeight + 'px;overflow-y:hidden;');
-        e.oninput = function(e) {
-            return () => {
-                e.style.height = 'auto';
-                e.style.height = e.scrollHeight + 'px';
-            };
-        }(e);
-    }
-    
-    // RESIZING IFRAME WINDOW
-    function resizeFrameSpace() {
-        frame.width = document.getElementById("frameSpace").offsetWidth - 15;
-        frame.height = document.getElementById("frameSpace").offsetHeight - 15;
-        onForm();
-    }
-    document.getElementById("frameSpace").onmouseup = function() { 
-        document.getElementById("width").value = document.getElementById("frameSpace").offsetWidth - 15;
-        document.getElementById("height").value = document.getElementById("frameSpace").offsetHeight - 15;
-        resizeFrameSpace();
-        // console.log(frame.width, frame.height);
-    }
-    document.getElementById("frameSpace").ontouchend = function() { 
-        document.getElementById("frameSpace").onmouseup(); 
-    }
-    document.getElementById("width").oninput = ()=> {
-        document.getElementById("frameSpace").style.width = "" + parseInt(document.getElementById("width").value) + "px";
-        resizeFrameSpace();
-    }
-    document.getElementById("height").oninput = ()=> {
-        document.getElementById("frameSpace").style.height = "" + document.getElementById("height").value + "px";
-        resizeFrameSpace();
-    }
-    
-    // HEX COLOR TO RGB FUNCTION
-    function hexToRgb(hex) {
-      // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
-      var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-      hex = hex.replace(shorthandRegex, function(m, r, g, b) {
-        return r + r + g + g + b + b;
-      });
-      var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      
-      return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16)
-      } : null;
-    }
-    
-    // COLOR PICKER
-    class ColorPicker {
-        constructor(divToAddTo, startColor="#000000") {
-            this.div = document.createElement("div");
+        // SET INITAL PAGE
+        document.getElementById("audiofiles").value = homepage + "/resources/audio/aesthetics/aesthetics";
+        
+        // COPYABLE ELEMENT AUTO RESIZE
+        const resizableElements = document.getElementsByClassName("autoresizing");
+        for(let i = 0; i < resizableElements.length; i++) {
+            const resizableElement = resizableElements[i];
+            resizableElement.setAttribute('style', 'width:80%;height:' + resizableElement.scrollHeight + 'px;overflow-y:hidden;');
+            resizableElement.oninput = function(e) {
+                return () => {
+                    e.style.height = 'auto';
+                    e.style.height = e.scrollHeight + 'px';
+                };
+            }(resizableElement);
+        }
+        
+        // RESIZING IFRAME WINDOW
+        function resizeFrameSpace() {
+            frame.width = document.getElementById("frameSpace").offsetWidth - 15;
+            frame.height = document.getElementById("frameSpace").offsetHeight - 15;
+            onForm();
+        }
+        document.getElementById("frameSpace").onmouseup = function() { 
+            document.getElementById("width").value = document.getElementById("frameSpace").offsetWidth - 15;
+            document.getElementById("height").value = document.getElementById("frameSpace").offsetHeight - 15;
+            resizeFrameSpace();
+        }
+        document.getElementById("frameSpace").ontouchend = function() { 
+            document.getElementById("frameSpace").onmouseup(); 
+        }
+        document.getElementById("width").oninput = ()=> {
+            document.getElementById("frameSpace").style.width = "" + parseInt(document.getElementById("width").value) + "px";
+            resizeFrameSpace();
+        }
+        document.getElementById("height").oninput = ()=> {
+            document.getElementById("frameSpace").style.height = "" + document.getElementById("height").value + "px";
+            resizeFrameSpace();
+        }
+        
+        /** Convert hexadecimal color to seperate red, green and blue values */
+        function hexToRgb(hex) {
+            // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+            const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+            hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+                return r + r + g + g + b + b;
+            });
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
             
-            this.buttonDiv = document.createElement("div");
-            this.removebutton = document.createElement("button");
-            this.addbutton = document.createElement("button");
-            
-            this.colorDiv = document.createElement("div");
-            this.colorinput = document.createElement("input");
-            this.textinput = document.createElement("input");
-            
-            this.divToAddTo = divToAddTo;
-            
-            this.div.classList.add("row");
-            this.div.classList.add("small-margin");
-            this.div.classList.add("centered");
-            this.div.style.padding = "0 50px";
-            this.div.style.margin = "5px 0";
-            
-            this.buttonDiv.classList.add("col-lg-5");
-            this.buttonDiv.classList.add("centered");
-            
-            var buttonDiv = this.buttonDiv;
-            this.removebutton.classList.add("col-lg-5");
-            this.removebutton.style.margin = "0 4%";
-            this.removebutton.style.left = "10%";
-            buttonDiv.appendChild(this.removebutton);
-            
-            this.addbutton.classList.add("col-lg-3");
-            this.addbutton.style.margin = "0 6%";
-            this.addbutton.style.left = "10%;";
-            buttonDiv.appendChild(this.addbutton);
-            
-            var colorDiv = this.colorDiv;
-            this.colorinput.classList.add("col-lg-4");
-            colorDiv.appendChild(this.colorinput);
-            this.textinput.classList.add("col-lg-1");
-            colorDiv.appendChild(this.textinput);
-            
-            this.div.appendChild(buttonDiv);
-            this.div.appendChild(colorDiv);
-            
-            divToAddTo.appendChild(this.div);
-            
-            // set remove button
-            this.removebutton.innerHTML = "remove";
-            this.removebutton.type = "button";
-            var div = this.div;
-            this.removebutton.onclick = function(e) {
-                if(divToAddTo.childElementCount > 1) {
-                    divToAddTo.removeChild(div);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+        
+        class ColorPicker {
+            constructor(divToAddTo, startColor="#000000") {
+                let div = document.createElement("div");
+                div.classList.add("row");
+                div.classList.add("small-margin");
+
+                let emptyDiv = document.createElement("div");
+                emptyDiv.classList.add("col-lg-5");
+                div.appendChild(emptyDiv);
+                
+                let removebutton = document.createElement("button");
+                let addbutton = document.createElement("button");
+                let colorinput = document.createElement("input");
+                let textinput = document.createElement("input");
+                
+                removebutton.classList.add("col-lg-1");
+                addbutton.classList.add("col-lg-1");
+                colorinput.classList.add("col-lg-2");
+                textinput.classList.add("col-lg-1");
+                
+                div.appendChild(removebutton);
+                div.appendChild(addbutton);
+                div.appendChild(colorinput);
+                div.appendChild(textinput);
+                
+                divToAddTo.appendChild(div);
+                
+                // set remove button
+                removebutton.innerHTML = "remove";
+                removebutton.type = "button";
+                removebutton.onclick = function(e) {
+                    if(divToAddTo.childElementCount > 1) {
+                        divToAddTo.removeChild(div);
+                    }
+                    onForm();
                 }
-                onForm();
-            }
-            
-            // set color input
-            var that = this;
-            this.colorinput.type = "color";
-            this.colorinput.value = startColor;
-            //this.colorinput.style.margin-left = "10px";
-            this.colorinput.onchange = function() {
-                that.textinput.value = that.colorinput.value;
-                that.setInputElement();
-            }
-            
-            // set color hex text input 
-            this.textinput.type = "text";
-            this.textinput.value = startColor;
-            this.textinput.width = "120px";
-            // this.textinput.margin-left = "10px;";
-            this.textinput.onchange = function() {
-                if(hexToRgb(that.textinput.value) != null) {
-                    that.colorinput.value = that.textinput.value;
+                
+                this.divToAddTo = divToAddTo;
+                this.colorinput = colorinput;
+                this.textinput = textinput;
+                let that = this;
+
+                // set color input
+                colorinput.type = "color";
+                colorinput.value = startColor;
+                this.colorinput.onchange = function() {
+                    that.textinput.value = that.colorinput.value;
                     that.setInputElement();
                 }
-            }
-            
-            // set add button
-            this.addbutton.innerHTML = "add";
-            this.addbutton.type = "button";
-            this.addbutton.onclick = function(e) {
-                var test = new ColorPicker(divToAddTo, that.colorinput.value);
-                onForm();
-            }
-            
-            this.setInputElement();
-        }
-        
-        // sets the colorgradient value for the hidden input element used by the main form (the elements inside this class should not be used in the form!)
-        setInputElement(hiddenInputElement = document.getElementById("colorgradient")) {
-            var inputToSet = hiddenInputElement;
-            
-            // find all color inputs
-            var inputs = this.divToAddTo.getElementsByTagName("input");
-            var ins = [];
-            for(var i = 0; i < inputs.length; i++) {
-                if(inputs[i].type == "color") {
-                    ins.push(inputs[i]);
-                }
-            }
-            inputs = ins;
-            
-            // generate text for all inputs
-            var text = "[ ";
-            for(var i = 0; i < inputs.length; i++) {
-                text += "[ "+ (i / (inputs.length - 1)) + ", ";
-                const c = hexToRgb(inputs[i].value);
-                text += "[" + c.r + ", "+ c.g + ", " + c.b + ", 1] ]";
-                if(i < inputs.length - 1) {
-                    text += ", ";
-                }
-            }
-            text += " ]";
-            
-            inputToSet.value = text;
-            
-            onForm();
-        }
-    };
-    
-    var colorpicker = document.getElementById("colorpicker");
-    var defaultColorGradient = new ColorPicker(colorpicker, "#e1eee2");
-    defaultColorGradient = new ColorPicker(colorpicker, "#33aa33");
-    defaultColorGradient = new ColorPicker(colorpicker, "#aaffaa");
-    defaultColorGradient = new ColorPicker(colorpicker, "#ecdb64");
-    defaultColorGradient = new ColorPicker(colorpicker, "#ffa020");
-    defaultColorGradient = new ColorPicker(colorpicker, "#ff4444");
-
-    function colorThemeChanged() {
-        var firstColor = document.getElementById("colorpicker").getElementsByTagName("input")[0];
-        var secondColor = document.getElementById("colorpicker").getElementsByTagName("input")[1];
-        var colorThemeElement = document.getElementById("colortheme");
-        
-        window.firstColor = firstColor;
-        console.log(firstColor);
-        if(colorThemeElement.value == "dark") {
-            firstColor.value = "#e1eee2";
-            secondColor.value = "#e1eee2";
-        } else if (colorThemeElement.value == "light") {
-            firstColor.value = "#162717";
-            secondColor.value = "#162717";
-        }
-        
-        defaultColorGradient.setInputElement();
-        onForm();
-    }
-    document.getElementById("colortheme").addEventListener("input", function() { colorThemeChanged(); } );
-    colorThemeChanged();
-
-    // set iframe according to default form values
-    onForm(document.getElementById("inputdata"));
-    // resize iframe on load
-    document.getElementById("frameSpace").onmouseup();
-    // resize copyable window
-    document.getElementById("copyable").oninput();
-    
-    // WIP:
-    /*
-    document.getElementById("colorgradienttext").oninput = (el)=> {
-        var text = "";
-        text += el.srcElement.value;
-        text = text.replace(/\s/g, '');
-
-        colors = [];
-
-        if(text[0] == "[" && text[text.length-1] == "]") {
-            text = text.substr(1, text.length - 2);
-        } else {
-            return null;
-        }
-
-        var elements = [];
-        for(var i = 0; i < text.length; i++) {
-            if(text[i] == "[") {
-                var endindex = -1;
-                var level = 0;
-                var foundEnd = false;
-                for(var j = i+1; j < text.length; j++) {
-                    if(!foundEnd) {
-                        if(text[j] == "[") {
-                            level++;
-                        }
-                        if(text[j] == "]" && level == 0) {
-                             foundEnd = true;
-                             endindex = j;
-                        }
-                        if(text[j] == "]") {
-                            level--;
-                        }
+                
+                // set color hex text input 
+                textinput.type = "text";
+                textinput.value = startColor;
+                textinput.onchange = function() {
+                    if(hexToRgb(that.textinput.value) != null) {
+                        that.colorinput.value = that.textinput.value;
+                        that.setInputElement();
                     }
                 }
-                if(endindex == -1) {
-                    return null;
+                
+                // set add button
+                addbutton.innerHTML = "add";
+                addbutton.type = "button";
+                addbutton.onclick = function(e) {
+                    var test = new ColorPicker(divToAddTo, that.colorinput.value);
+                    onForm();
                 }
-                elements.push(text.substr(i, endindex));
-                i = endindex;
+                
+                this.setInputElement();
             }
-        }
+            
+            // sets the colorgradient value for the hidden input element used by the main form (the elements inside this class should not be used in the form!)
+            setInputElement() {
+                // find all color inputs
+                let inputs = this.divToAddTo.getElementsByTagName("input");
+                let validInputs = [];
+                for(var i = 0; i < inputs.length; i++) {
+                    if(inputs[i].type == "color") {
+                        validInputs.push(inputs[i]);
+                    }
+                }
+                inputs = validInputs;
+                
+                // generate text for all inputs
+                var text = "[ ";
+                for(var i = 0; i < inputs.length; i++) {
+                    text += "[ "+ (i / (inputs.length - 1)) + ", ";
+                    const c = hexToRgb(inputs[i].value);
+                    text += "[" + c.r + ", "+ c.g + ", " + c.b + ", 1] ]";
+                    if(i < inputs.length - 1) {
+                        text += ", ";
+                    }
+                }
+                text += " ]";
+                
+                let hiddenInputElement = document.getElementById("colorgradient");
+                hiddenInputElement.value = text;
+                
+                onForm();
+            }
+        };
         
-        // UNFINISHED
-        // console.log(elements);
-    }
-    */
-    
-    var form = document.getElementById("inputdata");
-    var formelements = form.elements;
-    for(var i = 0; i < formelements.length; i++) {
-        formelements[i].addEventListener( "input", function() {
+        let colorpicker = document.getElementById("colorpicker");
+        let defaultColorGradient = new ColorPicker(colorpicker, "#e1eee2");
+        defaultColorGradient = new ColorPicker(colorpicker, "#33aa33");
+        defaultColorGradient = new ColorPicker(colorpicker, "#aaffaa");
+        defaultColorGradient = new ColorPicker(colorpicker, "#ecdb64");
+        defaultColorGradient = new ColorPicker(colorpicker, "#ffa020");
+        defaultColorGradient = new ColorPicker(colorpicker, "#ff4444");
+
+        function colorThemeChanged() {
+            let firstColor = document.getElementById("colorpicker").getElementsByTagName("input")[0];
+            let secondColor = document.getElementById("colorpicker").getElementsByTagName("input")[1];
+            const colorThemeElement = document.getElementById("colortheme");
+            
+            window.firstColor = firstColor;
+            console.log(firstColor);
+            if(colorThemeElement.value == "dark") {
+                firstColor.value = "#e1eee2";
+                secondColor.value = "#e1eee2";
+            } else if (colorThemeElement.value == "light") {
+                firstColor.value = "#162717";
+                secondColor.value = "#162717";
+            }
+            
+            defaultColorGradient.setInputElement();
             onForm();
-        });
-    }
+        }
+        document.getElementById("colortheme").addEventListener("input", function() { colorThemeChanged(); } );
+        colorThemeChanged();
+
+        // set iframe according to default form values
+        onForm(document.getElementById("inputdata"));
+
+        // resize iframe on load
+        document.getElementById("frameSpace").onmouseup();
+        // resize copyable window
+        document.getElementById("copyable").oninput();
+        
+        // WIP:
+        /*
+        document.getElementById("colorgradienttext").oninput = (el)=> {
+            var text = "";
+            text += el.srcElement.value;
+            text = text.replace(/\s/g, '');
+
+            colors = [];
+
+            if(text[0] == "[" && text[text.length-1] == "]") {
+                text = text.substr(1, text.length - 2);
+            } else {
+                return null;
+            }
+
+            var elements = [];
+            for(var i = 0; i < text.length; i++) {
+                if(text[i] == "[") {
+                    var endindex = -1;
+                    var level = 0;
+                    var foundEnd = false;
+                    for(var j = i+1; j < text.length; j++) {
+                        if(!foundEnd) {
+                            if(text[j] == "[") {
+                                level++;
+                            }
+                            if(text[j] == "]" && level == 0) {
+                                foundEnd = true;
+                                endindex = j;
+                            }
+                            if(text[j] == "]") {
+                                level--;
+                            }
+                        }
+                    }
+                    if(endindex == -1) {
+                        return null;
+                    }
+                    elements.push(text.substr(i, endindex));
+                    i = endindex;
+                }
+            }
+            
+            // UNFINISHED
+            // console.log(elements);
+        }
+        */
+        
+        // make sure all changes in the form, trigger an update to the iFrame
+        let form = document.getElementById("inputdata");
+        let formElements = form.elements;
+        for(let i = 0; i < formElements.length; i++) {
+            formElements[i].addEventListener( "input", function() {
+                onForm();
+            });
+        }
     </script>
 </body>
 </html>
