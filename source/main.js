@@ -8,11 +8,10 @@ if(SHOULD_LOG >= 0)
 function log(txt, niveau=0) {
     if(niveau <= SHOULD_LOG) {
         console.log(txt);
+
         if(SHOULD_LOG >= 0) {
-            var consoleElement = document.getElementById("console");
-            if(consoleElement) {
-                consoleElement.innerHTML += "<br>"+txt;
-            }
+            let consoleElement = document.getElementById("console");
+            consoleElement.innerHTML += "<br>" + txt;
         }
     }
 }
@@ -20,26 +19,18 @@ function log(txt, niveau=0) {
 log("USE_REVERB_NODES:" + USE_REVERB_NODES, 1);
 log("NUM_FILES:" + NUM_FILES, 1);
 
-
 window.binauralplayer = new class{}; // empty functionpointer container
 // available functions:
 // - window.binauralplayer.playPause()
 
 // cross browser audio context
 const AudioContext = window.AudioContext || window.webkitAudioContext;
-let audioContext;
-audioContext = new AudioContext();
+let audioContext = new AudioContext();
 audioContext.suspend();
 
 reverbjs.extend(audioContext);
 
-// const SPEAKER_DIST = 30.0;
-const REVERB_DIST = SPEAKER_DIST*1.3;
-
-// Table of contents:
-// **TO BE FILLED IN**
-
-
+const REVERB_DIST = 1.3 * SPEAKER_DIST;
 
 
 
@@ -90,6 +81,7 @@ vars = new DrawingVariables();
 
 function drawSVG(svgData, rotation, positionX, positionY, scale=1, offsetX = 0, offsetY = 0) {
     drawContext.save();
+
     drawContext.translate(positionX, positionY);
     drawContext.rotate( Math.PI + rotation );
     drawContext.translate(offsetX, offsetY);
@@ -120,6 +112,7 @@ function drawPath(path, rotation, positionX, positionY, scale=1, offsetX = 0, of
 class GlobalFunctions {
     constructor() {}
     
+    /** Returns the angle in radians */
     getAngle(x, y) {
         const val = Math.atan2(x, y) + 2 * Math.PI;
         return val % (2 * Math.PI);
@@ -216,11 +209,9 @@ function colorFromAmplitude(val, exponent = 1.0) {
 
 const abrevs = [ [0, "b"], [1000, "Kb"], [1000000, "Kb"], [1000000000, "Mb"], [1000000000000, "Gb"], [1000000000000000, "Tb"] ];
 function bytesToAbrieviatedSize(bytes) {
-    var out = "";
-    for(var i = 0; i < abrevs.length-1; i++) {
+    for(let i = 0; i < abrevs.length-1; i++) {
         if(bytes < abrevs[i+1][0]) {
-            out = "" + Math.round(bytes / abrevs[i][0]) + abrevs[i+1][1];
-            return out;
+            return "" + Math.round(bytes / abrevs[i][0]) + abrevs[i+1][1];
         }
     }
 }
@@ -291,7 +282,6 @@ class AudioListener {
     log() { console.log(this.info); }
 };
 var audioListener = new AudioListener();
-// audioListener.log();
 
 
 
