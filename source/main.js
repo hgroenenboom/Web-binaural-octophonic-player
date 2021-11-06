@@ -2,15 +2,15 @@
 const init_master_gain = 0.85;
 
 // Audio nodes
-var tracks = [];
-var panner = [];
-var analyserNodes = [];
-var binauralReverb = null;
+let tracks = [];
+let panner = [];
+let analyserNodes = [];
+let binauralReverb = null;
 let audioListener = new AudioListener();
 const masterGainNode = audioContext.createGain();
 
 // Drawing variables
-var positionableElements = null;
+let positionableElements = new PositionableElementsContainer();
 
 // HTML components
 const drawContext = document.getElementById("canvas").getContext("2d");
@@ -59,7 +59,7 @@ vars = new DrawingVariables();
 
 log("Start audiopipeline code");
 
-function initNodes() 
+function connectAllNodes() 
 {
     log("Start initializing");
     console.assert(audioContext);
@@ -70,10 +70,16 @@ function initNodes()
     
     setupPanningNodes();
     
-    // ---- Connect all nodes
+    if(USE_REVERB_NODES)
+    {
+        for(let i = 0; i < NUM_FILES; i++) {
+            binauralReverb.connectToReverb(panner[i]);
+        }
+    }
+
     tracks.connectToNodes(analyserNodes);
 
-    for(var i = 0; i < NUM_FILES; i++) 
+    for(let i = 0; i < NUM_FILES; i++) 
     {
         analyserNodes[i].connect(panner[i].panner);
         panner[i].connect(masterGainNode);
@@ -81,6 +87,7 @@ function initNodes()
 
     masterGainNode.connect(audioContext.destination);
     
+    // TODO: should be done elsewhere
     // ---- Setup drawing
     setupDrawingFunctions();
     
@@ -247,7 +254,7 @@ function setupPanningNodes()
         const angleBetweenPanners = 2 * Math.PI / NUM_FILES;
         const speakerDistance = 0.5 * relativeDistanceFromCentrePoint * environment.viewDistance;
 
-        for(var i = 0; i < NUM_FILES; i++) 
+        for(let i = 0; i < NUM_FILES; i++) 
         {
             const pannerAngle = i * angleBetweenPanners;
 
@@ -287,9 +294,7 @@ function setupAnalyzingNodes(numNodes)
     console.assert(numNodes > 0, "Num nodes shouldn't be zero!");
     console.assert(numNodes == NUM_FILES, "Num nodes should equal to num audio elements!");
     
-    //----------------------------------------------------------------------------//
-    // ------------------------ INIT + CONNECT AUDIONODES ------------------------//
-    for(var i = 0; i < numNodes; i++) 
+    for(let i = 0; i < numNodes; i++) 
     {
         analyserNodes[i] = audioContext.createAnalyser();
         analyserNodes[i].smoothingTimeConstant = 0.85;
@@ -302,13 +307,13 @@ function setupAnalyzingNodes(numNodes)
 function connectAnalyzingNodes(startNodes) 
 {
     console.assert(startNodes != null);
-    const numNodes = startNodes.length;
     console.assert(numNodes != 0);
     console.assert(numNodes == NUM_FILES, "analyzing nodes has a different amount of inputs then the number of audiofiles presented (given:"+numNodes+")");
     console.assert(numNodes == NUM_FILES, "numNodes ("+numNodes+") should be NUM_FILES!");
     console.assert(startNodes.length == numNodes, "startNodes ("+startNodes.length+") is not of same length as numNodes ("+numNodes+")!");
     
-    for(var i = 0; i < numNodes; i++) 
+    const numNodes = startNodes.length;
+    for(let i = 0; i < numNodes; i++) 
     {
         startNodes[i].connect(analyserNodes[i]);
     }
@@ -318,8 +323,6 @@ function connectAnalyzingNodes(startNodes)
 
 function setupDrawingFunctions() 
 {
-    positionableElements = new PositionableElementsContainer();
-
     // Add AudioListener positionable component
     positionableElements.addElement(
         (newPosition)=>{ audioListener.setListenerPosition(newPosition[0], audioListener.listenerPosition[1], newPosition[1]); },
@@ -333,13 +336,13 @@ function setupDrawingFunctions()
 
     // Add Speakers positionable components
     // wikimedia svg: https://upload.wikimedia.org/wikipedia/commons/2/21/Speaker_Icon.svg
-    for(var i = 0; i < NUM_FILES; i++) 
+    for(let i = 0; i < NUM_FILES; i++) 
     {
         positionableElements.addElement(
             function(i) {
                 return (newPosition)=>{ 
-                    panner[i].setPosition( newPosition[0], this.panner[i].positionY, newPosition[1] );
-                    const normalizedPosition = fromRotatedPositionToNormalizedPosition(this.panner[i].positionX, this.panner[i].positionZ, parseFloat(panSlider.value));
+                    panner[i].setPosition( newPosition[0], panner[i].positionY, newPosition[1] );
+                    const normalizedPosition = fromRotatedPositionToNormalizedPosition(panner[i].positionX, panner[i].positionZ, parseFloat(panSlider.value));
                     panner[i].hg_staticPosX = normalizedPosition[0];
                     panner[i].hg_staticPosZ = normalizedPosition[1];
                     if(USE_REVERB_NODES) {
@@ -361,7 +364,7 @@ function setupDrawingFunctions()
         );
     }
 
-    for(var i = 0; i < NUM_FILES+1; i++) 
+    for(let i = 0; i < NUM_FILES+1; i++) 
     {
         positionableElements.setDrawSize(i, 37);
     }
@@ -369,7 +372,7 @@ function setupDrawingFunctions()
     // Add reverb walls positionable components
     if(USE_REVERB_NODES) 
     {
-        for(var i = 0; i < binauralReverb.NUM_NODES; i++) 
+        for(let i = 0; i < binauralReverb.NUM_NODES; i++) 
         {
             positionableElements.addElement(
                 function(i) {
@@ -433,7 +436,7 @@ function setupDrawingFunctions()
     
     //----------------------------------------------------------------------------//
     // ------------------------ LISTENER EVENTS FROM CANVAS BUTTOn ---------------//
-    for(var i = 0; i < canvasButtonsDiv.children.length; i++) 
+    for(let i = 0; i < canvasButtonsDiv.children.length; i++) 
     {
         canvasButtonsDiv.children[i].addEventListener("mousedown", function(i) 
         {
@@ -491,7 +494,7 @@ function setupDrawingFunctions()
         const mousePositionCanvas = [vars.windowMouseDownX, vars.windowMouseDownY];
         if(environment.selectedView == 1) {
             
-            var elementBeingDragged = positionableElements.mouseDown(mousePositionCanvas);
+            let elementBeingDragged = positionableElements.mouseDown(mousePositionCanvas);
             
             // listener direction
             if(!elementBeingDragged) {
@@ -527,13 +530,13 @@ function setupDrawingFunctions()
                
                 const dragDistancePosition = [canvasXDistanceFromDragStart / vars.positionToCanvasMultX, canvasYDistanceFromDragStart / vars.positionToCanvasMultY];
                 
-                var elementIsBeingDragged = positionableElements.mouseDrag( dragDistancePosition );
+                let elementIsBeingDragged = positionableElements.mouseDrag( dragDistancePosition );
                 
                 // listener direction
                 if(!elementIsBeingDragged) {
                     const listenerPositionCanvas = positionableElements.getDrawSpace(0);
-                    var x = vars.windowDragX - ( listenerPositionCanvas.x + 0.5 * listenerPositionCanvas.w );
-                    var z = vars.windowDragY - ( listenerPositionCanvas.y + 0.5 * listenerPositionCanvas.h );
+                    let x = vars.windowDragX - ( listenerPositionCanvas.x + 0.5 * listenerPositionCanvas.w );
+                    let z = vars.windowDragY - ( listenerPositionCanvas.y + 0.5 * listenerPositionCanvas.h );
                     audioListener.setListenerDirection(x, 0, -z);
                 }
                 setPanning();
@@ -556,8 +559,8 @@ function setupDrawingFunctions()
         drawContext.fillRect(0, 0, vars.drawSpaceCanvas.w, vars.drawSpaceCanvas.h);
 
         // get average gain for all audiofiles
-        var average = [];
-        for(var i = 0; i < NUM_FILES; i++) 
+        let average = [];
+        for(let i = 0; i < NUM_FILES; i++) 
         {
             analyserNodes[i].getByteFrequencyData(drawArray);
             average[i] = arrayMean(drawArray) / 130;
@@ -569,7 +572,7 @@ function setupDrawingFunctions()
             const height = vars.drawSpaceCanvas.h - bottombar;
             const widthPerElement = Math.min(100, vars.drawSpaceCanvas.w / NUM_FILES);
 
-            for(var i = 0; i < NUM_FILES; i++) 
+            for(let i = 0; i < NUM_FILES; i++) 
             {
                 log(average[i], 1);
                 const audioEl = tracks.getAudioTrack(i);
@@ -582,8 +585,8 @@ function setupDrawingFunctions()
                 drawContext.fillRect(x, gainYPos, widthPerElement - 3, height - gainYPos);
                 
                 // report whether sync!
-                var durationIsSync = true;
-                for(var j = 0; j < NUM_FILES; j++) 
+                let durationIsSync = true;
+                for(let j = 0; j < NUM_FILES; j++) 
                 {
                 durationIsSync = Math.abs(audioEl.currentTime - tracks.getAudioTrack(j).currentTime) >= 0.1 ? false : durationIsSync; 
                 }
@@ -593,8 +596,8 @@ function setupDrawingFunctions()
                     drawContext.fillRect(x, height, widthPerElement, bottombar );
                     if(SHOULD_LOG >= 2) 
                     {
-                        var toPrint = "";
-                        for(var j = 0; j < NUM_FILES; j++) {
+                        let toPrint = "";
+                        for(let j = 0; j < NUM_FILES; j++) {
                             toPrint += timeToString(document.getElementsByTagName("audio")[j].currentTime)+", ";
                         }
                         log("["+toPrint+"]", 2);
@@ -622,7 +625,7 @@ function setupDrawingFunctions()
             drawContext.stroke();
             
             // draw elements
-            for(var i = 0; i < positionableElements.positionableElements.length; i++) {
+            for(let i = 0; i < positionableElements.positionableElements.length; i++) {
                 if(i == 0) {
                     drawContext.fillStyle = vars.frontColor;
                 } else if(i < 1 + NUM_FILES) {
@@ -633,7 +636,7 @@ function setupDrawingFunctions()
             }
             
             // draw speaker numbers
-            for(var i = 0; i < NUM_FILES; i++) {
+            for(let i = 0; i < NUM_FILES; i++) {
                 const drawSpace = positionableElements.getDrawSpace(i+1);
                 const speakerXMid = drawSpace.x + 0.5 * drawSpace.w;
                 const speakerYMid = drawSpace.y + 0.5 * drawSpace.h;
@@ -646,7 +649,7 @@ function setupDrawingFunctions()
         } 
         else 
         {
-            var width = drawContext.canvas.width;
+            let width = drawContext.canvas.width;
          
             const audioEl = tracks.getAudioTrack(0);
             const progress = audioEl.currentTime / audioEl.duration;
@@ -658,7 +661,7 @@ function setupDrawingFunctions()
             drawContext.lineTo(progress * width, drawContext.canvas.height);
             drawContext.stroke();
             
-            for(var i = 0; i < NUM_FILES; i++) {
+            for(let i = 0; i < NUM_FILES; i++) {
                 drawContext.fillStyle = vars.frontColor;
                 drawContext.save();
                 drawContext.translate(0, (i / NUM_FILES) * drawCanvas.height);
@@ -671,7 +674,7 @@ function setupDrawingFunctions()
                 
         // autorotate
         if(false) {
-            var panSlider = document.querySelector('[data-action="pan"]');
+            let panSlider = document.querySelector('[data-action="pan"]');
             panSlider.value = (parseFloat(panSlider.value) + 0.01) % (2 * Math.PI);
             setPanning();
         }
@@ -688,47 +691,38 @@ function setupDrawingFunctions()
 /*--------------------------------------------- loading resources  ------------------------------------------------*/
 /*-----------------------------------------------------------------------------------------------------------------*/
 
-var canplay = false;
-var reverbready = USE_REVERB_NODES ? false : true;
+let audioFilesLoaded = false;
+let reverbImpulseResponseLoaded = USE_REVERB_NODES ? false : true;
 
+/** Checks whether all audiofiles are loaded and enables the main view if so */
 function initIfAllLoaded() {
-    var al = true;
-    
-    // check whether all tracks are loaded
-    if(canplay != true)
-        al = false;
-    
-    if(!reverbready)
-        al = false;
-    
-    if(al) {
-        log("init called");
-        enableInteractions();
-        log("init finished");
-        
-        // enable view
-        var loaddiv = document.getElementById("loading screen");
-        loaddiv.style.display = "none";
-        var playerdiv = document.getElementById("octophonic player");
-        playerdiv.style.display = "flex";
+    if(!audioFilesLoaded || !reverbImpulseResponseLoaded) {
+        return;
     }
+    
+    log("init called");
+    connectAllNodes();
+    enableInteractions();
+    log("init finished");
+    
+    const loaddiv = document.getElementById("loading screen");
+    loaddiv.style.display = "none";
+    const playerdiv = document.getElementById("octophonic player");
+    playerdiv.style.display = "flex";
 }
 
-// RUN EVERYTHING
 jQuery('document').ready(() => {
-    // load all tracks
-    tracks = new MultiPreloadedAudioNodes(urls, ()=> { canplay = true; initIfAllLoaded(); } );
+    tracks = new MultiPreloadedAudioNodes(urls, ()=> { 
+        audioFilesLoaded = true; 
+        
+        initIfAllLoaded(); } 
+    );
     
     if(USE_REVERB_NODES) {
         binauralReverb = new BinauralReverb( ()=> { 
-            reverbready = true;
-            for(var i = 0; i < NUM_FILES; i++) {
-                binauralReverb.connectToReverb(panner[i]);
-            }
+            reverbImpulseResponseLoaded = true;
+
             initIfAllLoaded(); 
         } );
     }
-
-    // initialize all nodes
-    initNodes();
 });

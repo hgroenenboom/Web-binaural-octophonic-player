@@ -25,7 +25,7 @@
             # generate javascript
             echo '<script type="text/javascript">';
             
-            echo 'const SHOULD_LOG=' . ( isset($array["verbosity"]) ? 'parseFloat(' . $array["verbosity"] . ');' : '-1;' );
+            echo 'const SHOULD_LOG=' . ( isset($array["debuglevel"]) ? 'parseFloat(' . $array["debuglevel"] . ');' : '-1;' );
             
             if(isset($array["colorgradient"])) {
                 echo 'const colorPoints = ' . $array["colorgradient"] . ';';
