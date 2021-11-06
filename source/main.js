@@ -26,35 +26,6 @@ const gainSlider = document.querySelector('[data-action="volume"]');
 const trackVolumeControl = document.querySelector('[data-action="trackVolume"]');
 const playButton = document.getElementById('playbutton');
 
-class DrawingEnvironment
-{
-    constructor() {
-        // The selected view: 2d-field, waveforms, meters
-        this.selectedView = 1;
-
-        // The actual distance of everything in view
-        this.viewDistance = SPEAKER_DIST;
-    }
-}
-let environment = new DrawingEnvironment();
-
-// drawingvariables container
-// TODO: this should probably be a global class. Something like DrawingEnvironment and SelectedSpeaker
-class DrawingVariables {
-    constructor() {
-		this.speakerPositionCanvas = [];
-		this.speakerPositionXOnMouseDown = [];
-		this.speakerPositionZOnMouseDown = [];
-		this.speakerIsBeingDragged = [];
-	}
-    
-    get frontColor() { return colortheme == "light" ? "rgba(30, 30, 30, 1)" : "rgba(222, 222, 222, 1)"; }
-    get midColor() { return colortheme == "light" ? "rgba(180, 180, 180, 0.6)" : "rgba(180, 180, 180, 0.6)"; }
-    get backColor() { return colortheme == "light" ? "rgba(222, 222, 222, 0.6)" : "rgba(120, 120, 120, 0.6)"; }
-};
-// TODO: remove this
-vars = new DrawingVariables();
-
 /*-----------------------------------------------------------------------------------------------------------------*/
 /*--------------------------------------------- Audio pipeline ----------------------------------------------------*/
 /*-----------------------------------------------------------------------------------------------------------------*/
@@ -192,7 +163,22 @@ function setupPanningNodes()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function setupDrawingFunctions() 
+class DrawingEnvironment
+{
+    constructor() {
+        // The selected view: 2d-field, waveforms, meters
+        this.selectedView = 1;
+
+        // The actual distance of everything in view
+        this.viewDistance = SPEAKER_DIST;
+    }
+}
+let environment = new DrawingEnvironment();
+
+// TODO: remove this
+vars = {};
+
+function setupPositionableElementComponents()
 {
     // Add AudioListener positionable component
     positionableElements.addElement(
@@ -235,11 +221,12 @@ function setupDrawingFunctions()
         );
     }
 
-    for(let i = 0; i < NUM_FILES+1; i++) 
+    // Set the draw size for all elements that were just added
+    for(let i = 0; i < NUM_FILES + 1; i++) 
     {
         positionableElements.setDrawSize(i, 37);
     }
-    
+
     // Add reverb walls positionable components
     if(USE_REVERB_NODES) 
     {
@@ -259,9 +246,10 @@ function setupDrawingFunctions()
             positionableElements.setDrawSize(i+1+NUM_FILES, 4);
         }
     }
-    
-    //----------------------------------------------------------------------------//
-    // ------------------------ DRAWING VARIABLES   ------------------------------//
+}
+
+function setupDrawingFunctions() 
+{
     function setDrawingVariables() {
         vars.drawSpaceCanvas = new Rectangle(0, 0, drawCanvas.width, drawCanvas.height);
 
@@ -426,7 +414,7 @@ function setupDrawingFunctions()
         
         // draw background
         drawContext.clearRect(0, 0, vars.drawSpaceCanvas.w, vars.drawSpaceCanvas.h);
-        drawContext.fillStyle = vars.backColor;
+        drawContext.fillStyle = backColor();
         drawContext.fillRect(0, 0, vars.drawSpaceCanvas.w, vars.drawSpaceCanvas.h);
 
         // get average gain for all audiofiles
@@ -486,7 +474,7 @@ function setupDrawingFunctions()
         else if(environment.selectedView == 1)
         {    
             // draw axis
-            drawContext.strokeStyle = vars.midColor;
+            drawContext.strokeStyle = midColor();
             drawContext.lineWidth = 2;
             drawContext.beginPath();
             drawContext.moveTo(vars.canvasXMid, 0);
@@ -498,7 +486,7 @@ function setupDrawingFunctions()
             // draw elements
             for(let i = 0; i < positionableElements.positionableElements.length; i++) {
                 if(i == 0) {
-                    drawContext.fillStyle = vars.frontColor;
+                    drawContext.fillStyle = frontColor();
                 } else if(i < 1 + NUM_FILES) {
                     drawContext.fillStyle = colorFromAmplitude(average[i-1], 0.5);
                 }
@@ -511,7 +499,7 @@ function setupDrawingFunctions()
                 const drawSpace = positionableElements.getDrawSpace(i+1);
                 const speakerXMid = drawSpace.x + 0.5 * drawSpace.w;
                 const speakerYMid = drawSpace.y + 0.5 * drawSpace.h;
-                drawContext.fillStyle = vars.frontColor
+                drawContext.fillStyle = frontColor()
                 drawContext.font = 'normal '+ (10 + vars.canvasRad  * 0.5) + 'px sans-serif'; 
                 drawContext.textAlign = 'center'; 
                 // drawContext.fillText( i+1, speakerXMid - 0.5*vars.canvasRad, speakerYMid - 0.5*vars.canvasRad  );
@@ -525,7 +513,7 @@ function setupDrawingFunctions()
             const audioEl = tracks.getAudioTrack(0);
             const progress = audioEl.currentTime / audioEl.duration;
             
-            drawContext.strokeStyle = vars.midColor;
+            drawContext.strokeStyle = midColor();
             drawContext.lineWidth = width / 100;
             drawContext.beginPath();
             drawContext.moveTo(progress * width, 0);
@@ -533,7 +521,7 @@ function setupDrawingFunctions()
             drawContext.stroke();
             
             for(let i = 0; i < NUM_FILES; i++) {
-                drawContext.fillStyle = vars.frontColor;
+                drawContext.fillStyle = frontColor();
                 drawContext.save();
                 drawContext.translate(0, (i / NUM_FILES) * drawCanvas.height);
                 drawContext.scale( width, (1 / NUM_FILES) * drawCanvas.height);
@@ -550,7 +538,7 @@ function setupDrawingFunctions()
             setPanning();
         }
         
-        log("canvas updated", 1);
+        log("canvas updated", 3);
     };
     draw();
 }
@@ -680,6 +668,7 @@ function initializeIfAllLoaded() {
     log("All audiofiles loaded, initializing all members");
     
     connectAllNodes();
+    setupPositionableElementComponents(); 
     setupDrawingFunctions();
     enableInteractions();
     

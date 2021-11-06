@@ -39,3 +39,18 @@ function colorFromAmplitude(amplitude, exponent = 1.0)
     
     return fillStyle;
 }
+
+function frontColor() 
+{ 
+    return colortheme == "light" ? "rgba(30, 30, 30, 1)" : "rgba(222, 222, 222, 1)"; 
+}
+
+function midColor() 
+{ 
+    return colortheme == "light" ? "rgba(180, 180, 180, 0.6)" : "rgba(180, 180, 180, 0.6)"; 
+}
+
+function backColor() 
+{ 
+    return colortheme == "light" ? "rgba(222, 222, 222, 0.6)" : "rgba(120, 120, 120, 0.6)"; 
+}
