@@ -24,6 +24,23 @@ const panSlider = document.querySelector('[data-action="pan"]');
 const gainSlider = document.querySelector('[data-action="volume"]');
 const playButton = document.getElementById('playbutton');
 
+class DrawingEnvironment
+{
+    constructor() {
+        // The selected view: 2d-field, waveforms, meters
+        this.selectedView = 1;
+
+        // The actual distance of everything in view
+        this.viewDistance = SPEAKER_DIST;
+    }
+
+    get diameter() { return 1 };
+    get radius() { return 0.5 * this.radius };
+    get paddedDiameter() { return 1.4; };
+    get rPaddedDiameter() { return 1.0 / this.paddedDiameter; };
+}
+let environment = new DrawingEnvironment();
+
 // drawingvariables container
 // TODO: this should probably be a global class. Something like DrawingEnvironment
 class DrawingVariables {
@@ -174,7 +191,7 @@ function enableInteractions()
 
     window.binauralplayer.setSpeakerDistance = function(newDistance) 
     {
-        vars.SPEAKER_DIST = newDistance;
+        environment.viewDistance = newDistance;
     }
     
     playButton.addEventListener('click', window.binauralplayer.playPause, false);
@@ -244,12 +261,14 @@ function setupPanningNodes()
     function setDistributed(angle) 
     {
         const toAdd = 2 * Math.PI / NUM_FILES;
+        const speakerDistance = 0.5 * environment.rPaddedDiameter * environment.viewDistance;
+
         for(var i = 0; i < NUM_FILES; i++) 
         {
-            const speakerX = vars.R_EXTRA_VIEW_RADIUS * SPEAKER_DIST * 0.5 * ( Math.cos ( angle + i * toAdd ) );
-            const speakerZ = vars.R_EXTRA_VIEW_RADIUS * SPEAKER_DIST * 0.5 * ( Math.sin ( angle + i * toAdd ) );
+            const speakerX = speakerDistance * ( Math.cos ( angle + i * toAdd ) );
+            const speakerZ = speakerDistance * ( Math.sin ( angle + i * toAdd ) );
             
-            panner[i].setPosition(              speakerX, panner[i].positionY, speakerZ);
+            panner[i].setPosition(speakerX, panner[i].positionY, speakerZ);
             panner[i].hg_staticPosX = speakerX;
             panner[i].hg_staticPosZ = speakerZ;
             
@@ -258,14 +277,16 @@ function setupPanningNodes()
                 panner[NUM_FILES + i].setPosition(  speakerX, panner[i].positionY, speakerZ);
             }
             
+            // TODO: strange that this does not use the `speakerDistance` variable
+            // TODO: these variables should be set using setters
             panner[i].hg_angle = (angle + i * toAdd) % (2 * Math.PI);
-            panner[i].hg_radius = 0.5 * SPEAKER_DIST;
+            panner[i].hg_radius = 0.5 * environment.viewDistance; 
             log("panner:\tx: " + panner[i].positionX + " \t z: " + panner[i].positionZ, 2); 
             
             if(USE_REVERB_NODES) 
             {
-                const reverbX = vars.R_EXTRA_VIEW_RADIUS * 2.5 * SPEAKER_DIST * 0.5 * ( Math.cos ( angle + i * toAdd ) );
-                const reverbZ = vars.R_EXTRA_VIEW_RADIUS * 2.5 * SPEAKER_DIST * 0.5 * ( Math.sin ( angle + i * toAdd ) );
+                const reverbX = 2.5 * speakerDistance * ( Math.cos ( angle + i * toAdd ) );
+                const reverbZ = 2.5 * speakerDistance * ( Math.sin ( angle + i * toAdd ) );
                 panner[NUM_FILES + i].setPosition(reverbX, panner[i].positionY, reverbZ);
             }
         }
@@ -387,14 +408,11 @@ function setupDrawingFunctions()
         vars.canvasXMid = 0.5 * vars.drawSpaceCanvas.w;
         vars.canvasYMid = 0.5 * vars.drawSpaceCanvas.h;
 
-        // const isInsideScreen = vars.drawSpaceCanvas.isInside(vars.windowDragX, vars.windowDragY);
-        vars.viewDistance = /*isInsideScreen ? SPEAKER_DIST * 1.1 * vars.viewDistance :*/ vars.viewDistance;
-        
         const wLargerH = drawCanvas.width > drawCanvas.height;
         
         // for converting the actual positions to pixel coordinates
-        vars.positionToCanvasMultY = vars.drawSpaceCanvas.h / vars.viewDistance; 
-        vars.positionToCanvasMultX = vars.drawSpaceCanvas.w / vars.viewDistance;
+        vars.positionToCanvasMultY = vars.drawSpaceCanvas.h / environment.viewDistance; 
+        vars.positionToCanvasMultX = vars.drawSpaceCanvas.w / environment.viewDistance;
         if(wLargerH) {
             vars.positionToCanvasMultX = vars.positionToCanvasMultY;
         } else {
@@ -417,7 +435,7 @@ function setupDrawingFunctions()
             log("vars.drawSpaceCanvas: "+ vars.drawSpaceCanvas, debuglevel);
             log("vars.canvasXMid: "+ vars.canvasXMid, debuglevel);
             log("vars.canvasYMid: "+ vars.canvasYMid, debuglevel);
-            log("vars.viewDistance: "+ vars.viewDistance, debuglevel);
+            log("environment.timeToString: "+ environment.timeToString, debuglevel);
             log("vars.positionToCanvasMultY: "+ vars.positionToCanvasMultY, debuglevel);
             log("vars.positionToCanvasMultX: "+ vars.positionToCanvasMultX, debuglevel);
             log("vars.canvasRad: "+ vars.canvasRad, debuglevel);
