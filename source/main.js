@@ -33,14 +33,11 @@ class DrawingEnvironment
         // The actual distance of everything in view
         this.viewDistance = SPEAKER_DIST;
     }
-
-    get paddedDiameter() { return 1.4; };
-    get rPaddedDiameter() { return 1.0 / this.paddedDiameter; };
 }
 let environment = new DrawingEnvironment();
 
 // drawingvariables container
-// TODO: this should probably be a global class. Something like DrawingEnvironment
+// TODO: this should probably be a global class. Something like DrawingEnvironment and SelectedSpeaker
 class DrawingVariables {
     constructor() {
 		this.speakerPositionCanvas = [];
@@ -48,9 +45,6 @@ class DrawingVariables {
 		this.speakerPositionZOnMouseDown = [];
 		this.speakerIsBeingDragged = [];
 	}
-    
-    get EXTRA_VIEW_RAD() { return 1.4; };
-    get R_EXTRA_VIEW_RADIUS() { return 1 / this.EXTRA_VIEW_RAD; };
     
     get frontColor() { return colortheme == "light" ? "rgba(30, 30, 30, 1)" : "rgba(222, 222, 222, 1)"; }
     get midColor() { return colortheme == "light" ? "rgba(180, 180, 180, 0.6)" : "rgba(180, 180, 180, 0.6)"; }
@@ -248,15 +242,17 @@ function setupPanningNodes()
     }
 
     /** Distributes all panners in a circle */
-    function setDistributed(angle) 
+    function setDistributed(relativeDistanceFromCentrePoint = 0.71) 
     {
-        const toAdd = 2 * Math.PI / NUM_FILES;
-        const speakerDistance = 0.5 * environment.rPaddedDiameter * environment.viewDistance;
+        const angleBetweenPanners = 2 * Math.PI / NUM_FILES;
+        const speakerDistance = 0.5 * relativeDistanceFromCentrePoint * environment.viewDistance;
 
         for(var i = 0; i < NUM_FILES; i++) 
         {
-            const speakerX = speakerDistance * ( Math.cos ( angle + i * toAdd ) );
-            const speakerZ = speakerDistance * ( Math.sin ( angle + i * toAdd ) );
+            const pannerAngle = i * angleBetweenPanners;
+
+            const speakerX = speakerDistance * Math.cos ( pannerAngle );
+            const speakerZ = speakerDistance * Math.sin ( pannerAngle );
             
             panner[i].setPosition(speakerX, panner[i].positionY, speakerZ);
             panner[i].hg_staticPosX = speakerX;
@@ -264,24 +260,24 @@ function setupPanningNodes()
             
             if(USE_REVERB_NODES) 
             {
-                panner[NUM_FILES + i].setPosition(  speakerX, panner[i].positionY, speakerZ);
+                panner[NUM_FILES + i].setPosition(speakerX, panner[i].positionY, speakerZ);
             }
             
-            // TODO: strange that this does not use the `speakerDistance` variable
             // TODO: these variables should be set using setters
-            panner[i].hg_angle = (angle + i * toAdd) % (2 * Math.PI);
-            panner[i].hg_radius = 0.5 * environment.viewDistance; 
+            // TODO: the names of these variables should change
+            panner[i].hg_angle = pannerAngle % (2 * Math.PI);
+            panner[i].hg_radius = speakerDistance; 
             log("panner:\tx: " + panner[i].positionX + " \t z: " + panner[i].positionZ, 2); 
             
             if(USE_REVERB_NODES) 
             {
-                const reverbX = 2.5 * speakerDistance * ( Math.cos ( angle + i * toAdd ) );
-                const reverbZ = 2.5 * speakerDistance * ( Math.sin ( angle + i * toAdd ) );
+                const reverbX = 2.5 * speakerDistance * Math.cos ( pannerAngle );
+                const reverbZ = 2.5 * speakerDistance * Math.sin ( pannerAngle );
                 panner[NUM_FILES + i].setPosition(reverbX, panner[i].positionY, reverbZ);
             }
         }
     }
-    setDistributed(0.0);
+    setDistributed();
     
     setPanning();
 }

@@ -85,17 +85,16 @@ class BinauralReverb
     }
 
 // private
-    setDistributed() 
+    setDistributed(relativeDistanceFromCentre = 0.71) 
     {
-        const angle = 0;
-        const toAdd = 2 * Math.PI / this.NUM_NODES;
+        const angleBetweenPanners = 2 * Math.PI / this.NUM_NODES;
+        const radius = 0.5 * relativeDistanceFromCentre * REVERB_DIST;
         
         for(let i = 0; i < this.NUM_NODES; i++) 
         {
-            const r = vars.R_EXTRA_VIEW_RADIUS * REVERB_DIST * 0.5;
-            const curAng = angle + i * toAdd;
-            const speakerX = r * ( Math.cos ( curAng ) );
-            const speakerZ = r * ( Math.sin ( curAng ) );
+            const angle = i * angleBetweenPanners;
+            const speakerX = radius * ( Math.cos ( angle ) );
+            const speakerZ = radius * ( Math.sin ( angle ) );
             this.pannerNodes[i].setPosition( speakerX, this.pannerNodes[i].positionY, speakerZ );
             
             const speakerR = Math.sqrt( Math.pow( speakerX, 2 ) + Math.pow( speakerZ, 2 ) );
