@@ -2,14 +2,15 @@
     @pre amplitude { 0 - 1 }, exponent{ >0 - <inf }
     @post fillStyle { "rgb(<r>,<g>,<b>,<a>)" }
  */ 
-function colorFromAmplitude(amplitude, exponent = 1.0) {
+function colorFromAmplitude(amplitude, exponent = 1.0) 
+{
     console.assert(colorPoints != null, "colorFromAmplitude, colorpoints array is never created!");
     
     const skewedAmplitude = Math.pow(amplitude, exponent);
     
     // Find index of the colors to interpolate with
     let baseColorIndex = colorPoints.length - 2;
-    for(var i = 1; i < colorPoints.length; i++) {
+    for(let i = 1; i < colorPoints.length; i++) {
         if(colorPoints[i][0] >= skewedAmplitude) {
             baseColorIndex = i - 1;
             break;
@@ -25,7 +26,7 @@ function colorFromAmplitude(amplitude, exponent = 1.0) {
     
     // Get interpolated color and created the CSS rgba text
     let fillStyle = "rgba(";
-    for(var i = 0; i < 4; i++) {
+    for(let i = 0; i < 4; i++) {
         const brightness = amount * colorPoints[baseColorIndex + 1][1][i] + (1.0 - amount) * colorPoints[baseColorIndex][1][i];
 
         fillStyle += parseInt( brightness );

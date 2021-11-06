@@ -34,8 +34,6 @@ class DrawingEnvironment
         this.viewDistance = SPEAKER_DIST;
     }
 
-    get diameter() { return 1 };
-    get radius() { return 0.5 * this.radius };
     get paddedDiameter() { return 1.4; };
     get rPaddedDiameter() { return 1.0 / this.paddedDiameter; };
 }
@@ -45,20 +43,12 @@ let environment = new DrawingEnvironment();
 // TODO: this should probably be a global class. Something like DrawingEnvironment
 class DrawingVariables {
     constructor() {
-		// state switch between drawmodes    
-		this.drawMode = 1;
-				
-		this.viewDistance = SPEAKER_DIST;
-    
 		this.speakerPositionCanvas = [];
 		this.speakerPositionXOnMouseDown = [];
 		this.speakerPositionZOnMouseDown = [];
 		this.speakerIsBeingDragged = [];
 	}
     
-    // drawing look constants
-    get DIAM() { return 1 };
-    get RAD() { return 0.5*this.DIAM };
     get EXTRA_VIEW_RAD() { return 1.4; };
     get R_EXTRA_VIEW_RADIUS() { return 1 / this.EXTRA_VIEW_RAD; };
     
@@ -419,8 +409,8 @@ function setupDrawingFunctions()
             vars.positionToCanvasMultY = vars.positionToCanvasMultX;
         }
         
-        vars.canvasRad = vars.RAD * vars.positionToCanvasMultY;
-        vars.canvasDiam = vars.DIAM * vars.positionToCanvasMultY; 
+        vars.canvasRad = 0.5 * vars.positionToCanvasMultY;
+        vars.canvasDiam = vars.positionToCanvasMultY; 
 
         positionableElements.updateDrawingVariables();
         
@@ -452,8 +442,8 @@ function setupDrawingFunctions()
         canvasButtonsDiv.children[i].addEventListener("mousedown", function(i) 
         {
             return function() {
-                vars.drawMode = (i + 1) % 3;
-                log("drawmode = " + vars.drawMode);
+                environment.selectedView = (i + 1) % 3;
+                log("drawmode = " + environment.selectedView);
             }
         }(i));
     }
@@ -461,9 +451,9 @@ function setupDrawingFunctions()
     function canvasMouseUp(e) {
         vars.isMouseDown = false;
         
-        if(vars.drawMode == 1) {
+        if(environment.selectedView == 1) {
             positionableElements.mouseUp();
-        } else if(vars.drawMode == 2) {
+        } else if(environment.selectedView == 2) {
             getMouseDown(e);
             setDrawingVariables();
             const mousePositionCanvas = [vars.windowMouseDownX, vars.windowMouseDownY];
@@ -503,7 +493,7 @@ function setupDrawingFunctions()
         getMouseDown(e);
         
         const mousePositionCanvas = [vars.windowMouseDownX, vars.windowMouseDownY];
-        if(vars.drawMode == 1) {
+        if(environment.selectedView == 1) {
             
             var elementBeingDragged = positionableElements.mouseDown(mousePositionCanvas);
             
@@ -525,7 +515,7 @@ function setupDrawingFunctions()
         canvasMove(e);
     }, false);
     function canvasMove(e) {
-        if(vars.drawMode == 1) 
+        if(environment.selectedView == 1) 
         {
             setDrawingVariables();
             vars.windowDragX = getEventX(e) - drawCanvas.offsetLeft;
@@ -578,7 +568,7 @@ function setupDrawingFunctions()
         }
         
         // draw all elements
-        if(vars.drawMode == 0) {    // draw track gain meters
+        if(environment.selectedView == 0) {    // draw track gain meters
             const bottombar = Math.max(vars.drawSpaceCanvas.h / 12, 20);
             const height = vars.drawSpaceCanvas.h - bottombar;
             const widthPerElement = Math.min(100, vars.drawSpaceCanvas.w / NUM_FILES);
@@ -623,7 +613,7 @@ function setupDrawingFunctions()
                 drawContext.fillText(currentTime+"/"+duration, x + 0.5 * widthPerElement, vars.drawSpaceCanvas.h - 0.5 * (vars.drawSpaceCanvas.h - height) );
             }
         } 
-        else if(vars.drawMode == 1)
+        else if(environment.selectedView == 1)
         {    
             // draw axis
             drawContext.strokeStyle = vars.midColor;

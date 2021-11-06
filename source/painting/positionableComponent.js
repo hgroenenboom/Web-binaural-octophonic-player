@@ -199,7 +199,7 @@ class PositionableElement
                 this.getAngleFunction(), 
                 this.drawSpaceOnCanvas.x + 0.5 * this.drawSpaceOnCanvas.w, 
                 this.drawSpaceOnCanvas.y + 0.5 * this.drawSpaceOnCanvas.h, 
-                (this.hoveredOver ? 4 : 0) + this.drawSize * vars.DIAM * ( 5.0 / SPEAKER_DIST ) );
+                (this.hoveredOver ? 4 : 0) + this.drawSize * ( 5.0 / SPEAKER_DIST ) );
         } 
         else 
         {
