@@ -70,6 +70,16 @@ svg {
     fill:rgb(0,0,0);
 }
 
+h3 {
+    margin-top:41vh;
+    font-size:17px;
+    text-align:center;
+    overflow: hidden;
+    word-break: break-all;
+    margin-left: 7.5%;
+    width: 85%;
+}
+
 .canvas {
     height: 0px; /* set via javascript */
     width: 94vw;
@@ -89,16 +99,9 @@ svg {
     max-height: 40px;
 }
 
-.centered {
-    margin: auto;
-}
-
-.content {
-  min-height: 100%;
-  position: relative;
-}
-
 .customContainer {
+    min-height: 100%;
+    position: relative;
     width: 100%;
     display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
     display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
@@ -127,7 +130,6 @@ svg {
     height:100%;
     top:0px;
     pointer-events: none;
-    x-index: -1;
 }
 
 .frameSpace {
@@ -141,32 +143,6 @@ svg {
     height: 28px;
 }
 
-.slider {
-    -webkit-appearance: none;
-    background: #d0d0d0;
-    outline: none;
-    border-radius: 10px;
-    height: 2vh;
-}
-
-.slider::-moz-range-thumb {
-    width: 3.2vh;
-    height: 3.2vh;
-    cursor: pointer;
-    background: #4CAF50;
-    border-radius: 50%;
-}
-
-.slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 3.2vh;
-    height: 3.2vh;
-    cursor: pointer;
-    background: #4CAF50;
-    border-radius: 50%;
-}
-
 .sliders {
   width: 100%;
   height: auto;
@@ -177,6 +153,25 @@ svg {
   overflow: hidden;
 }
 
+.help-button {
+    font-size:16px;
+    min-width:0px;
+    min-height:0px;
+    width: 20px;
+    height: 20px;
+    margin: 5px 6px;
+    padding: 0px;
+    border-radius: 13px;
+    border: none;
+}
+
+.help-button-container {
+    float:right;
+    width:30px;
+    height:30px;
+}
+
+/* Custom CSS for specific HTML elements */
 #debugelements {
     top:110%;
     position:absolute;
@@ -215,30 +210,54 @@ svg {
     height: 100vh;
 }
 
-.help-button-container {
-    float:right;
-    width:30px;
-    height:30px;
+#helptext {
+    width: 90%;
+    margin-left: 5%;
+    position:relative;
+    height:auto;
 }
 
-.help-button {
-    font-size:16px;
-    min-width:0px;
-    min-height:0px;
-    width: 20px;
-    height: 20px;
-    margin: 5px 6px;
-    padding: 0px;
-    border-radius: 13px;
-    border: none;
+/* Custom scrollbar design */
+::-webkit-scrollbar {
+width: 6px;
+height: 6px;
+}
+::-webkit-scrollbar-track {
+border-radius: 10px;
+background: rgba(0,0,0,0.1);
+}
+::-webkit-scrollbar-thumb{
+border-radius: 10px;
+background: rgba(0,0,0,0.2);
+}
+::-webkit-scrollbar-thumb:hover{
+background: rgba(0,0,0,0.4);
+}
+::-webkit-scrollbar-thumb:active{
+background: rgba(0,0,0,.9);
 }
 
-h3 {
-    margin-top:41vh;
-    font-size:17px;
-    text-align:center;
-    overflow: hidden;
-    word-break: break-all;
-    margin-left: 7.5%;
-    width: 85%;
+/* Custom slider design */
+.slider {
+    -webkit-appearance: none;
+    background: #d0d0d0;
+    outline: none;
+    border-radius: 10px;
+    height: 2vh;
+}
+.slider::-moz-range-thumb {
+    width: 3.2vh;
+    height: 3.2vh;
+    cursor: pointer;
+    background: #4CAF50;
+    border-radius: 50%;
+}
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 3.2vh;
+    height: 3.2vh;
+    cursor: pointer;
+    background: #4CAF50;
+    border-radius: 50%;
 }

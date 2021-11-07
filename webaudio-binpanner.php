@@ -68,7 +68,7 @@
             }
         ?>
         
-        <div id="octophonic player" class="content customContainer" style="display:none;">
+        <div id="octophonic player" class="customContainer" style="display:none;">
             <div class="frameSpace drawFrameSpace">
                 <canvas class="canvas" id="canvas" width="1000" height="1000">canvas</canvas>
                 <div id="drawCanvasButtons">
@@ -103,8 +103,8 @@
         </div> 
         <!-- octophonic player -->
         
-        <div id="helpmenu" class="content customContainer" style="display:none;">
-            <div style="position:relative;height:auto;">
+        <div id="helpmenu" class="customContainer" style="display:none;">
+            <div id="helptext">
                 <h4 style="text-align:center;">Help & About</h4>
                 <h5>How to use this software</h5>
                 In the main view, you are able to move around the <i>listener</i> (the virtual position of your earbuds) and the <i>soundsources</i> (the speakers) by draging the icons. It's also possible to change the direction of the listener by clicking anywhere on the 2d field. This interaction enables new interesting virtual     3D listening experiences.
