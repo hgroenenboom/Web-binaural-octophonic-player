@@ -29,7 +29,7 @@ function colorFromAmplitude(amplitude, exponent = 1.0)
     for(let i = 0; i < 4; i++) {
         const brightness = amount * colorPoints[baseColorIndex + 1][1][i] + (1.0 - amount) * colorPoints[baseColorIndex][1][i];
 
-        fillStyle += parseInt( brightness );
+        fillStyle += parseFloat( brightness );
 
         if(i < 3) {
             fillStyle += ", ";
