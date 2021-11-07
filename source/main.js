@@ -174,12 +174,49 @@ class DrawingEnvironment
 
         // A Rectangle representing the space in which can be drawed
         this.drawSpaceCanvas = {};
+        
+        // Multiplier used to convert from a X position to a X pixel
+        this.positionToPixelMultX = 1;
+        
+        // Multiplier used to convert from a Y position to a Y pixel
+        this.positionToPixelMultY = 1;
+    }
+
+    update()
+    {
+        this.drawSpaceCanvas = new Rectangle(0, 0, drawCanvas.width, drawCanvas.height);
+
+        // for converting the actual positions to pixel coordinates
+        this.positionToPixelMultY = this.drawSpaceCanvas.h / this.viewDistance; 
+        this.positionToPixelMultX = this.drawSpaceCanvas.w / this.viewDistance;
+
+        if(drawCanvas.width > drawCanvas.height) {
+            this.positionToPixelMultX = this.positionToPixelMultY;
+        } else {
+            this.positionToPixelMultY = this.positionToPixelMultX;
+        }
+        
+        this.log(2);
+    }
+
+    get unit()
+    {
+        return 0.5 * this.positionToPixelMultY;
+    }
+
+    log(debugLevel) 
+    {
+        if(debugLevel >= -2 && debugLevel <= 10) 
+        {
+            log("\nDrawingEnvironment variables:", debugLevel);
+            log("drawSpaceCanvas: "+ this.drawSpaceCanvas, debugLevel);
+            log("viewDistance: "+ this.viewDistance, debugLevel);
+            log("positionToPixelMultY: "+ this.positionToPixelMultY, debugLevel);
+            log("positionToPixelMultX: "+ this.positionToPixelMultX, debugLevel);
+        }
     }
 }
 let environment = new DrawingEnvironment();
-
-// TODO: remove this
-vars = {};
 
 function setupPositionableElementComponents()
 {
@@ -253,52 +290,24 @@ function setupPositionableElementComponents()
 
 function setupDrawingFunctions() 
 {
-    function setDrawingVariables() {
-        environment.drawSpaceCanvas = new Rectangle(0, 0, drawCanvas.width, drawCanvas.height);
-
-        const wLargerH = drawCanvas.width > drawCanvas.height;
-        
-        // for converting the actual positions to pixel coordinates
-        vars.positionToCanvasMultY = environment.drawSpaceCanvas.h / environment.viewDistance; 
-        vars.positionToCanvasMultX = environment.drawSpaceCanvas.w / environment.viewDistance;
-        if(wLargerH) {
-            vars.positionToCanvasMultX = vars.positionToCanvasMultY;
-        } else {
-            vars.positionToCanvasMultY = vars.positionToCanvasMultX;
-        }
-        
-        vars.canvasRad = 0.5 * vars.positionToCanvasMultY;
-        vars.canvasDiam = vars.positionToCanvasMultY; 
+    function updateDrawEnvironment() {
+        environment.update();
 
         positionableElements.updateDrawingVariables(
             0.5 * environment.drawSpaceCanvas.w, 
             0.5 * environment.drawSpaceCanvas.h, 
-            vars.positionToCanvasMultX, 
-            vars.positionToCanvasMultY,
-            0.5 * vars.positionToCanvasMultY
+            environment.positionToPixelMultX, 
+            environment.positionToPixelMultY
         );
-        
-        debugDrawingVariables(2);
-    }
-
-    function debugDrawingVariables(debugamount) 
-    {
-        if(debugamount >= -2 && debugamount <= 10) 
-        {
-            const debuglevel = debugamount;
-            log("environment.drawSpaceCanvas: "+ environment.drawSpaceCanvas, debuglevel);
-            log("environment.timeToString: "+ environment.timeToString, debuglevel);
-            log("vars.positionToCanvasMultY: "+ vars.positionToCanvasMultY, debuglevel);
-            log("vars.positionToCanvasMultX: "+ vars.positionToCanvasMultX, debuglevel);
-            log("vars.canvasRad: "+ vars.canvasRad, debuglevel);
-            log("vars.canvasDiam: "+ vars.canvasDiam, debuglevel);
-        }
     }
     
-    setDrawingVariables();
+    updateDrawEnvironment();
     
     //----------------------------------------------------------------------------//
     // ------------------------ LISTENER EVENTS FROM CANVAS BUTTOn ---------------//
+
+    mouseState = {};
+
     for(let i = 0; i < canvasButtonsDiv.children.length; i++) 
     {
         canvasButtonsDiv.children[i].addEventListener("mousedown", function(i) 
@@ -311,14 +320,14 @@ function setupDrawingFunctions()
     }
 
     function canvasMouseUp(e) {
-        vars.isMouseDown = false;
+        mouseState.isMouseDown = false;
         
         if(environment.selectedView == 1) {
             positionableElements.mouseUp();
         } else if(environment.selectedView == 2) {
             getMouseDown(e);
-            setDrawingVariables();
-            const mousePositionCanvas = [vars.windowMouseDownX, vars.windowMouseDownY];
+            updateDrawEnvironment();
+            const mousePositionCanvas = [mouseState.windowMouseDownX, mouseState.windowMouseDownY];
             
             const val = tracks.duration * ( mousePositionCanvas[0] / drawCanvas.width );
             tracks.playAllFromTimePoint(val);
@@ -345,16 +354,16 @@ function setupDrawingFunctions()
         canvasMouseDown(e);
     }, false);
     function getMouseDown(e) {
-        setDrawingVariables();
-        vars.isMouseDown = true;
-        vars.windowMouseDownX = getEventX(e) - drawCanvas.offsetLeft;
-        vars.windowMouseDownY = getEventY(e) - drawCanvas.offsetTop;
+        updateDrawEnvironment();
+        mouseState.isMouseDown = true;
+        mouseState.windowMouseDownX = getEventX(e) - drawCanvas.offsetLeft;
+        mouseState.windowMouseDownY = getEventY(e) - drawCanvas.offsetTop;
     }
     function canvasMouseDown(e) {
-        setDrawingVariables();
+        updateDrawEnvironment();
         getMouseDown(e);
         
-        const mousePositionCanvas = [vars.windowMouseDownX, vars.windowMouseDownY];
+        const mousePositionCanvas = [mouseState.windowMouseDownX, mouseState.windowMouseDownY];
         if(environment.selectedView == 1) {
             
             let elementBeingDragged = positionableElements.mouseDown(mousePositionCanvas);
@@ -362,8 +371,8 @@ function setupDrawingFunctions()
             // listener direction
             if(!elementBeingDragged) {
                 const listenerPositionCanvas = positionableElements.getDrawSpace(0);
-                const x = vars.windowMouseDownX - ( listenerPositionCanvas.x + 0.5 * listenerPositionCanvas.w );
-                const z = vars.windowMouseDownY - ( listenerPositionCanvas.y + 0.5 * listenerPositionCanvas.h );
+                const x = mouseState.windowMouseDownX - ( listenerPositionCanvas.x + 0.5 * listenerPositionCanvas.w );
+                const z = mouseState.windowMouseDownY - ( listenerPositionCanvas.y + 0.5 * listenerPositionCanvas.h );
                 audioListener.setListenerDirection(x, 0, -z);
             }
         }
@@ -372,34 +381,34 @@ function setupDrawingFunctions()
     drawCanvas.addEventListener("touchmove", (e) => {
         e.preventDefault();
         canvasMove(e);
-    }/*, vars.hoverListener ? { passive:false } : { passive:true }*/);
+    }/*, mouseState.hoverListener ? { passive:false } : { passive:true }*/);
     drawCanvas.addEventListener("mousemove", (e) => {
         canvasMove(e);
     }, false);
     function canvasMove(e) {
         if(environment.selectedView == 1) 
         {
-            setDrawingVariables();
-            vars.windowDragX = getEventX(e) - drawCanvas.offsetLeft;
-            vars.windowDragY = getEventY(e) - drawCanvas.offsetTop;
+            updateDrawEnvironment();
+            mouseState.windowDragX = getEventX(e) - drawCanvas.offsetLeft;
+            mouseState.windowDragY = getEventY(e) - drawCanvas.offsetTop;
             
-            const mousePosOnCanvas = [vars.windowDragX, vars.windowDragY];
+            const mousePosOnCanvas = [mouseState.windowDragX, mouseState.windowDragY];
             positionableElements.mouseMove(mousePosOnCanvas);
             
             // mouse drag
-            if(vars.isMouseDown) {
-                const canvasXDistanceFromDragStart = vars.windowDragX - vars.windowMouseDownX;
-                const canvasYDistanceFromDragStart = vars.windowDragY - vars.windowMouseDownY;
+            if(mouseState.isMouseDown) {
+                const canvasXDistanceFromDragStart = mouseState.windowDragX - mouseState.windowMouseDownX;
+                const canvasYDistanceFromDragStart = mouseState.windowDragY - mouseState.windowMouseDownY;
                
-                const dragDistancePosition = [canvasXDistanceFromDragStart / vars.positionToCanvasMultX, canvasYDistanceFromDragStart / vars.positionToCanvasMultY];
+                const dragDistancePosition = [canvasXDistanceFromDragStart / environment.positionToPixelMultX, canvasYDistanceFromDragStart / environment.positionToPixelMultY];
                 
                 let elementIsBeingDragged = positionableElements.mouseDrag( dragDistancePosition );
                 
                 // listener direction
                 if(!elementIsBeingDragged) {
                     const listenerPositionCanvas = positionableElements.getDrawSpace(0);
-                    let x = vars.windowDragX - ( listenerPositionCanvas.x + 0.5 * listenerPositionCanvas.w );
-                    let z = vars.windowDragY - ( listenerPositionCanvas.y + 0.5 * listenerPositionCanvas.h );
+                    let x = mouseState.windowDragX - ( listenerPositionCanvas.x + 0.5 * listenerPositionCanvas.w );
+                    let z = mouseState.windowDragY - ( listenerPositionCanvas.y + 0.5 * listenerPositionCanvas.h );
                     audioListener.setListenerDirection(x, 0, -z);
                 }
                 setPanning();
@@ -414,7 +423,7 @@ function setupDrawingFunctions()
     {
         // init draw loop???? (recursion?)
         drawVisual = requestAnimationFrame(draw);
-        setDrawingVariables();
+        updateDrawEnvironment();
         
         // draw background
         drawContext.clearRect(0, 0, environment.drawSpaceCanvas.w, environment.drawSpaceCanvas.h);
@@ -507,7 +516,7 @@ function setupDrawingFunctions()
                 const speakerXMid = drawSpace.x + 0.5 * drawSpace.w;
                 const speakerYMid = drawSpace.y + 0.5 * drawSpace.h;
                 drawContext.fillStyle = frontColor()
-                drawContext.font = 'normal '+ (10 + vars.canvasRad  * 0.5) + 'px sans-serif'; 
+                drawContext.font = 'normal '+ (10 + 0.5 * environment.unit) + 'px sans-serif'; 
                 drawContext.textAlign = 'center'; 
                 drawContext.fillText( i+1, drawSpace.x - 10, drawSpace.y - 10  );
             }
