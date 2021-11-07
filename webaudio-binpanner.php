@@ -105,16 +105,16 @@
         
         <div id="helpmenu" class="customContainer" style="display:none;">
             <div id="helptext">
-                <h4 style="text-align:center;margin: 21px 0;font-weight: 500;">Help & About</h4>
-                <h5>How to use this software</h5>
-                In the main view, you are able to move around the <i>listener</i> (the virtual position of your earbuds) and the <i>soundsources</i> (the speakers) by draging the icons. It's also possible to change the direction of the listener by clicking anywhere on the 2d field. This interaction enables new interesting virtual     3D listening experiences.
+                <h4 style="text-align:center;margin: 21px 0;font-weight: 500;">About</h4>
+                <h5>Usage</h5>
+                In the main view, you see a top-down view of the listening environment. You are able to move around and you are able to move all <i>soundsources</i> by draging any of the icons. You can also change in which direction you are listening by clicking and dragging anywhere in the grid. Enjoy your virtual 3D listening experience!
                 
-                <h5>Used techniques</h5>
-                This software uses an audio technique called 'binaural audio'. This technique allows us to almost exactly simulate the location of any sound source. To experience this effect it is <u>required</u> to wear earbuds. <a href="https://hookeaudio.com/what-is-binaural-audio/" target="_blank">More info.</a>
+                <h5>Technology</h5>
+                This software uses an audio technology called 'binaural audio'. This technology allows us to accurately simulate a sound source coming from any direction. Wearing earbuds is necessary to experience this effect. <a href="https://hookeaudio.com/what-is-binaural-audio/" target="_blank">More info.</a>
                 
                 
-                <h5>Credits, contact & copyrights</h5>
-                This software and all of it's attachements are created and owned by Harold Groenenboom. <br>Contact: info@haroldgroenenboom.nl<br>
+                <h5>Credits & contact</h5>
+                This software is created by Harold Groenenboom. <br>Contact: info@haroldgroenenboom.nl<br>
                 <br>
                 Copyright © 2019 Groenenboom Music Composition & Software Design
                 
