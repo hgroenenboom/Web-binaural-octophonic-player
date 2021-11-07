@@ -1,4 +1,4 @@
-f/**
+/**
 * Template Name: Stanley
 * Template URL: https://templatemag.com/stanley-bootstrap-freelancer-template/
 * Author: TemplateMag.com
@@ -209,7 +209,7 @@ hr {
 #welcome {
     padding-top: 70px;
     padding-bottom: 70px;
-    background-image:url('../img/ww-bg.png');    
+    background-image:url('../img/ww-bg.jpg');    
     background-repeat: no-repeat;
     background-attachment: inherit;
     background-color: #f2f2f2;
@@ -342,7 +342,7 @@ bt {
 
 .gallery img {
     min-width: 90%;
-    height: auto;"
+    height: auto;
 }
 
 .gallery img:hover {
