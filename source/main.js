@@ -442,7 +442,7 @@ function setupDrawingFunctions()
         if(environment.selectedView == 0) {    // draw track gain meters
             const bottombar = Math.max(environment.drawSpaceCanvas.h / 12, 20);
             const height = environment.drawSpaceCanvas.h - bottombar;
-            const widthPerElement = Math.min(environment.drawSpaceCanvas.w / NUM_FILES);
+            const widthPerElement = environment.drawSpaceCanvas.w / NUM_FILES;
 
             for(let i = 0; i < NUM_FILES; i++) 
             {
@@ -469,11 +469,11 @@ function setupDrawingFunctions()
                     
                     if(SHOULD_LOG > 2)
                     {
-                        const toPrint = "";
+                        let toPrint = "";
                         for(let j = 0; j < NUM_FILES; j++) {
                             toPrint += timeToString(document.getElementsByTagName("audio")[j].currentTime)+", ";
                         }
-                        log("["+toPrint+"]", 2);
+                        log("[" + toPrint + "]", 2);
                     }
                 }
 
