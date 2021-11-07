@@ -491,7 +491,7 @@ function setupDrawingFunctions()
             
             // draw axis
             drawContext.strokeStyle = midColor();
-            drawContext.lineWidth = 2;
+            drawContext.lineWidth = 1;
             drawContext.beginPath();
             drawContext.moveTo(canvasXMid, 0);
             drawContext.lineTo(canvasXMid, environment.drawSpaceCanvas.h);

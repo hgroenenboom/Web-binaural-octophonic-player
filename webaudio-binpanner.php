@@ -105,7 +105,7 @@
         
         <div id="helpmenu" class="customContainer" style="display:none;">
             <div id="helptext">
-                <h4 style="text-align:center;">Help & About</h4>
+                <h4 style="text-align:center;margin: 21px 0;font-weight: 500;">Help & About</h4>
                 <h5>How to use this software</h5>
                 In the main view, you are able to move around the <i>listener</i> (the virtual position of your earbuds) and the <i>soundsources</i> (the speakers) by draging the icons. It's also possible to change the direction of the listener by clicking anywhere on the 2d field. This interaction enables new interesting virtual     3D listening experiences.
                 
@@ -175,6 +175,37 @@
             <div style="position:absolute;background-color:#777777; height:100%; width:100%; top:0px; x-index:-1; z-index:0; pointer-events:none;">
             </div>
         </footer>
+
+        <div class="background" style="background-image: url('<?php
+            parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
+            if(isset($array["background_image"])) {
+                echo $array["background_image"];
+                } else {
+                echo "resources/img/test3.gif";
+            }
+            echo "'); opacity:";
+            if(isset($array["opacity"])) {
+                echo $array["opacity"];
+                } else {
+                echo "0.8";
+            }
+            ?>;">
+        </div> 
+        <!--- background image -->
+        
+        <!--- background color -->
+        <div class="background" style="position:absolute;z-index: -2;background-color: <?php
+            if(isset($array["colortheme"])) {
+                if($array["colortheme"] == "dark") {
+                    echo "#000";
+                    } else {
+                    // light theme
+                    echo "#fff";
+                }
+            }
+            ?>;">
+        </div> 
+        <!--- background color -->
         
         <div id="debugelements"> 
             <?php

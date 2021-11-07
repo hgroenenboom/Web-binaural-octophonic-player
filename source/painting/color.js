@@ -47,10 +47,10 @@ function frontColor()
 
 function midColor() 
 { 
-    return colortheme == "light" ? "rgba(180, 180, 180, 0.6)" : "rgba(180, 180, 180, 0.6)"; 
+    return colortheme == "light" ? "rgba(180, 180, 180, 0.8)" : "rgba(180, 180, 180, 0.8)"; 
 }
 
 function backColor() 
 { 
-    return colortheme == "light" ? "rgba(222, 222, 222, 0.6)" : "rgba(120, 120, 120, 0.6)"; 
+    return colortheme == "light" ? "rgba(222, 222, 222, 0.1)" : "rgba(120, 120, 120, 0.1)"; 
 }
