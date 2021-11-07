@@ -44,18 +44,11 @@ div.drawingSpace {
 }
 
 footer {
-    height:31px;
+    height: 31px;
+    bottom: 31px;
     margin-bottom:-31px;
     width:100%;
     position: absolute;
-}
-
-input[type=range] {
-    width: 97%;
-    margin: 0.2% 0%;
-    height: 2wh;
-    display: inline;
-    vertical-align: middle;
 }
 
 label {
@@ -86,7 +79,7 @@ svg {
 
 .canvas-menu-item {
     width:20px;
-    height: 3vw;
+    height: 20px;
     background-color: rgba(200, 200, 200, 0.5);
     padding: 4px;
     margin: 1px 5px;
@@ -123,9 +116,9 @@ svg {
 .footerContainer {
     float: left;
     position: relative;
-    height: 30px;
-    width: 30px;
-    margin: 0 3px;
+    height: 29px;
+    width: 19px;
+    margin: 0 4px;
 }
 
 .footerDrawable {
@@ -182,12 +175,15 @@ svg {
 
 .wrapper {
   overflow: hidden;
-  position: relative
+}
+
+#debugelements {
+    top:110%;
+    position:absolute;
 }
 
 #drawCanvasButtons {
     height:100%;
-    display:inline-block;
     width: 20px;
     float: left;
 }
@@ -197,8 +193,20 @@ svg {
 }
 
 #loading-screen {
-    position:relative; 
     z-index:1;
+    position: absolute;
+    width: 100%;
+    height: 100%
+}
+
+#loading-text {
+    margin-top: 5vh;
+    font-size: 10px;
+    text-align: center;
+    overflow: hidden;
+    word-break: break-all;
+    margin-left: 15%;
+    width: 70%;
 }
 
 #helpmenu {
@@ -217,8 +225,20 @@ svg {
     font-size:16px;
     min-width:0px;
     min-height:0px;
-    width:20px;
-    height:23px;
-    margin: 5px 5px;
-    padding:0px;
+    width: 20px;
+    height: 20px;
+    margin: 5px 6px;
+    padding: 0px;
+    border-radius: 13px;
+    border: none;
+}
+
+h3 {
+    margin-top:41vh;
+    font-size:17px;
+    text-align:center;
+    overflow: hidden;
+    word-break: break-all;
+    margin-left: 7.5%;
+    width: 85%;
 }

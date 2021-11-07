@@ -58,8 +58,8 @@
     
     <body class="wrapper">
         <div id="loading screen">
-            <p style="margin-top:10vw;font-size:4vw;text-align:center">loading resources</p>
-            <p id="loading-text" style="margin-top: 7vw;font-size:2.2vw;text-align:center;padding:7wh;overflow:auto;height:50vh;">waiting for server...</p>
+            <h3>loading resources</h3>
+            <p id="loading-text">waiting for server...</p>
         </div>
         <?php
             # DISPLAY FILES LOADED
@@ -82,7 +82,6 @@
                 </div>
             </div> 
             <!-- /canvas space -->
-            
             
             <div id="controlpanel" class="frameSpace">
                 
@@ -177,38 +176,7 @@
             </div>
         </footer>
         
-        <div class="background" style="background-image: url('<?php
-            parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
-            if(isset($array["background_image"])) {
-                echo $array["background_image"];
-                } else {
-                echo "resources/img/test3.gif";
-            }
-            echo "'); opacity:";
-            if(isset($array["opacity"])) {
-                echo $array["opacity"];
-                } else {
-                echo "0.8";
-            }
-            ?>;">
-        </div> 
-        <!--- background image -->
-        
-        <!--- background color -->
-        <div class="background" style="position:absolute;z-index: -2;background-color: <?php
-            if(isset($array["colortheme"])) {
-                if($array["colortheme"] == "dark") {
-                    echo "#000";
-                    } else {
-                    // light theme
-                    echo "#fff";
-                }
-            }
-            ?>;">
-        </div> 
-        <!--- background color -->
-        
-        <div id="debugelements" style="top:100%;position:absolute;"> 
+        <div id="debugelements"> 
             <?php
                 # GENERATE DEBUG INTERFACE
                 if(array_key_exists("debuglevel", $array) && isset($array["debuglevel"])) {
