@@ -3,7 +3,11 @@ body {
 }
 
 button {
-    color: #000;
+    color: rgb(71, 71, 71);
+}
+
+.footerBackground {
+    background-color:#282828; 
 }
 
 .slider {
@@ -26,10 +30,6 @@ svg {
     fill: rgb(255,255,255);
 }
 
-h4 {
-    color: #fff;
-}
-
-h5 {
+h1, h2, h3, h4, h5, h6 {
     color: #fff;
 }

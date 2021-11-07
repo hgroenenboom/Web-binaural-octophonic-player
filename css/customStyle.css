@@ -120,6 +120,16 @@ h5 {
     width: 98vh;
 }
 
+.footerBackground {
+    position:absolute;
+    background-color:#d7d7d7; 
+    height:100%; 
+    width:100%; 
+    top:0px; 
+    z-index:0; 
+    pointer-events:none;
+}
+
 .footerContainer {
     float: left;
     position: relative;

@@ -127,18 +127,18 @@
             <div style="position:relative;height:100%;z-index:1">
                 <div id="playButtonSVG" class="footerContainer"> 
                     <svg class="footerDrawable" viewBox="0 0 24 24" width="30" height="30" xmlns="http://www.w3.org/2000/svg">
-                        <path style="stroke:#111;stroke-width:2;stroke-linejoin:round;fill:#111;" d="M23 12l-22 12v-24l22 12zm-21 10.315l18.912-10.315-18.912-10.315v20.63z"/>
+                        <path style="stroke-width:2;stroke-linejoin:round;" d="M23 12l-22 12v-24l22 12zm-21 10.315l18.912-10.315-18.912-10.315v20.63z"/>
                     </svg>
                 </div>
                 <div style="display:none;" id="pauseButtonSVG" class="footerContainer"> 
                     <svg class="footerDrawable" viewBox="0 0 24 24" width="30" height="30" xmlns="http://www.w3.org/2000/svg">
-                        <path style="stroke:#111;stroke-width:2;stroke-linejoin:round;fill:#111;" d="M10 24h-6v-24h6v24zm10 0h-6v-24h6v24zm-11-23h-4v22h4v-22zm10 0h-4v22h4v-22z"/>
+                        <path style="stroke-width:2;stroke-linejoin:round;" d="M10 24h-6v-24h6v24zm10 0h-6v-24h6v24zm-11-23h-4v22h4v-22zm10 0h-4v22h4v-22z"/>
                     </svg>
                 </div>
                 <div class="footerContainer">
                     <svg class="footerDrawable" xmlns="http://www.w3.org/2000/svg" version="1.0" width="30" height="30" viewBox="0 0 75 75">
-                        <path d="M39.389,13.769 L22.235,28.606 L6,28.606 L6,47.699 L21.989,47.699 L39.389,62.75 L39.389,13.769z" style="stroke:#111;stroke-width:5;stroke-linejoin:round;fill:#111;"/>
-                        <path d="M48,27.6a19.5,19.5 0 0 1 0,21.4M55.1,20.5a30,30 0 0 1 0,35.6M61.6,14a38.8,38.8 0 0 1 0,48.6" style="stroke:#111;stroke-width:5;stroke-linecap:round;fill:#111;"/>
+                        <path d="M39.389,13.769 L22.235,28.606 L6,28.606 L6,47.699 L21.989,47.699 L39.389,62.75 L39.389,13.769z" style="stroke-width:5;stroke-linejoin:round;"/>
+                        <path d="M48,27.6a19.5,19.5 0 0 1 0,21.4M55.1,20.5a30,30 0 0 1 0,35.6M61.6,14a38.8,38.8 0 0 1 0,48.6" style="stroke-width:5;stroke-linecap:round;"/>
                     </svg>
                 </div>
                 
@@ -171,7 +171,7 @@
                 </div>
             </div>
             
-            <div style="position:absolute;background-color:#777777; height:100%; width:100%; top:0px; x-index:-1; z-index:0; pointer-events:none;">
+            <div class="footerBackground">
             </div>
         </footer>
 
