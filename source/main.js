@@ -442,46 +442,47 @@ function setupDrawingFunctions()
         if(environment.selectedView == 0) {    // draw track gain meters
             const bottombar = Math.max(environment.drawSpaceCanvas.h / 12, 20);
             const height = environment.drawSpaceCanvas.h - bottombar;
-            const widthPerElement = Math.min(100, environment.drawSpaceCanvas.w / NUM_FILES);
+            const widthPerElement = environment.drawSpaceCanvas.w / NUM_FILES;
 
             for(let i = 0; i < NUM_FILES; i++) 
             {
                 log(average[i], 1);
                 const audioEl = tracks.getAudioTrack(i);
                 const currentTime = timeToString(audioEl.currentTime);
-                const x = i * widthPerElement;
+                const x = i * widthPerElement + 0.25 * widthPerElement;
                 
                 // draw meters
                 drawContext.fillStyle = colorFromAmplitude(average[i]);
                 const gainYPos = height - height * average[i];
-                drawContext.fillRect(x, gainYPos, widthPerElement - 3, height - gainYPos);
+                drawContext.fillRect(x, gainYPos, widthPerElement / 2, height - gainYPos);
                 
                 // report whether sync!
                 let durationIsSync = true;
                 for(let j = 0; j < NUM_FILES; j++) 
                 {
-                durationIsSync = Math.abs(audioEl.currentTime - tracks.getAudioTrack(j).currentTime) >= 0.1 ? false : durationIsSync; 
+                    durationIsSync = Math.abs(audioEl.currentTime - tracks.getAudioTrack(j).currentTime) >= 0.1 ? false : durationIsSync; 
                 }
                 if(!durationIsSync) 
                 {
-                    drawContext.fillStyle = "rgba(150, 0, 0, 0.4)";
-                    drawContext.fillRect(x, height, widthPerElement, bottombar );
-                    if(SHOULD_LOG >= 2) 
+                    drawContext.fillStyle = "rgba(150, 150, 150, 0.4)";
+                    drawContext.fillRect(x, height, widthPerElement / 2, bottombar );
+                    
+                    if(SHOULD_LOG > 2)
                     {
                         let toPrint = "";
                         for(let j = 0; j < NUM_FILES; j++) {
                             toPrint += timeToString(document.getElementsByTagName("audio")[j].currentTime)+", ";
                         }
-                        log("["+toPrint+"]", 2);
+                        log("[" + toPrint + "]", 2);
                     }
                 }
 
                 // draw duration
                 const duration = timeToString(audioEl.duration);
-                drawContext.fillStyle = "rgba(0, 0, 0, 1)";
-                drawContext.font = 'normal bold '+bottombar/3+'px sans-serif'; 
+                drawContext.fillStyle = frontColor();
+                drawContext.font = 'normal bold ' + 10 + 'px sans-serif'; 
                 drawContext.textAlign = 'center'; 
-                drawContext.fillText(currentTime+"/"+duration, x + 0.5 * widthPerElement, environment.drawSpaceCanvas.h - 0.5 * (environment.drawSpaceCanvas.h - height) );
+                drawContext.fillText(currentTime + "/" + duration, x + 0.25 * widthPerElement, environment.drawSpaceCanvas.h - 0.5 * (environment.drawSpaceCanvas.h - height) );
             }
         } 
         else if(environment.selectedView == 1)
@@ -491,7 +492,7 @@ function setupDrawingFunctions()
             
             // draw axis
             drawContext.strokeStyle = midColor();
-            drawContext.lineWidth = 2;
+            drawContext.lineWidth = 1;
             drawContext.beginPath();
             drawContext.moveTo(canvasXMid, 0);
             drawContext.lineTo(canvasXMid, environment.drawSpaceCanvas.h);
@@ -518,7 +519,7 @@ function setupDrawingFunctions()
                 drawContext.fillStyle = frontColor()
                 drawContext.font = 'normal '+ (10 + 0.5 * environment.unit) + 'px sans-serif'; 
                 drawContext.textAlign = 'center'; 
-                drawContext.fillText( i+1, drawSpace.x - 10, drawSpace.y - 10  );
+                drawContext.fillText( i + 1, drawSpace.x - 10, drawSpace.y - 10  );
             }
         } 
         else 
@@ -529,7 +530,7 @@ function setupDrawingFunctions()
             const progress = audioEl.currentTime / audioEl.duration;
             
             drawContext.strokeStyle = midColor();
-            drawContext.lineWidth = width / 100;
+            drawContext.lineWidth = 2;
             drawContext.beginPath();
             drawContext.moveTo(progress * width, 0);
             drawContext.lineTo(progress * width, drawContext.canvas.height);

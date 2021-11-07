@@ -44,18 +44,11 @@ div.drawingSpace {
 }
 
 footer {
-    height:31px;
+    height: 31px;
+    bottom: 31px;
     margin-bottom:-31px;
     width:100%;
     position: absolute;
-}
-
-input[type=range] {
-    width: 97%;
-    margin: 0.2% 0%;
-    height: 2wh;
-    display: inline;
-    vertical-align: middle;
 }
 
 label {
@@ -66,10 +59,8 @@ label {
 }
 
 path {
-    stroke:#111;
     stroke-width:5;
     stroke-linejoin:round;
-    fill:#111;
 }
 
 svg {
@@ -77,17 +68,33 @@ svg {
     fill:rgb(0,0,0);
 }
 
+h3 {
+    margin-top:41vh;
+    font-size:17px;
+    text-align:center;
+    overflow: hidden;
+    word-break: break-all;
+    margin-left: 7.5%;
+    width: 85%;
+}
+
+h5 {
+    font-weight: 500;
+}
+
 .canvas {
     height: 0px; /* set via javascript */
     width: 94vw;
+    border-radius: 10px;
     margin: auto;
     float: left;
 }
 
 .canvas-menu-item {
     width:20px;
-    height: 3vw;
+    height: 20px;
     background-color: rgba(200, 200, 200, 0.5);
+    border-radius: 4px;
     padding: 4px;
     margin: 1px 5px;
     min-width: 20px;
@@ -96,16 +103,9 @@ svg {
     max-height: 40px;
 }
 
-.centered {
-    margin: auto;
-}
-
-.content {
-  min-height: 100%;
-  position: relative;
-}
-
 .customContainer {
+    min-height: 100%;
+    position: relative;
     width: 100%;
     display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
     display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
@@ -123,9 +123,9 @@ svg {
 .footerContainer {
     float: left;
     position: relative;
-    height: 30px;
-    width: 30px;
-    margin: 0 3px;
+    height: 29px;
+    width: 19px;
+    margin: 0 4px;
 }
 
 .footerDrawable {
@@ -134,7 +134,6 @@ svg {
     height:100%;
     top:0px;
     pointer-events: none;
-    x-index: -1;
 }
 
 .frameSpace {
@@ -148,32 +147,6 @@ svg {
     height: 28px;
 }
 
-.slider {
-    -webkit-appearance: none;
-    background: #d0d0d0;
-    outline: none;
-    border-radius: 10px;
-    height: 2vh;
-}
-
-.slider::-moz-range-thumb {
-    width: 3.2vh;
-    height: 3.2vh;
-    cursor: pointer;
-    background: #4CAF50;
-    border-radius: 50%;
-}
-
-.slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 3.2vh;
-    height: 3.2vh;
-    cursor: pointer;
-    background: #4CAF50;
-    border-radius: 50%;
-}
-
 .sliders {
   width: 100%;
   height: auto;
@@ -182,12 +155,34 @@ svg {
 
 .wrapper {
   overflow: hidden;
-  position: relative
+}
+
+.help-button {
+    font-size:16px;
+    min-width:0px;
+    min-height:0px;
+    width: 20px;
+    height: 20px;
+    margin: 5px 6px;
+    padding: 0px;
+    border-radius: 13px;
+    border: none;
+}
+
+.help-button-container {
+    float:right;
+    width:30px;
+    height:30px;
+}
+
+/* Custom CSS for specific HTML elements */
+#debugelements {
+    top:110%;
+    position:absolute;
 }
 
 #drawCanvasButtons {
     height:100%;
-    display:inline-block;
     width: 20px;
     float: left;
 }
@@ -197,8 +192,20 @@ svg {
 }
 
 #loading-screen {
-    position:relative; 
     z-index:1;
+    position: absolute;
+    width: 100%;
+    height: 100%
+}
+
+#loading-text {
+    margin-top: 5vh;
+    font-size: 10px;
+    text-align: center;
+    overflow: hidden;
+    word-break: break-all;
+    margin-left: 15%;
+    width: 70%;
 }
 
 #helpmenu {
@@ -207,18 +214,54 @@ svg {
     height: 100vh;
 }
 
-.help-button-container {
-    float:right;
-    width:30px;
-    height:30px;
+#helptext {
+    width: 90%;
+    margin-left: 5%;
+    position:relative;
+    height:auto;
 }
 
-.help-button {
-    font-size:16px;
-    min-width:0px;
-    min-height:0px;
-    width:20px;
-    height:23px;
-    margin: 5px 5px;
-    padding:0px;
+/* Custom scrollbar design */
+::-webkit-scrollbar {
+width: 6px;
+height: 6px;
+}
+::-webkit-scrollbar-track {
+border-radius: 10px;
+background: rgba(0,0,0,0.1);
+}
+::-webkit-scrollbar-thumb{
+border-radius: 10px;
+background: rgba(0,0,0,0.2);
+}
+::-webkit-scrollbar-thumb:hover{
+background: rgba(0,0,0,0.4);
+}
+::-webkit-scrollbar-thumb:active{
+background: rgba(0,0,0,.9);
+}
+
+/* Custom slider design */
+.slider {
+    -webkit-appearance: none;
+    background: #d0d0d0;
+    outline: none;
+    border-radius: 10px;
+    height: 2vh;
+}
+.slider::-moz-range-thumb {
+    width: 3.2vh;
+    height: 3.2vh;
+    cursor: pointer;
+    background: #4CAF50;
+    border-radius: 50%;
+}
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 3.2vh;
+    height: 3.2vh;
+    cursor: pointer;
+    background: #4CAF50;
+    border-radius: 50%;
 }

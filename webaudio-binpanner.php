@@ -58,8 +58,8 @@
     
     <body class="wrapper">
         <div id="loading screen">
-            <p style="margin-top:10vw;font-size:4vw;text-align:center">loading resources</p>
-            <p id="loading-text" style="margin-top: 7vw;font-size:2.2vw;text-align:center;padding:7wh;overflow:auto;height:50vh;">waiting for server...</p>
+            <h3>loading resources</h3>
+            <p id="loading-text">waiting for server...</p>
         </div>
         <?php
             # DISPLAY FILES LOADED
@@ -68,7 +68,7 @@
             }
         ?>
         
-        <div id="octophonic player" class="content customContainer" style="display:none;">
+        <div id="octophonic player" class="customContainer" style="display:none;">
             <div class="frameSpace drawFrameSpace">
                 <canvas class="canvas" id="canvas" width="1000" height="1000">canvas</canvas>
                 <div id="drawCanvasButtons">
@@ -82,7 +82,6 @@
                 </div>
             </div> 
             <!-- /canvas space -->
-            
             
             <div id="controlpanel" class="frameSpace">
                 
@@ -104,9 +103,9 @@
         </div> 
         <!-- octophonic player -->
         
-        <div id="helpmenu" class="content customContainer" style="display:none;">
-            <div style="position:relative;height:auto;">
-                <h4 style="text-align:center;">Help & About</h4>
+        <div id="helpmenu" class="customContainer" style="display:none;">
+            <div id="helptext">
+                <h4 style="text-align:center;margin: 21px 0;font-weight: 500;">Help & About</h4>
                 <h5>How to use this software</h5>
                 In the main view, you are able to move around the <i>listener</i> (the virtual position of your earbuds) and the <i>soundsources</i> (the speakers) by draging the icons. It's also possible to change the direction of the listener by clicking anywhere on the 2d field. This interaction enables new interesting virtual     3D listening experiences.
                 
@@ -159,8 +158,8 @@
                 </datalist>
                 -->
                 
-                <p class="footerContainer" style="width:auto;padding:2px;color:#ddd;margin:0 8px;<?php if(!isset($array["rotatespeakers"])) { echo 'display:none;'; } ?>">rotate speakers</p>
-                <input type="range" id="pan" class="footerContainer control-panning slider circular-slider" style="width:100px;margin:10px;<?php if(!isset($array["rotatespeakers"])) { echo 'display:none;'; } ?>" min="0" max="6.28" value="3.745" list="pan-vals" step="0.01" data-action="pan"/>
+                <p class="footerContainer" style="width:auto;font-size:13px;color:#000;margin:0 8px;<?php if(!isset($array["rotatespeakers"])) { echo 'display:none;'; } ?>">rotate speakers</p>
+                <input type="range" id="pan" class="footerContainer control-panning circular-slider" style="width:100px;<?php if(!isset($array["rotatespeakers"])) { echo 'display:none;'; } ?>" min="0" max="6.28" value="3.745" list="pan-vals" step="0.01" data-action="pan"/>
                 <datalist id="pan-vals">
                     <option value="0" label="min"></option>
                     <option value="6.28" label="max"></option>
@@ -176,7 +175,7 @@
             <div style="position:absolute;background-color:#777777; height:100%; width:100%; top:0px; x-index:-1; z-index:0; pointer-events:none;">
             </div>
         </footer>
-        
+
         <div class="background" style="background-image: url('<?php
             parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
             if(isset($array["background_image"])) {
@@ -208,7 +207,7 @@
         </div> 
         <!--- background color -->
         
-        <div id="debugelements" style="top:100%;position:absolute;"> 
+        <div id="debugelements"> 
             <?php
                 # GENERATE DEBUG INTERFACE
                 if(array_key_exists("debuglevel", $array) && isset($array["debuglevel"])) {
