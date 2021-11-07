@@ -169,8 +169,11 @@ class DrawingEnvironment
         // The selected view: 2d-field, waveforms, meters
         this.selectedView = 1;
 
-        // The actual distance of everything in view
+        // The distance of everything in view (not in pixels)
         this.viewDistance = SPEAKER_DIST;
+
+        // A Rectangle representing the space in which can be drawed
+        this.drawSpaceCanvas = {};
     }
 }
 let environment = new DrawingEnvironment();
@@ -251,16 +254,13 @@ function setupPositionableElementComponents()
 function setupDrawingFunctions() 
 {
     function setDrawingVariables() {
-        vars.drawSpaceCanvas = new Rectangle(0, 0, drawCanvas.width, drawCanvas.height);
-
-        vars.canvasXMid = 0.5 * vars.drawSpaceCanvas.w;
-        vars.canvasYMid = 0.5 * vars.drawSpaceCanvas.h;
+        environment.drawSpaceCanvas = new Rectangle(0, 0, drawCanvas.width, drawCanvas.height);
 
         const wLargerH = drawCanvas.width > drawCanvas.height;
         
         // for converting the actual positions to pixel coordinates
-        vars.positionToCanvasMultY = vars.drawSpaceCanvas.h / environment.viewDistance; 
-        vars.positionToCanvasMultX = vars.drawSpaceCanvas.w / environment.viewDistance;
+        vars.positionToCanvasMultY = environment.drawSpaceCanvas.h / environment.viewDistance; 
+        vars.positionToCanvasMultX = environment.drawSpaceCanvas.w / environment.viewDistance;
         if(wLargerH) {
             vars.positionToCanvasMultX = vars.positionToCanvasMultY;
         } else {
@@ -270,7 +270,13 @@ function setupDrawingFunctions()
         vars.canvasRad = 0.5 * vars.positionToCanvasMultY;
         vars.canvasDiam = vars.positionToCanvasMultY; 
 
-        positionableElements.updateDrawingVariables();
+        positionableElements.updateDrawingVariables(
+            0.5 * environment.drawSpaceCanvas.w, 
+            0.5 * environment.drawSpaceCanvas.h, 
+            vars.positionToCanvasMultX, 
+            vars.positionToCanvasMultY,
+            0.5 * vars.positionToCanvasMultY
+        );
         
         debugDrawingVariables(2);
     }
@@ -280,9 +286,7 @@ function setupDrawingFunctions()
         if(debugamount >= -2 && debugamount <= 10) 
         {
             const debuglevel = debugamount;
-            log("vars.drawSpaceCanvas: "+ vars.drawSpaceCanvas, debuglevel);
-            log("vars.canvasXMid: "+ vars.canvasXMid, debuglevel);
-            log("vars.canvasYMid: "+ vars.canvasYMid, debuglevel);
+            log("environment.drawSpaceCanvas: "+ environment.drawSpaceCanvas, debuglevel);
             log("environment.timeToString: "+ environment.timeToString, debuglevel);
             log("vars.positionToCanvasMultY: "+ vars.positionToCanvasMultY, debuglevel);
             log("vars.positionToCanvasMultX: "+ vars.positionToCanvasMultX, debuglevel);
@@ -413,9 +417,9 @@ function setupDrawingFunctions()
         setDrawingVariables();
         
         // draw background
-        drawContext.clearRect(0, 0, vars.drawSpaceCanvas.w, vars.drawSpaceCanvas.h);
+        drawContext.clearRect(0, 0, environment.drawSpaceCanvas.w, environment.drawSpaceCanvas.h);
         drawContext.fillStyle = backColor();
-        drawContext.fillRect(0, 0, vars.drawSpaceCanvas.w, vars.drawSpaceCanvas.h);
+        drawContext.fillRect(0, 0, environment.drawSpaceCanvas.w, environment.drawSpaceCanvas.h);
 
         // get average gain for all audiofiles
         let average = [];
@@ -427,9 +431,9 @@ function setupDrawingFunctions()
         
         // draw all elements
         if(environment.selectedView == 0) {    // draw track gain meters
-            const bottombar = Math.max(vars.drawSpaceCanvas.h / 12, 20);
-            const height = vars.drawSpaceCanvas.h - bottombar;
-            const widthPerElement = Math.min(100, vars.drawSpaceCanvas.w / NUM_FILES);
+            const bottombar = Math.max(environment.drawSpaceCanvas.h / 12, 20);
+            const height = environment.drawSpaceCanvas.h - bottombar;
+            const widthPerElement = Math.min(100, environment.drawSpaceCanvas.w / NUM_FILES);
 
             for(let i = 0; i < NUM_FILES; i++) 
             {
@@ -468,19 +472,22 @@ function setupDrawingFunctions()
                 drawContext.fillStyle = "rgba(0, 0, 0, 1)";
                 drawContext.font = 'normal bold '+bottombar/3+'px sans-serif'; 
                 drawContext.textAlign = 'center'; 
-                drawContext.fillText(currentTime+"/"+duration, x + 0.5 * widthPerElement, vars.drawSpaceCanvas.h - 0.5 * (vars.drawSpaceCanvas.h - height) );
+                drawContext.fillText(currentTime+"/"+duration, x + 0.5 * widthPerElement, environment.drawSpaceCanvas.h - 0.5 * (environment.drawSpaceCanvas.h - height) );
             }
         } 
         else if(environment.selectedView == 1)
         {    
+            const canvasXMid = 0.5 * environment.drawSpaceCanvas.w;
+            const canvasYMid = 0.5 * environment.drawSpaceCanvas.h;
+            
             // draw axis
             drawContext.strokeStyle = midColor();
             drawContext.lineWidth = 2;
             drawContext.beginPath();
-            drawContext.moveTo(vars.canvasXMid, 0);
-            drawContext.lineTo(vars.canvasXMid, vars.drawSpaceCanvas.h);
-            drawContext.moveTo(0, vars.canvasYMid);
-            drawContext.lineTo(vars.drawSpaceCanvas.w, vars.canvasYMid);
+            drawContext.moveTo(canvasXMid, 0);
+            drawContext.lineTo(canvasXMid, environment.drawSpaceCanvas.h);
+            drawContext.moveTo(0, canvasYMid);
+            drawContext.lineTo(environment.drawSpaceCanvas.w, canvasYMid);
             drawContext.stroke();
             
             // draw elements
@@ -502,7 +509,6 @@ function setupDrawingFunctions()
                 drawContext.fillStyle = frontColor()
                 drawContext.font = 'normal '+ (10 + vars.canvasRad  * 0.5) + 'px sans-serif'; 
                 drawContext.textAlign = 'center'; 
-                // drawContext.fillText( i+1, speakerXMid - 0.5*vars.canvasRad, speakerYMid - 0.5*vars.canvasRad  );
                 drawContext.fillText( i+1, drawSpace.x - 10, drawSpace.y - 10  );
             }
         } 

@@ -10,11 +10,11 @@ class PositionableElementsContainer
         this.positionableElements[this.positionableElements.length] = new PositionableElement(setPositionFromCanvasFunction, getPositionFromElementFunction, getAngleFunction, svg);
     }
     
-    updateDrawingVariables() 
+    updateDrawingVariables(midXPixel, midYPixel, positionToPixelMultiplierX, positionToPixelMultiplierY) 
     {
         for(let i = 0; i < this.positionableElements.length; i++) 
         {
-            this.positionableElements[i].updateDrawingVariables();
+            this.positionableElements[i].updateDrawingVariables(midXPixel, midYPixel, positionToPixelMultiplierX, positionToPixelMultiplierY);
         }
     }
     

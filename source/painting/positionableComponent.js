@@ -20,7 +20,7 @@ class PositionableElement
 
         this.svg = null;
         this.drawSize = 10;
-        this.drawSpaceOnCanvas = new Rectangle(0, 0, 2 * this.drawRadius, 2 * this.drawRadius);
+        this.drawSpaceOnCanvas = new Rectangle(0, 0, 0, 0);
 
         this.hoveredOver = false;
         this.isBeingDragged = false;
@@ -140,15 +140,16 @@ class PositionableElement
         this.drawSize = size;
     }
     
-    updateDrawingVariables() 
+    updateDrawingVariables(midXPixel, midYPixel, positionToPixelMultiplierX, positionToPixelMultiplierY) 
     {
         const posOnCanvas = this.getPositionFromElementFunction();
+        const radius = 0.5 * positionToPixelMultiplierY;
         
         this.drawSpaceOnCanvas = new Rectangle(
-            vars.canvasXMid + vars.positionToCanvasMultX * posOnCanvas[0] - this.drawRadius, 
-            vars.canvasYMid + vars.positionToCanvasMultY * posOnCanvas[1] - this.drawRadius, 
-            2 * this.drawRadius, 
-            2 * this.drawRadius
+            midXPixel + positionToPixelMultiplierX * posOnCanvas[0] - radius, 
+            midYPixel + positionToPixelMultiplierY * posOnCanvas[1] - radius, 
+            2 * radius, 
+            2 * radius
         );
     }
     
@@ -211,7 +212,6 @@ class PositionableElement
         }
     }   
     
-    get drawRadius() { return vars.canvasRad; }
-    get drawSpace() { return this.drawSpaceOnCanvas; } 
+    get drawSpace() { return this.drawSpaceOnCanvas; }
     get hovered() { return this.hoveredOver; }
 };
