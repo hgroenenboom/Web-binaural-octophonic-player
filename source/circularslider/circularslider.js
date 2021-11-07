@@ -1,7 +1,7 @@
 // Sets all available circular-sliders on the current webpage/iframe.
 const sliders = document.getElementsByClassName("circular-slider");
 
-for(var i = 0; i < sliders.length; i++) {
+for(let i = 0; i < sliders.length; i++) {
     function mouseDown(e) {
         if( !e.srcElement.classList.contains("drawing") ) {
             e.srcElement.classList.add("drawing");

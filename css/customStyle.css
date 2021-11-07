@@ -52,7 +52,7 @@ footer {
 
 input[type=range] {
     width: 97%;
-    margin: 0.2%; 0%;
+    margin: 0.2% 0%;
     height: 2wh;
     display: inline;
     vertical-align: middle;
@@ -66,7 +66,10 @@ label {
 }
 
 path {
-    style="stroke:#111;stroke-width:5;stroke-linejoin:round;fill:#111;
+    stroke:#111;
+    stroke-width:5;
+    stroke-linejoin:round;
+    fill:#111;
 }
 
 svg {

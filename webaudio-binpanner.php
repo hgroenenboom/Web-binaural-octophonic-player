@@ -1,6 +1,6 @@
 <!--- BINAURAL MULTICHANNEL AUDIO PLAYER --->
-<!--- by Harold Groenenboom                       --->
-<!--- Base code: https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Web_audio_spatialization_basics --->
+<!--- by Harold Groenenboom              --->
+<!--- Source used: https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Web_audio_spatialization_basics --->
 <!DOCTYPE html>
 <html>
     <head>
@@ -21,46 +21,39 @@
         
         <?php
             parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
-            
-            # set number of audiofiles 
-            $NUM_AUDIO_FILES = 8;
-            if(isset($array["channels"])) {
-                $NUM_AUDIO_FILES = (int)$array["channels"];
-            }
-            
+                        
             # generate javascript
             echo '<script type="text/javascript">';
             
-            echo 'var SHOULD_LOG=' . ( isset($array["verbosity"]) ? 'parseFloat(' . $array["verbosity"] . ');' : '-1;' );
-            if(isset($array["colorgradient"])) {
-                echo 'var colorPoints = ' . $array["colorgradient"] . ';';
-            } else {
-                echo 'var colorPoints = [[0, [198, 207, 199, 0.7]],[0.1, [32, 209, 33, 1.0]], [0.33, [36, 66, 36, 1.0]], [0.666, [242, 128, 13, 1.0]], [1, [255, 0, 0, 1.0]]];';
-            }
-            # set use reverb flag
-            echo 'var USE_REVERB_NODES = ' . (isset( $array["reverbon"] ) ? "true" : "false") . ';';
-            echo 'var SPEAKER_DIST = ' . (isset( $array["speakerdist"] ) ? $array["speakerdist"] : '10') . ';';
-            $colortheme = 'var colortheme = "';
-            $colortheme = $colortheme. ( ( isset($array["colortheme"]) && $array["colortheme"] == "dark" ) ? "dark" : "light") . '";';
-            echo $colortheme;
+            echo 'const SHOULD_LOG=' . ( isset($array["debuglevel"]) ? 'parseFloat(' . $array["debuglevel"] . ');' : '-1;' );
             
-            echo "function toggleHelp() { 
+            if(isset($array["colorgradient"])) {
+                echo 'const colorPoints = ' . $array["colorgradient"] . ';';
+            } else {
+                echo 'const colorPoints = [[0, [198, 207, 199, 0.7]],[0.1, [32, 209, 33, 1.0]], [0.33, [36, 66, 36, 1.0]], [0.666, [242, 128, 13, 1.0]], [1, [255, 0, 0, 1.0]]];';
+            }
+
+            echo 'const USE_REVERB_NODES = ' . (isset( $array["reverbon"] ) ? "true" : "false") . ';';
+
+            echo 'const SPEAKER_DIST = ' . (isset( $array["speakerdist"] ) ? $array["speakerdist"] : '10') . ';';
+
+            echo 'const colortheme = "' . ( ( isset($array["colortheme"]) && $array["colortheme"] == "dark" ) ? "dark" : "light") . '";';
+            
+            echo "</script>";
+            
+            if(isset($array["colortheme"]) && $array["colortheme"] == "dark") {
+                echo "<link href='css/darkTheme.css' rel='stylesheet'>";
+            }
+        ?>
+        <script>
+            function toggleHelp() { 
                 if(document.getElementById('helpmenu').style.display == 'none') {
                     document.getElementById('helpmenu').style.display='block'; document.getElementById('octophonic player').style.display='none';
                 } else {
                     document.getElementById('helpmenu').style.display='none'; document.getElementById('octophonic player').style.display='block';
                 }
-            }";
-            
-            echo "</script>";
-            
-            # set style sheet by colortheme
-            if(isset($array["colortheme"])) {
-                if($array["colortheme"] == "dark") {
-                    echo "<link href='css/darkTheme.css' rel='stylesheet'>";
-                }
             }
-        ?>
+        </script>
     </head>
     
     <body class="wrapper">
@@ -87,7 +80,8 @@
                     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="300px" width="300px" fill="#000000" version="1.1" x="0px" y="0px" viewBox="0 0 256 256" enable-background="new 0 0 256 256" xml:space="preserve" class="canvas-menu-item"><g><path d="M12,64H4c-2.2,0-4,1.8-4,4v120c0,2.2,1.8,4,4,4h8c2.2,0,4-1.8,4-4V68C16,65.8,14.2,64,12,64z"/><path d="M36,48h-8c-2.2,0-4,1.8-4,4v152c0,2.2,1.8,4,4,4h8c2.2,0,4-1.8,4-4V52C40,49.8,38.2,48,36,48z"/><path d="M60,0h-8c-2.2,0-4,1.8-4,4v248c0,2.2,1.8,4,4,4h8c2.2,0,4-1.8,4-4V4C64,1.8,62.2,0,60,0z"/><path d="M108,64h-8c-2.2,0-4,1.8-4,4v120c0,2.2,1.8,4,4,4h8c2.2,0,4-1.8,4-4V68C112,65.8,110.2,64,108,64z"/><path d="M84,32h-8c-2.2,0-4,1.8-4,4v184c0,2.2,1.8,4,4,4h8c2.2,0,4-1.8,4-4V36C88,33.8,86.2,32,84,32z"/><path d="M132,80h-8c-2.2,0-4,1.8-4,4v88c0,2.2,1.8,4,4,4h8c2.2,0,4-1.8,4-4V84C136,81.8,134.2,80,132,80z"/><path d="M180,64h-8c-2.2,0-4,1.8-4,4v120c0,2.2,1.8,4,4,4h8c2.2,0,4-1.8,4-4V68C184,65.8,182.2,64,180,64z"/><path d="M204,80h-8c-2.2,0-4,1.8-4,4v88c0,2.2,1.8,4,4,4h8c2.2,0,4-1.8,4-4V84C208,81.8,206.2,80,204,80z"/><path d="M156,48h-8c-2.2,0-4,1.8-4,4v152c0,2.2,1.8,4,4,4h8c2.2,0,4-1.8,4-4V52C160,49.8,158.2,48,156,48z"/><path d="M228,96h-8c-2.2,0-4,1.8-4,4v56c0,2.2,1.8,4,4,4h8c2.2,0,4-1.8,4-4v-56C232,97.8,230.2,96,228,96z"/><path d="M252,112h-8c-2.2,0-4,1.8-4,4v24c0,2.2,1.8,4,4,4h8c2.2,0,4-1.8,4-4v-24C256,113.8,254.2,112,252,112z"/></g></svg>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="canvas-menu-item"><path d="M6 23h-6v-2h6v2zm9-2h-6v2h6v-2zm9 0h-6v2h6v-2zm-18-4h-6v2h6v-2zm9 0h-6v2h6v-2zm9 0h-6v2h6v-2zm0-4h-6v2h6v-2zm-18 0h-6v2h6v-2zm9 0h-6v2h6v-2zm-9-4h-6v2h6v-2zm9 0h-6v2h6v-2zm0-4h-6v2h6v-2zm0-4h-6v2h6v-2z"/></svg>
                 </div>
-            </div> <!-- /canvas space -->
+            </div> 
+            <!-- /canvas space -->
             
             
             <div id="controlpanel" class="frameSpace">
@@ -105,8 +99,10 @@
                 <button data-playing="false" id="playbutton" style="display:none;" role="switch" aria-checked="false">
                     <span>Play/Pause</span>
                 </button>
-            </div> <!-- control panel -->            
-        </div> <!-- octophonic player -->
+            </div> 
+            <!-- control panel -->            
+        </div> 
+        <!-- octophonic player -->
         
         <div id="helpmenu" class="content customContainer" style="display:none;">
             <div style="position:relative;height:auto;">
@@ -195,11 +191,11 @@
                 echo "0.8";
             }
             ?>;">
-        </div> <!--- background image -->
+        </div> 
+        <!--- background image -->
         
         <!--- background color -->
         <div class="background" style="position:absolute;z-index: -2;background-color: <?php
-            parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
             if(isset($array["colortheme"])) {
                 if($array["colortheme"] == "dark") {
                     echo "#000";
@@ -209,7 +205,8 @@
                 }
             }
             ?>;">
-        </div> <!--- background color -->
+        </div> 
+        <!--- background color -->
         
         <div id="debugelements" style="top:100%;position:absolute;"> 
             <?php
@@ -229,7 +226,8 @@
                     echo '<script src="source/debug.js" type="text/javascript"></script>';
                 }
             ?>
-        </div> <!-- /debugelements -->
+        </div> 
+        <!-- /debugelements -->
         
         <!-- audio sources -->
         <?php
@@ -240,29 +238,49 @@
             }
             else 
             {
+                $NUM_AUDIO_FILES = isset($array["channels"]) ? (int)$array["channels"] : 8;
+
                 # file, num_channels, ext mode
                 if(isset($array["file"]) && isset($array["ext"])) 
                 {
                     echo '<script type="text/javascript">var urls=[';
+                    
                     # IF EXTENSION AND FILE IS DEFINED
-                    for($i = 1; $i < $NUM_AUDIO_FILES+1; $i++) {
+                    for($i = 1; $i < $NUM_AUDIO_FILES + 1; $i++) {
                         echo '"' . $array["file"] . $i . $array["ext"] . '"';
+                        
                         if($i < $NUM_AUDIO_FILES) { echo ", "; }
                     }
                     echo '];</script>';
                 } 
                 else 
                 {
-                    echo '<h>no valid audiofile selected! please enter a valid audiofile...';
+                    echo '<h1>no valid audiofile selected! please enter a valid audiofile...</h1>';
                 }
             }
-        ?> <!-- /audio sources-->
+        ?> 
+        <!-- /audio sources-->
         
-        <!-- http://reverbjs.org/ -->
         <script src="http://reverbjs.org/reverb.js"></script> 
         
-        <!-- main scripts -->
+        <script src="source/preload.js" type="text/javascript"></script>
+        <script src="source/coordinates/coordinates.js" type="text/javascript"></script>
+        <script src="source/utility.js" type="text/javascript"></script>
+        
+        <script src="source/audio/audioFilePlayer.js" type="text/javascript"></script>
+        <script src="source/audio/audioListener.js" type="text/javascript"></script>
+        <script src="source/audio/binauralPanner.js" type="text/javascript"></script>
+        <script src="source/audio/binauralReverb.js" type="text/javascript"></script>
+        <script src="source/audio/multiAudioFilePlayer.js" type="text/javascript"></script>
+        
+        <script src="source/painting/color.js" type="text/javascript"></script>
+        <script src="source/painting/positionableComponent.js" type="text/javascript"></script>
+        <script src="source/painting/positionableComponentRegistry.js" type="text/javascript"></script>
+        <script src="source/painting/rectangle.js" type="text/javascript"></script>
+        <script src="source/painting/svg.js" type="text/javascript"></script>
+        
         <script src="source/main.js" type="text/javascript"></script>
+
         <script src="source/circularslider/circularslider.js"></script>
     </body>
 </html>
