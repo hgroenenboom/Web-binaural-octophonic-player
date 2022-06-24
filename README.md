@@ -29,5 +29,3 @@ For a live example visit: https://haroldgroenenboom.nl/other/binauralplayer/gene
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/hgroenenboom/Web-binaural-octophonic-player)
 ![Website](https://img.shields.io/website?url=https%3A%2F%2Fhgroenenboom.github.io%2FWeb-binaural-octophonic-player%2F)
 ![GitHub contributors](https://img.shields.io/github/contributors/hgroenenboom/Web-binaural-octophonic-player)
-
-Web-binaural-octophonic-player
