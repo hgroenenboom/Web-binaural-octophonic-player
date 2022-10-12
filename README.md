@@ -4,7 +4,7 @@ The player locally transforms your surround sound input into surround binaural a
 
 ![image](/resources/img/screenshot.png)
 
-## Intended usage
+Usage
 To generate your own embeddable player visit this link to my website: https://haroldgroenenboom.nl/other/binauralplayer/generator.html
 
 ### Status
