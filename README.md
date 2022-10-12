@@ -9,3 +9,7 @@ Locally host a server with php and make sure this server points to the root of t
 Open `localhost:<port>/generator.html` and have fun playing around. 
 
 For a live example visit: https://haroldgroenenboom.nl/other/binauralplayer/generator.html
+
+### Status
+![GitHub commit activity](https://img.shields.io/github/commit-activity/y/hgroenenboom/Web-binaural-octophonic-player)
+![GitHub last commit](https://img.shields.io/github/last-commit/hgroenenboom/Web-binaural-octophonic-player)
