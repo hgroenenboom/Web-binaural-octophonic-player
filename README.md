@@ -1,4 +1,4 @@
-# Web binaural octophonic player
+# Binaural multichannel audioplayer for the web
 A binaural (multichannel) audiofile player for the web. Working in all major browsers and devices.
 The player locally transforms your surround sound input into surround binaural audio output and provide the user with a nice interface to walk around in the virtual soundstage.
 
