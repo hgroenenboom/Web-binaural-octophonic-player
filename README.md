@@ -5,10 +5,7 @@ The player locally transforms your surround sound input into surround binaural a
 ![image](/resources/img/screenshot.png)
 
 ## Intended usage
-Locally host a server with php and make sure this server points to the root of this repository. 
-Open `localhost:<port>/generator.html` and have fun playing around. 
-
-For a live example visit: https://haroldgroenenboom.nl/other/binauralplayer/generator.html
+To generate your own embeddable player visit this link to my website: https://haroldgroenenboom.nl/other/binauralplayer/generator.html
 
 ### Status
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/y/hgroenenboom/Web-binaural-octophonic-player)
