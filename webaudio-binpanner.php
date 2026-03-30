@@ -19,22 +19,30 @@
         <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script>
         
         <?php
-            parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
+            $queryString = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY) ?? '';
+            parse_str($queryString, $array);
                         
             # generate javascript
             echo '<script type="text/javascript">';
             
-            echo 'const SHOULD_LOG=' . ( isset($array["debuglevel"]) ? 'parseFloat(' . $array["debuglevel"] . ');' : '-1;' );
+            $debugLevel = isset($array["debuglevel"]) ? floatval($array["debuglevel"]) : -1;
+            echo 'const SHOULD_LOG=' . $debugLevel . ';';
             
             if(isset($array["colorgradient"])) {
-                echo 'const colorPoints = ' . $array["colorgradient"] . ';';
+                $gradient = json_decode($array["colorgradient"]);
+                if($gradient !== null) {
+                    echo 'const colorPoints = ' . json_encode($gradient) . ';';
+                } else {
+                    echo 'const colorPoints = [[0, [198, 207, 199, 0.7]],[0.1, [32, 209, 33, 1.0]], [0.33, [36, 66, 36, 1.0]], [0.666, [242, 128, 13, 1.0]], [1, [255, 0, 0, 1.0]]];';
+                }
             } else {
                 echo 'const colorPoints = [[0, [198, 207, 199, 0.7]],[0.1, [32, 209, 33, 1.0]], [0.33, [36, 66, 36, 1.0]], [0.666, [242, 128, 13, 1.0]], [1, [255, 0, 0, 1.0]]];';
             }
 
             echo 'const USE_REVERB_NODES = ' . (isset( $array["reverbon"] ) ? "true" : "false") . ';';
 
-            echo 'const SPEAKER_DIST = ' . (isset( $array["speakerdist"] ) ? $array["speakerdist"] : '10') . ';';
+            $speakerDist = isset($array["speakerdist"]) ? floatval($array["speakerdist"]) : 10;
+            echo 'const SPEAKER_DIST = ' . $speakerDist . ';';
 
             echo 'const colortheme = "' . ( ( isset($array["colortheme"]) && $array["colortheme"] == "dark" ) ? "dark" : "light") . '";';
             
@@ -63,7 +71,8 @@
         <?php
             # DISPLAY FILES LOADED
             if(array_key_exists("verbosity", $array) && isset($array["verbosity"])) {
-                echo '<div style="position:absolute;top:0px;margin:0px;"><p style="top:0px;font-size:8px;">' . $array["file"]."1".$array["ext"] . '</p></div>';
+                $fileDisplay = htmlspecialchars(($array["file"] ?? '') . "1" . ($array["ext"] ?? ''), ENT_QUOTES, 'UTF-8');
+                echo '<div style="position:absolute;top:0px;margin:0px;"><p style="top:0px;font-size:8px;">' . $fileDisplay . '</p></div>';
             }
         ?>
         
@@ -176,18 +185,10 @@
         </footer>
 
         <div class="background" style="background-image: url('<?php
-            parse_str(parse_url( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" )["query"], $array);
-            if(isset($array["background_image"])) {
-                echo $array["background_image"];
-                } else {
-                echo "resources/img/test3.gif";
-            }
-            echo "'); opacity:";
-            if(isset($array["opacity"])) {
-                echo $array["opacity"];
-                } else {
-                echo "0.8";
-            }
+            $bgImage = isset($array["background_image"]) ? $array["background_image"] : "resources/img/test3.gif";
+            echo htmlspecialchars($bgImage, ENT_QUOTES, 'UTF-8');
+            $opacity = isset($array["opacity"]) ? floatval($array["opacity"]) : 0.8;
+            echo "'); opacity:" . $opacity;
             ?>;">
         </div> 
         <!--- background image -->
@@ -232,24 +233,25 @@
             #GENERATE AUDIO FILE JS ARRAY
             if(isset($array["filelist"]) && $array["filelist"] != "") 
             {
-                echo '<script type="text/javascript">var urls=' . $array["filelist"] . ';</script>';
+                $filelist = json_decode($array["filelist"]);
+                if($filelist !== null && is_array($filelist)) {
+                    echo '<script type="text/javascript">var urls=' . json_encode($filelist) . ';</script>';
+                } else {
+                    echo '<h1>invalid filelist format</h1>';
+                }
             }
             else 
             {
-                $NUM_AUDIO_FILES = isset($array["channels"]) ? (int)$array["channels"] : 8;
+                $NUM_AUDIO_FILES = isset($array["channels"]) ? intval($array["channels"]) : 8;
 
                 # file, num_channels, ext mode
                 if(isset($array["file"]) && isset($array["ext"])) 
                 {
-                    echo '<script type="text/javascript">var urls=[';
-                    
-                    # IF EXTENSION AND FILE IS DEFINED
+                    $urls = [];
                     for($i = 1; $i < $NUM_AUDIO_FILES + 1; $i++) {
-                        echo '"' . $array["file"] . $i . $array["ext"] . '"';
-                        
-                        if($i < $NUM_AUDIO_FILES) { echo ", "; }
+                        $urls[] = $array["file"] . $i . $array["ext"];
                     }
-                    echo '];</script>';
+                    echo '<script type="text/javascript">var urls=' . json_encode($urls) . ';</script>';
                 } 
                 else 
                 {
